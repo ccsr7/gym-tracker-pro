@@ -164,45 +164,45 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
 
     const drawHeader = (isFirstPage: boolean) => {
       // Dark header background
-      doc.setFillColor(...colors.primary);
+      doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
       doc.rect(0, 0, 210, 50, 'F');
 
       // Orange accent bar at top
-      doc.setFillColor(...colors.orange);
+      doc.setFillColor(colors.orange[0], colors.orange[1], colors.orange[2]);
       doc.rect(0, 0, 210, 4, 'F');
 
       if (isFirstPage) {
         // Logo icon - Orange gradient box with dumbbell
-        doc.setFillColor(...colors.orange);
+        doc.setFillColor(colors.orange[0], colors.orange[1], colors.orange[2]);
         doc.roundedRect(20, 12, 10, 10, 1.5, 1.5, 'F');
 
         // Dumbbell icon (simplified)
-        doc.setFillColor(...colors.white);
+        doc.setFillColor(colors.white[0], colors.white[1], colors.white[2]);
         doc.circle(23, 17, 1.2, 'F');
         doc.circle(27, 17, 1.2, 'F');
         doc.setLineWidth(0.8);
-        doc.setDrawColor(...colors.white);
+        doc.setDrawColor(colors.white[0], colors.white[1], colors.white[2]);
         doc.line(23.8, 17, 26.2, 17);
 
         // Title - Two line layout like the app
-        doc.setTextColor(...colors.white);
+        doc.setTextColor(colors.white[0], colors.white[1], colors.white[2]);
         doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
         doc.text('GYM TRACKER', 35, 16);
 
         doc.setFontSize(7);
-        doc.setTextColor(...colors.orange);
+        doc.setTextColor(colors.orange[0], colors.orange[1], colors.orange[2]);
         doc.text('PRO', 35, 21);
 
         // Subtitle
-        doc.setTextColor(...colors.gray);
+        doc.setTextColor(colors.gray[0], colors.gray[1], colors.gray[2]);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'normal');
         doc.text('Mis Rutinas de Entrenamiento', 20, 35);
 
         // Date on right side
         doc.setFontSize(9);
-        doc.setTextColor(...colors.gray);
+        doc.setTextColor(colors.gray[0], colors.gray[1], colors.gray[2]);
         const dateStr = new Date().toLocaleDateString('es-ES', {
           day: '2-digit',
           month: 'long',
@@ -211,27 +211,27 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
         doc.text(dateStr, 190, 35, { align: 'right' });
 
         // Decorative line
-        doc.setDrawColor(...colors.gray);
+        doc.setDrawColor(colors.gray[0], colors.gray[1], colors.gray[2]);
         doc.setLineWidth(0.3);
         doc.line(20, 42, 190, 42);
       } else {
         // Simplified header for subsequent pages
-        doc.setFillColor(...colors.orange);
+        doc.setFillColor(colors.orange[0], colors.orange[1], colors.orange[2]);
         doc.roundedRect(20, 15, 8, 8, 1, 1, 'F');
 
-        doc.setFillColor(...colors.white);
+        doc.setFillColor(colors.white[0], colors.white[1], colors.white[2]);
         doc.circle(22.5, 19, 0.8, 'F');
         doc.circle(25.5, 19, 0.8, 'F');
         doc.setLineWidth(0.6);
-        doc.setDrawColor(...colors.white);
+        doc.setDrawColor(colors.white[0], colors.white[1], colors.white[2]);
         doc.line(23.1, 19, 24.9, 19);
 
-        doc.setTextColor(...colors.white);
+        doc.setTextColor(colors.white[0], colors.white[1], colors.white[2]);
         doc.setFontSize(8);
         doc.setFont('helvetica', 'bold');
         doc.text('GYM TRACKER', 32, 18);
         doc.setFontSize(6);
-        doc.setTextColor(...colors.orange);
+        doc.setTextColor(colors.orange[0], colors.orange[1], colors.orange[2]);
         doc.text('PRO', 32, 22);
       }
     };
@@ -260,15 +260,15 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
       doc.roundedRect(15, yPosition - 2, 180, 16, 2, 2, 'S');
 
       // Day badge - more compact
-      doc.setFillColor(...dayColor);
+      doc.setFillColor(dayColor[0], dayColor[1], dayColor[2]);
       doc.roundedRect(18, yPosition, 28, 9, 2, 2, 'F');
-      doc.setTextColor(...colors.white);
+      doc.setTextColor(colors.white[0], colors.white[1], colors.white[2]);
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       doc.text(routine.day.substring(0, 3).toUpperCase(), 32, yPosition + 6, { align: 'center' });
 
       // Routine name - bigger and bolder
-      doc.setTextColor(...colors.primary);
+      doc.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
       doc.setFontSize(13);
       doc.setFont('helvetica', 'bold');
       doc.text(routine.name, 50, yPosition + 7);
@@ -305,9 +305,9 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
       yPosition += 14;
 
       // Exercises table header - sleeker design
-      doc.setFillColor(...dayColor);
+      doc.setFillColor(dayColor[0], dayColor[1], dayColor[2]);
       doc.roundedRect(15, yPosition, 180, 7, 1, 1, 'F');
-      doc.setTextColor(...colors.white);
+      doc.setTextColor(colors.white[0], colors.white[1], colors.white[2]);
       doc.setFontSize(7);
       doc.setFont('helvetica', 'bold');
       doc.text('#', 19, yPosition + 5);
@@ -335,7 +335,7 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
             doc.rect(15, yPosition - 1, 180, 8, 'F');
           }
 
-          doc.setTextColor(...colors.primary);
+          doc.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
           doc.setFontSize(8);
           doc.setFont('helvetica', 'normal');
 
@@ -352,14 +352,14 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
 
           // Sets
           doc.setFont('helvetica', 'normal');
-          doc.setTextColor(...dayColor);
+          doc.setTextColor(dayColor[0], dayColor[1], dayColor[2]);
           doc.text(`${ex.sets}`, 120, yPosition + 5);
 
           // Reps
           doc.text(`${ex.reps}`, 143, yPosition + 5);
 
           // Muscle group
-          doc.setTextColor(...colors.gray);
+          doc.setTextColor(colors.gray[0], colors.gray[1], colors.gray[2]);
           doc.setFontSize(7);
           const muscleGroup = exercise.muscleGroup.length > 15
             ? exercise.muscleGroup.substring(0, 12) + '...'
@@ -374,7 +374,7 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
 
       // Add spacing between routines
       if (routineIndex < selectedRoutineData.length - 1) {
-        doc.setDrawColor(...colors.lightGray);
+        doc.setDrawColor(colors.lightGray[0], colors.lightGray[1], colors.lightGray[2]);
         doc.setLineWidth(0.5);
         doc.line(15, yPosition, 195, yPosition);
         yPosition += 8;
@@ -387,12 +387,12 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
       doc.setPage(i);
 
       // Footer line
-      doc.setDrawColor(...colors.orange);
+      doc.setDrawColor(colors.orange[0], colors.orange[1], colors.orange[2]);
       doc.setLineWidth(1);
       doc.line(15, 285, 195, 285);
 
       doc.setFontSize(7);
-      doc.setTextColor(...colors.gray);
+      doc.setTextColor(colors.gray[0], colors.gray[1], colors.gray[2]);
       doc.setFont('helvetica', 'italic');
       doc.text(
         `🏋️ Generado con GYM TRACKER PRO`,
@@ -403,7 +403,7 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
 
       // Page number
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...colors.orange);
+      doc.setTextColor(colors.orange[0], colors.orange[1], colors.orange[2]);
       doc.text(`${i}/${pageCount}`, 190, 290, { align: 'right' });
     }
 
