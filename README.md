@@ -147,7 +147,8 @@ Este proyecto es de código abierto y está disponible bajo la licencia MIT.
 
 ## 👨‍💻 Autor
 
-Desarrollado con 💪 por Cesar
+Desarrollado por Cesar y gracias al claude del quiro c:
+
 
 ## 🤝 Contribuciones
 
