@@ -31,6 +31,7 @@ export default function CreateRoutinePage() {
   const [multiSelectMode, setMultiSelectMode] = useState<string[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [supersetSelection, setSupersetSelection] = useState<number | null>(null);
+  const [isRestDay, setIsRestDay] = useState(false);
 
   const days: DayOfWeek[] = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
   const categories = ['Todos', 'Pecho', 'Espalda', 'Piernas', 'Hombros', 'Brazos', 'Core', 'Cardio'];
@@ -163,8 +164,14 @@ export default function CreateRoutinePage() {
   };
 
   const handleSave = () => {
-    if (!name.trim() || selectedExercises.length === 0) {
-      alert('Por favor ingresa un nombre y selecciona al menos un ejercicio');
+    // Validar según si es día de descanso o no
+    if (!name.trim()) {
+      alert('Por favor ingresa un nombre para el día');
+      return;
+    }
+
+    if (!isRestDay && selectedExercises.length === 0) {
+      alert('Por favor selecciona al menos un ejercicio o marca como día de descanso');
       return;
     }
 
@@ -183,8 +190,9 @@ export default function CreateRoutinePage() {
       id: Date.now().toString(),
       name,
       day,
-      exercises: selectedExercises,
-      duration: selectedExercises.length * 5,
+      exercises: isRestDay ? [] : selectedExercises,
+      duration: isRestDay ? 0 : selectedExercises.length * 5,
+      isRestDay,
     };
 
     routines.push(newRoutine);
@@ -293,20 +301,44 @@ export default function CreateRoutinePage() {
           </div>
         </div>
 
-        {/* Selected Exercises */}
+        {/* Rest Day Toggle */}
         <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-6 mb-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-white dark:text-slate-900">
-              Ejercicios ({selectedExercises.length})
-            </h3>
+          <label className="flex items-center justify-between cursor-pointer">
+            <div>
+              <p className="text-lg font-medium text-white dark:text-slate-900">Día de Descanso</p>
+              <p className="text-sm text-slate-400 dark:text-slate-600">Marcar este día como descanso programado</p>
+            </div>
             <button
-              onClick={() => setShowExercisePicker(true)}
-              className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
+              type="button"
+              onClick={() => setIsRestDay(!isRestDay)}
+              className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                isRestDay ? 'bg-purple-500' : 'bg-slate-700 dark:bg-slate-300'
+              }`}
             >
-              <Plus className="w-4 h-4" />
-              Agregar
+              <span
+                className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                  isRestDay ? 'translate-x-7' : 'translate-x-1'
+                }`}
+              />
             </button>
-          </div>
+          </label>
+        </div>
+
+        {/* Selected Exercises - Only show if not rest day */}
+        {!isRestDay && (
+          <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-6 mb-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white dark:text-slate-900">
+                Ejercicios ({selectedExercises.length})
+              </h3>
+              <button
+                onClick={() => setShowExercisePicker(true)}
+                className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Agregar
+              </button>
+            </div>
 
           {supersetSelection !== null && (
             <div className="mb-4 p-3 bg-blue-500/20 border border-blue-500/50 rounded-lg">
@@ -445,7 +477,8 @@ export default function CreateRoutinePage() {
               })}
             </div>
           )}
-        </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex gap-3">

@@ -31,6 +31,7 @@ export default function Dashboard() {
   }, []);
 
   const checkRecentWorkout = () => {
+    // Solo verificar workouts COMPLETADOS y GUARDADOS en el historial
     const workouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
     if (workouts.length === 0) return;
 
@@ -39,13 +40,14 @@ export default function Dashboard() {
     );
     const lastWorkout = sortedWorkouts[0];
 
-    // Verificar si el último workout fue en las últimas 30 minutos
+    // Verificar si el último workout GUARDADO fue en las últimas 5 minutos
+    // (tiempo razonable después de completar un entrenamiento)
     const lastWorkoutTime = new Date(lastWorkout.date).getTime();
     const now = Date.now();
-    const thirtyMinutes = 30 * 60 * 1000;
+    const fiveMinutes = 5 * 60 * 1000;
 
-    if (now - lastWorkoutTime < thirtyMinutes) {
-      // Verificar si ya fue mostrado
+    if (now - lastWorkoutTime < fiveMinutes) {
+      // Verificar si ya fue mostrado en esta sesión
       const shownKey = `workout-summary-shown-${lastWorkout.id}`;
       if (!sessionStorage.getItem(shownKey)) {
         setLastCompletedWorkout(lastWorkout);
@@ -216,7 +218,93 @@ export default function Dashboard() {
             </StaggerItem>
           </StaggerContainer>
 
-          {/* Workout Summary - Show if recently completed */}
+          {/* Today's Routine or Rest Day - Always show, independent of summary */}
+          {todayRoutine ? (
+            <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-4 md:p-6 mb-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <h2 className="text-lg md:text-xl font-bold text-white dark:text-slate-900 flex items-center gap-2 mb-1">
+                    <Flame className="w-5 h-5 text-emerald-500" />
+                    {todayRoutine.name}
+                  </h2>
+                  <p className="text-sm text-slate-400 dark:text-slate-600">Rutina para {todayRoutine.day}</p>
+                </div>
+              </div>
+
+              {/* Compact Stats */}
+              <div className="flex flex-wrap gap-3 text-xs text-slate-400 dark:text-slate-600 mb-4">
+                <span className="flex items-center gap-1.5">
+                  <Dumbbell className="w-3.5 h-3.5" />
+                  {todayRoutine.exercises.length} ejercicios
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Target className="w-3.5 h-3.5" />
+                  {todayRoutine.exercises.reduce((acc, ex) => acc + ex.sets, 0)} series
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5" />
+                  ~{todayRoutine.duration} min
+                </span>
+              </div>
+
+              {/* Exercise List - Simplified */}
+              <div className="space-y-2 mb-4">
+                {todayRoutine.exercises.slice(0, 4).map((routineEx, index) => {
+                  const exercise = getExerciseById(routineEx.exerciseId);
+                  if (!exercise) return null;
+
+                  return (
+                    <div
+                      key={index}
+                      className="bg-slate-700/30 dark:bg-white border border-slate-600/50 dark:border-slate-300 rounded-lg p-3 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="bg-emerald-500/20 text-emerald-400 dark:text-emerald-600 text-xs font-bold px-2 py-1 rounded flex-shrink-0">
+                          {index + 1}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-sm font-medium text-white dark:text-slate-900 truncate">{exercise.name}</h3>
+                          <p className="text-xs text-slate-400 dark:text-slate-600">
+                            {routineEx.sets} × {routineEx.reps}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {todayRoutine.exercises.length > 4 && (
+                  <p className="text-xs text-center text-slate-400 dark:text-slate-600">
+                    +{todayRoutine.exercises.length - 4} ejercicios más
+                  </p>
+                )}
+              </div>
+
+              {/* Start Button */}
+              <button
+                onClick={startWorkout}
+                className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-6 py-3 md:py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-emerald-500/50"
+              >
+                <Play className="w-5 h-5" />
+                Iniciar Entrenamiento
+              </button>
+            </div>
+          ) : (
+            <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-8 md:p-12 text-center mb-6">
+              <Calendar className="w-12 h-12 md:w-16 md:h-16 text-purple-500 mx-auto mb-3" />
+              <h3 className="text-xl md:text-2xl font-bold text-white dark:text-slate-900 mb-2">Día de Descanso</h3>
+              <p className="text-sm text-slate-400 dark:text-slate-600 mb-4">
+                No hay entrenamientos hoy. ¡Recupérate!
+              </p>
+              <button
+                onClick={() => router.push('/routines')}
+                className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-medium transition-colors text-sm"
+              >
+                Ver Mis Rutinas
+              </button>
+            </div>
+          )}
+
+          {/* Workout Summary - Show AFTER routine if recently completed */}
           {showWorkoutSummary && lastCompletedWorkout && (
             <div className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 dark:from-emerald-100 dark:to-emerald-50 backdrop-blur-sm border-2 border-emerald-500/50 dark:border-emerald-300 rounded-xl p-6 mb-6 animate-in fade-in duration-500">
               <div className="flex items-start justify-between mb-4">
@@ -315,92 +403,6 @@ export default function Dashboard() {
               </div>
             </div>
           )}
-
-          {/* Today's Routine */}
-          {!showWorkoutSummary && todayRoutine ? (
-            <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-4 md:p-6 mb-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h2 className="text-lg md:text-xl font-bold text-white dark:text-slate-900 flex items-center gap-2 mb-1">
-                    <Flame className="w-5 h-5 text-emerald-500" />
-                    {todayRoutine.name}
-                  </h2>
-                  <p className="text-sm text-slate-400 dark:text-slate-600">Rutina para {todayRoutine.day}</p>
-                </div>
-              </div>
-
-              {/* Compact Stats */}
-              <div className="flex flex-wrap gap-3 text-xs text-slate-400 dark:text-slate-600 mb-4">
-                <span className="flex items-center gap-1.5">
-                  <Dumbbell className="w-3.5 h-3.5" />
-                  {todayRoutine.exercises.length} ejercicios
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Target className="w-3.5 h-3.5" />
-                  {todayRoutine.exercises.reduce((acc, ex) => acc + ex.sets, 0)} series
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5" />
-                  ~{todayRoutine.duration} min
-                </span>
-              </div>
-
-              {/* Exercise List - Simplified */}
-              <div className="space-y-2 mb-4">
-                {todayRoutine.exercises.slice(0, 4).map((routineEx, index) => {
-                  const exercise = getExerciseById(routineEx.exerciseId);
-                  if (!exercise) return null;
-
-                  return (
-                    <div
-                      key={index}
-                      className="bg-slate-700/30 dark:bg-white border border-slate-600/50 dark:border-slate-300 rounded-lg p-3 flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="bg-emerald-500/20 text-emerald-400 dark:text-emerald-600 text-xs font-bold px-2 py-1 rounded flex-shrink-0">
-                          {index + 1}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-sm font-medium text-white dark:text-slate-900 truncate">{exercise.name}</h3>
-                          <p className="text-xs text-slate-400 dark:text-slate-600">
-                            {routineEx.sets} × {routineEx.reps}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                {todayRoutine.exercises.length > 4 && (
-                  <p className="text-xs text-center text-slate-400 dark:text-slate-600">
-                    +{todayRoutine.exercises.length - 4} ejercicios más
-                  </p>
-                )}
-              </div>
-
-              {/* Start Button */}
-              <button
-                onClick={startWorkout}
-                className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-6 py-3 md:py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-emerald-500/50"
-              >
-                <Play className="w-5 h-5" />
-                Iniciar Entrenamiento
-              </button>
-            </div>
-          ) : !showWorkoutSummary ? (
-            <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-8 md:p-12 text-center mb-6">
-              <Calendar className="w-12 h-12 md:w-16 md:h-16 text-purple-500 mx-auto mb-3" />
-              <h3 className="text-xl md:text-2xl font-bold text-white dark:text-slate-900 mb-2">Día de Descanso</h3>
-              <p className="text-sm text-slate-400 dark:text-slate-600 mb-4">
-                No hay entrenamientos hoy. ¡Recupérate!
-              </p>
-              <button
-                onClick={() => router.push('/routines')}
-                className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-medium transition-colors text-sm"
-              >
-                Ver Mis Rutinas
-              </button>
-            </div>
-          ) : null}
 
           {/* Quick Actions */}
           <div className="grid grid-cols-2 gap-3">

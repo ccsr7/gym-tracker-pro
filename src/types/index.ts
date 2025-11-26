@@ -42,6 +42,7 @@ export interface Routine {
   day: DayOfWeek;
   exercises: RoutineExercise[];
   duration: number;
+  isRestDay?: boolean; // Indica si este día es de descanso programado
 }
 
 export interface Workout {
