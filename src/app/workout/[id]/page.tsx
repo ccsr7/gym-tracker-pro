@@ -20,6 +20,7 @@ export default function WorkoutPage() {
   const [restTimer, setRestTimer] = useState(0);
   const [isResting, setIsResting] = useState(false);
   const [restDuration, setRestDuration] = useState(90); // Duración configurable del descanso
+  const [restEndTime, setRestEndTime] = useState<number>(0); // Timestamp cuando termina el descanso
   const [notes, setNotes] = useState('');
   const [rpe, setRpe] = useState<number>(5);
   const [lastWorkoutData, setLastWorkoutData] = useState<Record<string, { weight: number; reps: number }>>({});
@@ -51,6 +52,19 @@ export default function WorkoutPage() {
           setStartTime(inProgressData.startTime);
           setNotes(inProgressData.notes || '');
           setRpe(inProgressData.rpe || 5);
+
+          // Restaurar el estado del descanso si había uno activo
+          if (inProgressData.isResting && inProgressData.restEndTime) {
+            const now = Date.now();
+            const remaining = Math.ceil((inProgressData.restEndTime - now) / 1000);
+
+            if (remaining > 0) {
+              // El descanso todavía está activo
+              setRestEndTime(inProgressData.restEndTime);
+              setRestTimer(remaining);
+              setIsResting(true);
+            }
+          }
           return;
         } else {
           // Limpiar el workout en progreso si decide no continuar
@@ -100,21 +114,24 @@ export default function WorkoutPage() {
     return () => clearInterval(interval);
   }, [startTime]);
 
-  // Timer de descanso
+  // Timer de descanso - Usa timestamps para que funcione en segundo plano
   useEffect(() => {
-    if (isResting && restTimer > 0) {
+    if (isResting && restEndTime > 0) {
       const interval = setInterval(() => {
-        setRestTimer(prev => {
-          if (prev <= 1) {
-            setIsResting(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+        const now = Date.now();
+        const remaining = Math.ceil((restEndTime - now) / 1000);
+
+        if (remaining <= 0) {
+          setRestTimer(0);
+          setIsResting(false);
+          setRestEndTime(0);
+        } else {
+          setRestTimer(remaining);
+        }
+      }, 100); // Actualizar cada 100ms para mayor precisión
       return () => clearInterval(interval);
     }
-  }, [isResting, restTimer]);
+  }, [isResting, restEndTime]);
 
   // Auto-guardar progreso del workout
   useEffect(() => {
@@ -127,11 +144,13 @@ export default function WorkoutPage() {
         notes,
         rpe,
         routineId: routine.id,
-        routineName: routine.name
+        routineName: routine.name,
+        restEndTime,
+        isResting
       };
       localStorage.setItem(inProgressKey, JSON.stringify(dataToSave));
     }
-  }, [workoutExercises, currentExerciseIndex, notes, rpe, routine, routineId, startTime]);
+  }, [workoutExercises, currentExerciseIndex, notes, rpe, routine, routineId, startTime, restEndTime, isResting]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -160,6 +179,8 @@ export default function WorkoutPage() {
 
         // Auto-iniciar descanso
         if (!isResting) {
+          const endTime = Date.now() + (restDuration * 1000);
+          setRestEndTime(endTime);
           setRestTimer(restDuration);
           setIsResting(true);
         }
@@ -176,6 +197,8 @@ export default function WorkoutPage() {
 
     // Auto-iniciar descanso si completó la serie
     if (updated[exerciseIdx].sets[setIdx].completed && !isResting) {
+      const endTime = Date.now() + (restDuration * 1000);
+      setRestEndTime(endTime);
       setRestTimer(restDuration);
       setIsResting(true);
 
