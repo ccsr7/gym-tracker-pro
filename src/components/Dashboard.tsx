@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { getSpanishDay } from '@/lib/utils';
-import { Flame, Target, Calendar, Play, Dumbbell, BarChart3 } from 'lucide-react';
+import { Flame, Target, Calendar, Play, Dumbbell, BarChart3, Trophy, TrendingUp, Clock, X } from 'lucide-react';
 import Navigation from './Navigation';
 import PageTransition, { StaggerContainer, StaggerItem, ScaleCard } from './PageTransition';
-import { Routine } from '@/types';
+import { Routine, Workout } from '@/types';
 import { getExerciseById } from '@/data/exercises';
 import { useRouter } from 'next/navigation';
 
@@ -19,13 +19,45 @@ export default function Dashboard() {
   const [totalWorkouts, setTotalWorkouts] = useState(0);
   const [totalVolume, setTotalVolume] = useState(0);
   const [inProgressWorkout, setInProgressWorkout] = useState<{ routineId: string; routineName: string } | null>(null);
+  const [lastCompletedWorkout, setLastCompletedWorkout] = useState<Workout | null>(null);
+  const [showWorkoutSummary, setShowWorkoutSummary] = useState(false);
 
   useEffect(() => {
     setCurrentDate(new Date());
     loadStats();
     loadTodayRoutine();
     checkInProgressWorkout();
+    checkRecentWorkout();
   }, []);
+
+  const checkRecentWorkout = () => {
+    const workouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+    if (workouts.length === 0) return;
+
+    const sortedWorkouts = workouts.sort((a: Workout, b: Workout) =>
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    const lastWorkout = sortedWorkouts[0];
+
+    // Verificar si el último workout fue en las últimas 30 minutos
+    const lastWorkoutTime = new Date(lastWorkout.date).getTime();
+    const now = Date.now();
+    const thirtyMinutes = 30 * 60 * 1000;
+
+    if (now - lastWorkoutTime < thirtyMinutes) {
+      // Verificar si ya fue mostrado
+      const shownKey = `workout-summary-shown-${lastWorkout.id}`;
+      if (!sessionStorage.getItem(shownKey)) {
+        setLastCompletedWorkout(lastWorkout);
+        setShowWorkoutSummary(true);
+        sessionStorage.setItem(shownKey, 'true');
+      }
+    }
+  };
+
+  const dismissSummary = () => {
+    setShowWorkoutSummary(false);
+  };
 
   const loadStats = () => {
     const workouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
@@ -184,8 +216,108 @@ export default function Dashboard() {
             </StaggerItem>
           </StaggerContainer>
 
+          {/* Workout Summary - Show if recently completed */}
+          {showWorkoutSummary && lastCompletedWorkout && (
+            <div className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 dark:from-emerald-100 dark:to-emerald-50 backdrop-blur-sm border-2 border-emerald-500/50 dark:border-emerald-300 rounded-xl p-6 mb-6 animate-in fade-in duration-500">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="bg-emerald-500/20 dark:bg-emerald-200 p-3 rounded-xl">
+                    <Trophy className="w-6 h-6 text-emerald-400 dark:text-emerald-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white dark:text-slate-900 mb-1">
+                      ¡Entrenamiento Completado! 🎉
+                    </h3>
+                    <p className="text-emerald-300 dark:text-emerald-700 text-sm font-medium">
+                      {lastCompletedWorkout.routineName}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={dismissSummary}
+                  className="text-slate-400 dark:text-slate-600 hover:text-white dark:hover:text-slate-900 transition-colors p-1"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div className="bg-slate-800/40 dark:bg-white rounded-lg p-3 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <Clock className="w-4 h-4 text-emerald-400 dark:text-emerald-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-white dark:text-slate-900">{lastCompletedWorkout.duration}</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-600">minutos</p>
+                </div>
+
+                <div className="bg-slate-800/40 dark:bg-white rounded-lg p-3 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <Dumbbell className="w-4 h-4 text-emerald-400 dark:text-emerald-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-white dark:text-slate-900">{lastCompletedWorkout.exercises.length}</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-600">ejercicios</p>
+                </div>
+
+                <div className="bg-slate-800/40 dark:bg-white rounded-lg p-3 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <Target className="w-4 h-4 text-emerald-400 dark:text-emerald-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-white dark:text-slate-900">
+                    {lastCompletedWorkout.exercises.reduce((total, ex) => total + ex.sets.length, 0)}
+                  </p>
+                  <p className="text-xs text-slate-400 dark:text-slate-600">series</p>
+                </div>
+
+                <div className="bg-slate-800/40 dark:bg-white rounded-lg p-3 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <TrendingUp className="w-4 h-4 text-emerald-400 dark:text-emerald-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-white dark:text-slate-900">
+                    {lastCompletedWorkout.totalVolume || 0}
+                  </p>
+                  <p className="text-xs text-slate-400 dark:text-slate-600">kg</p>
+                </div>
+              </div>
+
+              {/* RPE if available */}
+              {lastCompletedWorkout.rpe && (
+                <div className="bg-slate-800/40 dark:bg-white rounded-lg p-3 mb-4">
+                  <p className="text-slate-400 dark:text-slate-600 text-xs mb-1">Esfuerzo Percibido (RPE)</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-slate-700/50 dark:bg-slate-200 rounded-full h-2">
+                      <div
+                        className="bg-emerald-500 h-2 rounded-full transition-all"
+                        style={{ width: `${(lastCompletedWorkout.rpe / 10) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-lg font-bold text-white dark:text-slate-900">
+                      {lastCompletedWorkout.rpe}/10
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => router.push('/history')}
+                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                >
+                  Ver Historial
+                </button>
+                <button
+                  onClick={dismissSummary}
+                  className="flex-1 bg-slate-700/50 dark:bg-slate-300 hover:bg-slate-700 dark:hover:bg-slate-400 text-white dark:text-slate-900 px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Today's Routine */}
-          {todayRoutine ? (
+          {!showWorkoutSummary && todayRoutine ? (
             <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-4 md:p-6 mb-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
@@ -254,7 +386,7 @@ export default function Dashboard() {
                 Iniciar Entrenamiento
               </button>
             </div>
-          ) : (
+          ) : !showWorkoutSummary ? (
             <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-8 md:p-12 text-center mb-6">
               <Calendar className="w-12 h-12 md:w-16 md:h-16 text-purple-500 mx-auto mb-3" />
               <h3 className="text-xl md:text-2xl font-bold text-white dark:text-slate-900 mb-2">Día de Descanso</h3>
@@ -268,7 +400,7 @@ export default function Dashboard() {
                 Ver Mis Rutinas
               </button>
             </div>
-          )}
+          ) : null}
 
           {/* Quick Actions */}
           <div className="grid grid-cols-2 gap-3">
