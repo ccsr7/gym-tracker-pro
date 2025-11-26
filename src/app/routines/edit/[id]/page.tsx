@@ -37,6 +37,35 @@ export default function EditRoutinePage() {
   const days: DayOfWeek[] = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
   const categories = ['Todos', 'Pecho', 'Espalda', 'Piernas', 'Hombros', 'Brazos', 'Core', 'Cardio'];
 
+  // Colores para diferentes biseries
+  const supersetColors = [
+    { border: 'border-orange-500/50', bg: 'bg-orange-500/20', text: 'text-orange-400', hover: 'hover:bg-orange-500/30' },
+    { border: 'border-blue-500/50', bg: 'bg-blue-500/20', text: 'text-blue-400', hover: 'hover:bg-blue-500/30' },
+    { border: 'border-purple-500/50', bg: 'bg-purple-500/20', text: 'text-purple-400', hover: 'hover:bg-purple-500/30' },
+    { border: 'border-pink-500/50', bg: 'bg-pink-500/20', text: 'text-pink-400', hover: 'hover:bg-pink-500/30' },
+    { border: 'border-emerald-500/50', bg: 'bg-emerald-500/20', text: 'text-emerald-400', hover: 'hover:bg-emerald-500/30' },
+    { border: 'border-cyan-500/50', bg: 'bg-cyan-500/20', text: 'text-cyan-400', hover: 'hover:bg-cyan-500/30' },
+  ];
+
+  // Obtener color para una biserie específica
+  const getSupersetColor = (exerciseId: string) => {
+    const partnerId = supersets[exerciseId];
+    if (!partnerId) return null;
+
+    // Encontrar todos los pares únicos de biseries
+    const uniquePairs = new Set<string>();
+    Object.entries(supersets).forEach(([id, partner]) => {
+      const pairKey = [id, partner].sort().join('-');
+      uniquePairs.add(pairKey);
+    });
+
+    // Encontrar el índice del par actual
+    const currentPairKey = [exerciseId, partnerId].sort().join('-');
+    const pairIndex = Array.from(uniquePairs).indexOf(currentPairKey);
+
+    return supersetColors[pairIndex % supersetColors.length];
+  };
+
   useEffect(() => {
     if (routineId) {
       const routines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
@@ -298,6 +327,7 @@ export default function EditRoutinePage() {
                 const supersetPartnerExercise = supersetPartner
                   ? exercisesDatabase.find(ex => ex.id === supersetPartner)
                   : null;
+                const supersetColor = getSupersetColor(exerciseId);
 
                 return (
                   <div key={exerciseId}>
@@ -308,14 +338,14 @@ export default function EditRoutinePage() {
                       onDragEnd={handleDragEnd}
                       className={`bg-slate-700/30 rounded-lg p-4 flex items-center gap-3 cursor-move hover:bg-slate-700/50 transition-colors ${
                         draggedIndex === index ? 'opacity-50' : ''
-                      } ${supersetPartner ? 'border-2 border-orange-500/50' : ''}`}
+                      } ${supersetPartner && supersetColor ? `border-2 ${supersetColor.border}` : ''}`}
                     >
                       <GripVertical className="w-5 h-5 text-slate-500" />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className="text-white font-medium">{exercise.name}</p>
-                          {supersetPartner && (
-                            <span className="bg-orange-500/20 text-orange-400 text-xs px-2 py-0.5 rounded-full">
+                          {supersetPartner && supersetColor && (
+                            <span className={`${supersetColor.bg} ${supersetColor.text} text-xs px-2 py-0.5 rounded-full`}>
                               Biserie
                             </span>
                           )}
@@ -323,8 +353,8 @@ export default function EditRoutinePage() {
                         <p className="text-slate-400 text-sm">
                           {exercise.category} • {exercise.muscleGroup}
                         </p>
-                        {supersetPartnerExercise && (
-                          <p className="text-orange-400 text-xs mt-1">
+                        {supersetPartnerExercise && supersetColor && (
+                          <p className={`${supersetColor.text} text-xs mt-1`}>
                             ↔️ {supersetPartnerExercise.name}
                           </p>
                         )}
@@ -336,8 +366,8 @@ export default function EditRoutinePage() {
                             setShowSupersetPicker(exerciseId);
                           }}
                           className={`p-2 rounded-lg transition-colors ${
-                            supersetPartner
-                              ? 'text-orange-400 bg-orange-500/20 hover:bg-orange-500/30'
+                            supersetPartner && supersetColor
+                              ? `${supersetColor.text} ${supersetColor.bg} ${supersetColor.hover}`
                               : 'text-slate-400 hover:text-white hover:bg-slate-700'
                           }`}
                           title="Configurar biserie"
@@ -410,8 +440,8 @@ export default function EditRoutinePage() {
                                 }}
                                 disabled={!!(hasOtherSuperset && !isPartner)}
                                 className={`w-full text-left p-2 rounded-lg text-sm transition-colors ${
-                                  isPartner
-                                    ? 'bg-orange-500/20 border border-orange-500 text-orange-400'
+                                  isPartner && supersetColor
+                                    ? `${supersetColor.bg} border ${supersetColor.border} ${supersetColor.text}`
                                     : hasOtherSuperset
                                     ? 'bg-slate-700/30 text-slate-500 cursor-not-allowed'
                                     : 'bg-slate-700/50 hover:bg-slate-700 text-white'
