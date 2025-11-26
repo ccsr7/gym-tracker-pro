@@ -18,11 +18,13 @@ export default function Dashboard() {
   const [weekWorkouts, setWeekWorkouts] = useState(0);
   const [totalWorkouts, setTotalWorkouts] = useState(0);
   const [totalVolume, setTotalVolume] = useState(0);
+  const [inProgressWorkout, setInProgressWorkout] = useState<{ routineId: string; routineName: string } | null>(null);
 
   useEffect(() => {
     setCurrentDate(new Date());
     loadStats();
     loadTodayRoutine();
+    checkInProgressWorkout();
   }, []);
 
   const loadStats = () => {
@@ -51,6 +53,36 @@ export default function Dashboard() {
     setTodayRoutine(routine || null);
   };
 
+  const checkInProgressWorkout = () => {
+    // Buscar workouts en progreso en localStorage
+    const keys = Object.keys(localStorage);
+    const inProgressKey = keys.find(key => key.startsWith('workout-in-progress-'));
+
+    if (inProgressKey) {
+      const data = JSON.parse(localStorage.getItem(inProgressKey) || '{}');
+      if (data.routineId && data.routineName) {
+        setInProgressWorkout({
+          routineId: data.routineId,
+          routineName: data.routineName
+        });
+      }
+    }
+  };
+
+  const continueWorkout = () => {
+    if (inProgressWorkout) {
+      router.push(`/workout/${inProgressWorkout.routineId}`);
+    }
+  };
+
+  const discardWorkout = () => {
+    if (inProgressWorkout && confirm('¿Estás seguro de que quieres descartar este entrenamiento?')) {
+      const inProgressKey = `workout-in-progress-${inProgressWorkout.routineId}`;
+      localStorage.removeItem(inProgressKey);
+      setInProgressWorkout(null);
+    }
+  };
+
   const startWorkout = () => {
     if (todayRoutine) {
       router.push(`/workout/${todayRoutine.id}`);
@@ -69,6 +101,37 @@ export default function Dashboard() {
               Hola, {user?.name} 👋
             </h1>
           </div>
+
+          {/* In-Progress Workout Banner */}
+          {inProgressWorkout && (
+            <div className="bg-gradient-to-br from-orange-500/20 to-orange-600/10 dark:from-orange-100 dark:to-orange-50 backdrop-blur-sm border-2 border-orange-500/50 dark:border-orange-300 rounded-xl p-4 mb-6 animate-pulse">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-orange-500/20 dark:bg-orange-200 p-2 rounded-lg">
+                    <Play className="w-5 h-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-white dark:text-slate-900 font-bold">Entrenamiento en progreso</h3>
+                    <p className="text-orange-300 dark:text-orange-700 text-sm">{inProgressWorkout.routineName}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={continueWorkout}
+                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                  >
+                    Continuar
+                  </button>
+                  <button
+                    onClick={discardWorkout}
+                    className="bg-slate-700/50 dark:bg-slate-300 hover:bg-slate-700 dark:hover:bg-slate-400 text-white dark:text-slate-900 px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                  >
+                    Descartar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Stats Grid - Compacto en mobile */}
           <StaggerContainer className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">

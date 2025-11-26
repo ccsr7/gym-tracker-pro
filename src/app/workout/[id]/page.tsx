@@ -23,6 +23,7 @@ export default function WorkoutPage() {
   const [notes, setNotes] = useState('');
   const [rpe, setRpe] = useState<number>(5);
   const [lastWorkoutData, setLastWorkoutData] = useState<Record<string, { weight: number; reps: number }>>({});
+  const [workoutId, setWorkoutId] = useState<string>(`workout-in-progress-${routineId}`);
 
   useEffect(() => {
     // Cargar duración de descanso preferida
@@ -36,6 +37,26 @@ export default function WorkoutPage() {
 
     if (foundRoutine) {
       setRoutine(foundRoutine);
+
+      // Verificar si hay un workout en progreso para esta rutina
+      const inProgressKey = `workout-in-progress-${routineId}`;
+      const savedInProgress = localStorage.getItem(inProgressKey);
+
+      if (savedInProgress) {
+        const inProgressData = JSON.parse(savedInProgress);
+        // Preguntar si quiere continuar
+        if (confirm('Tienes un entrenamiento en progreso. ¿Quieres continuar donde lo dejaste?')) {
+          setWorkoutExercises(inProgressData.exercises);
+          setCurrentExerciseIndex(inProgressData.currentExerciseIndex || 0);
+          setStartTime(inProgressData.startTime);
+          setNotes(inProgressData.notes || '');
+          setRpe(inProgressData.rpe || 5);
+          return;
+        } else {
+          // Limpiar el workout en progreso si decide no continuar
+          localStorage.removeItem(inProgressKey);
+        }
+      }
 
       // Buscar el último entrenamiento de esta rutina para pre-cargar pesos
       const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
@@ -64,7 +85,8 @@ export default function WorkoutPage() {
           reps: lastWeights[ex.exerciseId]?.reps || 0, // Solo usar último entrenamiento, no el valor por defecto de la rutina
           weight: lastWeights[ex.exerciseId]?.weight || 0,
           completed: false
-        }))
+        })),
+        isSupersetWith: ex.isSupersetWith
       }));
       setWorkoutExercises(initialWorkout);
     }
@@ -93,6 +115,23 @@ export default function WorkoutPage() {
       return () => clearInterval(interval);
     }
   }, [isResting, restTimer]);
+
+  // Auto-guardar progreso del workout
+  useEffect(() => {
+    if (routine && workoutExercises.length > 0) {
+      const inProgressKey = `workout-in-progress-${routineId}`;
+      const dataToSave = {
+        exercises: workoutExercises,
+        currentExerciseIndex,
+        startTime,
+        notes,
+        rpe,
+        routineId: routine.id,
+        routineName: routine.name
+      };
+      localStorage.setItem(inProgressKey, JSON.stringify(dataToSave));
+    }
+  }, [workoutExercises, currentExerciseIndex, notes, rpe, routine, routineId, startTime]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -139,6 +178,20 @@ export default function WorkoutPage() {
     if (updated[exerciseIdx].sets[setIdx].completed && !isResting) {
       setRestTimer(restDuration);
       setIsResting(true);
+
+      // Auto-avance en biseries: cambiar al otro ejercicio de la biserie
+      const currentExercise = updated[exerciseIdx];
+      if (currentExercise.isSupersetWith) {
+        // Buscar el ejercicio con el que forma biserie
+        const supersetPartnerIdx = updated.findIndex(ex => ex.exerciseId === currentExercise.isSupersetWith);
+
+        if (supersetPartnerIdx !== -1) {
+          // Cambiar al ejercicio de la biserie
+          setTimeout(() => {
+            setCurrentExerciseIndex(supersetPartnerIdx);
+          }, 100); // Pequeño delay para que se vea el cambio
+        }
+      }
     }
   };
 
@@ -184,11 +237,18 @@ export default function WorkoutPage() {
     storedWorkouts.push(workout);
     localStorage.setItem('gym-tracker-workouts', JSON.stringify(storedWorkouts));
 
+    // Limpiar el workout en progreso
+    const inProgressKey = `workout-in-progress-${routineId}`;
+    localStorage.removeItem(inProgressKey);
+
     router.push('/history');
   };
 
   const handleCancelWorkout = () => {
     if (confirm('¿Estás seguro de que quieres cancelar este entrenamiento? Se perderá todo el progreso.')) {
+      // Limpiar el workout en progreso
+      const inProgressKey = `workout-in-progress-${routineId}`;
+      localStorage.removeItem(inProgressKey);
       router.push('/');
     }
   };

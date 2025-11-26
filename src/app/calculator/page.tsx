@@ -148,7 +148,7 @@ export default function CalculatorPage() {
               </div>
               <h4 className="text-white dark:text-slate-900 font-medium mb-2">Registra tu serie</h4>
               <p className="text-slate-400 dark:text-slate-600 text-sm">
-                Anota el peso que levantaste y cuántas repeticiones completaste (ideal: 3-8 reps)
+                Anota el peso que levantaste y cuántas repeticiones completaste (ideal: 3-8 reps, máximo 12)
               </p>
             </div>
             <div className="bg-slate-700/30 dark:bg-slate-200 rounded-lg p-4">
