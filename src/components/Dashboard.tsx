@@ -137,7 +137,10 @@ export default function Dashboard() {
           <StaggerContainer className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             {/* Weekly Workouts */}
             <StaggerItem>
-              <ScaleCard className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 dark:from-emerald-100 dark:to-emerald-50 backdrop-blur-sm border border-emerald-500/30 dark:border-emerald-200 rounded-xl p-4 cursor-pointer">
+              <ScaleCard
+                onClick={() => router.push('/history')}
+                className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 dark:from-emerald-100 dark:to-emerald-50 backdrop-blur-sm border border-emerald-500/30 dark:border-emerald-200 rounded-xl p-4 cursor-pointer hover:border-emerald-500/50 dark:hover:border-emerald-400 transition-all"
+              >
                 <Flame className="w-6 h-6 md:w-8 md:h-8 text-emerald-500 mb-2" />
                 <p className="text-2xl md:text-3xl font-bold text-white dark:text-emerald-600">{weekWorkouts}</p>
                 <p className="text-xs text-emerald-300 dark:text-emerald-600 font-medium">Esta semana</p>
@@ -146,7 +149,10 @@ export default function Dashboard() {
 
             {/* Total Workouts */}
             <StaggerItem>
-              <ScaleCard className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 dark:from-blue-100 dark:to-blue-50 backdrop-blur-sm border border-blue-500/30 dark:border-blue-200 rounded-xl p-4 cursor-pointer">
+              <ScaleCard
+                onClick={() => router.push('/history')}
+                className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 dark:from-blue-100 dark:to-blue-50 backdrop-blur-sm border border-blue-500/30 dark:border-blue-200 rounded-xl p-4 cursor-pointer hover:border-blue-500/50 dark:hover:border-blue-400 transition-all"
+              >
                 <Target className="w-6 h-6 md:w-8 md:h-8 text-blue-500 mb-2" />
                 <p className="text-2xl md:text-3xl font-bold text-white dark:text-blue-600">{totalWorkouts}</p>
                 <p className="text-xs text-blue-300 dark:text-blue-600 font-medium">Total sesiones</p>
