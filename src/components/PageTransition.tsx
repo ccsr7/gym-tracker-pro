@@ -62,7 +62,11 @@ export function StaggerItem({ children, className = '' }: PageTransitionProps) {
 }
 
 // Scale animation for cards
-export function ScaleCard({ children, className = '' }: PageTransitionProps) {
+interface ScaleCardProps extends PageTransitionProps {
+  onClick?: () => void;
+}
+
+export function ScaleCard({ children, className = '', onClick }: ScaleCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -71,6 +75,7 @@ export function ScaleCard({ children, className = '' }: PageTransitionProps) {
       whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.2 }}
       className={className}
+      onClick={onClick}
     >
       {children}
     </motion.div>

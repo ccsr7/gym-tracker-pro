@@ -408,7 +408,7 @@ export default function EditRoutinePage() {
                                     setShowSupersetPicker(null);
                                   }
                                 }}
-                                disabled={hasOtherSuperset && !isPartner}
+                                disabled={!!(hasOtherSuperset && !isPartner)}
                                 className={`w-full text-left p-2 rounded-lg text-sm transition-colors ${
                                   isPartner
                                     ? 'bg-orange-500/20 border border-orange-500 text-orange-400'
