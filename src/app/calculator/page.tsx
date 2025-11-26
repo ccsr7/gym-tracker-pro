@@ -198,7 +198,6 @@ export default function CalculatorPage() {
                 max="12"
                 className="w-full px-4 py-4 bg-slate-700/50 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 text-lg placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
               />
-              <p className="text-slate-500 dark:text-slate-600 text-xs mt-1">Máximo 12 reps para mejor precisión</p>
             </div>
           </div>
 
