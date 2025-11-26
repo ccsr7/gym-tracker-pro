@@ -36,6 +36,17 @@ export default function CreateRoutinePage() {
   const days: DayOfWeek[] = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
   const categories = ['Todos', 'Pecho', 'Espalda', 'Piernas', 'Hombros', 'Brazos', 'Core', 'Cardio'];
 
+  // Auto-rellenar nombre cuando se activa día de descanso
+  const handleRestDayToggle = () => {
+    const newIsRestDay = !isRestDay;
+    setIsRestDay(newIsRestDay);
+
+    // Si se activa día de descanso y el nombre está vacío, auto-rellenar
+    if (newIsRestDay && !name.trim()) {
+      setName('Día de Descanso');
+    }
+  };
+
   const filteredExercises = exercisesDatabase.filter(ex => {
     const matchesSearch = ex.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === 'Todos' || ex.category === categoryFilter;
@@ -165,15 +176,13 @@ export default function CreateRoutinePage() {
 
   const handleSave = () => {
     // Validar según si es día de descanso o no
-    if (!name.trim()) {
-      alert('Por favor ingresa un nombre para el día');
-      return;
-    }
-
     if (!isRestDay && selectedExercises.length === 0) {
       alert('Por favor selecciona al menos un ejercicio o marca como día de descanso');
       return;
     }
+
+    // Si no hay nombre, usar uno por defecto
+    const finalName = name.trim() || (isRestDay ? 'Día de Descanso' : 'Nueva Rutina');
 
     const routines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
 
@@ -188,7 +197,7 @@ export default function CreateRoutinePage() {
 
     const newRoutine: Routine = {
       id: Date.now().toString(),
-      name,
+      name: finalName,
       day,
       exercises: isRestDay ? [] : selectedExercises,
       duration: isRestDay ? 0 : selectedExercises.length * 5,
@@ -310,7 +319,7 @@ export default function CreateRoutinePage() {
             </div>
             <button
               type="button"
-              onClick={() => setIsRestDay(!isRestDay)}
+              onClick={handleRestDayToggle}
               className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
                 isRestDay ? 'bg-purple-500' : 'bg-slate-700 dark:bg-slate-300'
               }`}
