@@ -1,13 +1,14 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { memo } from 'react';
 import { Home, Library, CalendarDays, User, Dumbbell, Moon, Sun, BarChart3, Calculator } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 import { useAuth } from '@/lib/auth-context';
 
-export default function Navigation() {
+function Navigation() {
   const pathname = usePathname();
-  const router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
 
@@ -55,9 +56,10 @@ export default function Navigation() {
                 const isActive = pathname === item.path;
 
                 return (
-                  <button
+                  <Link
                     key={item.path}
-                    onClick={() => router.push(item.path)}
+                    href={item.path}
+                    prefetch={true}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium shadow-md ${
                       isActive
                         ? `${item.color} text-white scale-105`
@@ -66,13 +68,14 @@ export default function Navigation() {
                   >
                     <Icon className="w-4 h-4" />
                     <span className="text-sm">{item.label}</span>
-                  </button>
+                  </Link>
                 );
               })}
 
               {/* Calculator Button */}
-              <button
-                onClick={() => router.push('/calculator')}
+              <Link
+                href="/calculator"
+                prefetch={true}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium shadow-md ${
                   pathname === '/calculator'
                     ? 'bg-gradient-to-br from-yellow-500 to-yellow-600 text-white scale-105'
@@ -81,11 +84,12 @@ export default function Navigation() {
               >
                 <Calculator className="w-4 h-4" />
                 <span className="text-sm">Calculadora 1RM</span>
-              </button>
+              </Link>
 
               {/* Profile Button */}
-              <button
-                onClick={() => router.push('/profile')}
+              <Link
+                href="/profile"
+                prefetch={true}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium shadow-md ${
                   pathname === '/profile'
                     ? 'bg-gradient-to-br from-pink-500 to-pink-600 text-white scale-105'
@@ -94,7 +98,7 @@ export default function Navigation() {
               >
                 <User className="w-4 h-4" />
                 <span className="text-sm">Perfil</span>
-              </button>
+              </Link>
 
               {/* Theme Toggle */}
               <button
@@ -129,12 +133,13 @@ export default function Navigation() {
           {/* Right Actions */}
           <div className="flex items-center gap-1">
             {/* Calculator Button */}
-            <button
-              onClick={() => router.push('/calculator')}
+            <Link
+              href="/calculator"
+              prefetch={true}
               className="p-2 text-slate-300 dark:text-slate-700 hover:bg-slate-800/50 dark:hover:bg-slate-100 rounded-lg transition-colors"
             >
               <Calculator className="w-5 h-5" />
-            </button>
+            </Link>
 
             {/* Theme Toggle */}
             <button
@@ -145,12 +150,13 @@ export default function Navigation() {
             </button>
 
             {/* Profile Button */}
-            <button
-              onClick={() => router.push('/profile')}
+            <Link
+              href="/profile"
+              prefetch={true}
               className="p-2 text-slate-300 dark:text-slate-700 hover:bg-slate-800/50 dark:hover:bg-slate-100 rounded-lg transition-colors"
             >
               <User className="w-5 h-5" />
-            </button>
+            </Link>
           </div>
         </div>
       </div>
@@ -163,9 +169,10 @@ export default function Navigation() {
             const isActive = pathname === item.path;
 
             return (
-              <button
+              <Link
                 key={item.path}
-                onClick={() => router.push(item.path)}
+                href={item.path}
+                prefetch={true}
                 className={`flex flex-col items-center justify-center py-3 px-2 rounded-xl transition-all ${
                   isActive
                     ? `${item.color} text-white shadow-lg scale-105`
@@ -174,7 +181,7 @@ export default function Navigation() {
               >
                 <Icon className="w-6 h-6 mb-1" />
                 <span className="text-xs font-medium">{item.label}</span>
-              </button>
+              </Link>
             );
           })}
         </div>
@@ -182,3 +189,5 @@ export default function Navigation() {
     </>
   );
 }
+
+export default memo(Navigation);

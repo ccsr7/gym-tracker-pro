@@ -11,11 +11,11 @@ interface PageTransitionProps {
 export default function PageTransition({ children, className = '' }: PageTransitionProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
+      exit={{ opacity: 0, y: -10 }}
       transition={{
-        duration: 0.3,
+        duration: 0.15,
         ease: [0.22, 1, 0.36, 1], // Custom easing for smooth motion
       }}
       className={className}
@@ -37,7 +37,7 @@ export function StaggerContainer({ children, className = '' }: PageTransitionPro
         show: {
           opacity: 1,
           transition: {
-            staggerChildren: 0.1,
+            staggerChildren: 0.05,
           },
         },
       }}
@@ -51,8 +51,8 @@ export function StaggerItem({ children, className = '' }: PageTransitionProps) {
   return (
     <motion.div
       variants={{
-        hidden: { opacity: 0, y: 20 },
-        show: { opacity: 1, y: 0 },
+        hidden: { opacity: 0, y: 10 },
+        show: { opacity: 1, y: 0, transition: { duration: 0.15 } },
       }}
       className={className}
     >
@@ -69,11 +69,11 @@ interface ScaleCardProps extends PageTransitionProps {
 export function ScaleCard({ children, className = '', onClick }: ScaleCardProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
+      initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.12 }}
       className={className}
       onClick={onClick}
     >
@@ -88,7 +88,7 @@ export function PressButton({ children, className = '' }: PageTransitionProps) {
     <motion.button
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      transition={{ duration: 0.15 }}
+      transition={{ duration: 0.1 }}
       className={className}
     >
       {children}
@@ -100,11 +100,11 @@ export function PressButton({ children, className = '' }: PageTransitionProps) {
 export function SlideUp({ children, className = '' }: PageTransitionProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 100 }}
+      initial={{ opacity: 0, y: 50 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 100 }}
+      exit={{ opacity: 0, y: 50 }}
       transition={{
-        duration: 0.3,
+        duration: 0.2,
         ease: [0.22, 1, 0.36, 1],
       }}
       className={className}
@@ -121,7 +121,7 @@ export function Fade({ children, className = '' }: PageTransitionProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.15 }}
       className={className}
     >
       {children}
