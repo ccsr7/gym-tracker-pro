@@ -110,16 +110,26 @@ export default function HistoryPage() {
           {workouts.map((workout) => (
             <div
               key={workout.id}
-              className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-6 hover:border-emerald-500/50 transition-all"
+              className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-4 md:p-6 hover:border-emerald-500/50 transition-all"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-white dark:text-slate-900 mb-1">{workout.routineName}</h3>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-600" />
-                    <p className="text-slate-300 dark:text-slate-700">{formatDate(workout.date)}</p>
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <h3 className="text-lg md:text-xl font-bold text-white dark:text-slate-900 flex-1 min-w-0 break-words">{workout.routineName}</h3>
+                    {/* Botón de eliminar en móvil */}
+                    <button
+                      onClick={() => handleDeleteWorkout(workout.id)}
+                      className="sm:hidden p-2 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-lg transition-colors flex-shrink-0"
+                      title="Eliminar sesión"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-slate-400 dark:text-slate-600">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-600 flex-shrink-0" />
+                    <p className="text-sm text-slate-300 dark:text-slate-700">{formatDate(workout.date)}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm text-slate-400 dark:text-slate-600">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {Math.floor(workout.duration / 60)}:{(workout.duration % 60).toString().padStart(2, '0')}
@@ -131,21 +141,22 @@ export default function HistoryPage() {
                     {workout.totalVolume && (
                       <span className="flex items-center gap-1">
                         <TrendingUp className="w-3 h-3" />
-                        {workout.totalVolume} kg total
+                        {workout.totalVolume} kg
                       </span>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 sm:flex-shrink-0">
                   {workout.rpe && (
                     <div className="text-center bg-orange-500/20 dark:bg-orange-100 rounded-lg px-3 py-2">
                       <p className="text-xs text-orange-400 dark:text-orange-600">RPE</p>
-                      <p className="text-2xl font-bold text-orange-500">{workout.rpe}/10</p>
+                      <p className="text-xl md:text-2xl font-bold text-orange-500">{workout.rpe}/10</p>
                     </div>
                   )}
+                  {/* Botón de eliminar en desktop */}
                   <button
                     onClick={() => handleDeleteWorkout(workout.id)}
-                    className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-lg transition-colors"
+                    className="hidden sm:block p-2 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-lg transition-colors"
                     title="Eliminar sesión"
                   >
                     <Trash2 className="w-5 h-5" />
@@ -163,28 +174,29 @@ export default function HistoryPage() {
                   return (
                     <div
                       key={index}
-                      className="bg-slate-700/30 dark:bg-white border dark:border-slate-300 rounded-lg p-4"
+                      className="bg-slate-700/30 dark:bg-white border dark:border-slate-300 rounded-lg p-3 md:p-4"
                     >
-                      <h4 className="text-white dark:text-slate-900 font-medium mb-3">{exercise.name}</h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                      <h4 className="text-sm md:text-base text-white dark:text-slate-900 font-medium mb-2 md:mb-3">{exercise.name}</h4>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1.5 md:gap-2">
                         {workoutEx.sets.map((set, setIdx) => (
                           <div
                             key={setIdx}
-                            className={`text-center p-2 rounded ${
+                            className={`text-center p-1.5 md:p-2 rounded text-xs md:text-sm ${
                               set.completed
                                 ? 'bg-emerald-500/20 dark:bg-emerald-100 border border-emerald-500/50 dark:border-emerald-300'
                                 : 'bg-slate-600/30 dark:bg-slate-100 border border-slate-500/30 dark:border-slate-300 opacity-50'
                             }`}
                           >
-                            <p className="text-xs text-slate-400 dark:text-slate-600">S{setIdx + 1}</p>
-                            <p className="font-bold text-white dark:text-slate-900">{set.weight}kg</p>
-                            <p className="text-xs text-emerald-400 dark:text-emerald-600">×{set.reps}</p>
+                            <p className="text-[10px] md:text-xs text-slate-400 dark:text-slate-600">S{setIdx + 1}</p>
+                            <p className="font-bold text-white dark:text-slate-900 text-xs md:text-sm">{set.weight}kg</p>
+                            <p className="text-[10px] md:text-xs text-emerald-400 dark:text-emerald-600">×{set.reps}</p>
                           </div>
                         ))}
                       </div>
-                      <div className="mt-2 text-xs text-slate-400 dark:text-slate-600">
-                        {completedSets.length}/{workoutEx.sets.length} series completadas •
-                        Volumen: {completedSets.reduce((sum, set) => sum + (set.weight * set.reps), 0)} kg
+                      <div className="mt-2 text-[10px] md:text-xs text-slate-400 dark:text-slate-600 flex flex-wrap gap-1">
+                        <span>{completedSets.length}/{workoutEx.sets.length} series</span>
+                        <span>•</span>
+                        <span>{completedSets.reduce((sum, set) => sum + (set.weight * set.reps), 0)} kg</span>
                       </div>
                     </div>
                   );
