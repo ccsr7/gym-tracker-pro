@@ -219,7 +219,7 @@ export default function Dashboard() {
           </StaggerContainer>
 
           {/* Today's Routine or Rest Day - Always show, independent of summary */}
-          {todayRoutine ? (
+          {todayRoutine && !todayRoutine.isRestDay ? (
             <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-4 md:p-6 mb-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
@@ -293,7 +293,7 @@ export default function Dashboard() {
               <Calendar className="w-12 h-12 md:w-16 md:h-16 text-purple-500 mx-auto mb-3" />
               <h3 className="text-xl md:text-2xl font-bold text-white dark:text-slate-900 mb-2">Día de Descanso</h3>
               <p className="text-sm text-slate-400 dark:text-slate-600 mb-4">
-                No hay entrenamientos hoy. ¡Recupérate!
+                {todayRoutine?.isRestDay ? todayRoutine.name : 'No hay entrenamientos hoy. ¡Recupérate!'}
               </p>
               <button
                 onClick={() => router.push('/routines')}

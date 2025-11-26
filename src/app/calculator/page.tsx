@@ -208,7 +208,7 @@ export default function CalculatorPage() {
               <AlertCircle className="w-5 h-5 text-yellow-400 dark:text-yellow-600 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-yellow-300 dark:text-yellow-700">
                 Con más de 8 repeticiones, la estimación puede ser menos precisa. Para mejores resultados,
-                usa un peso con el que puedas hacer entre 3-8 repeticiones.
+                usa un peso con el que puedas hacer máximo 8 repeticiones.
               </div>
             </div>
           )}
