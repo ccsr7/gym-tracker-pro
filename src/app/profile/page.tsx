@@ -6,7 +6,9 @@ import Navigation from '@/components/Navigation';
 import PageTransition from '@/components/PageTransition';
 import { useAuth } from '@/lib/auth-context';
 import { calculateBMI, getBMICategory } from '@/lib/utils';
-import { User as UserIcon, Scale, Ruler, Activity, LogOut, Edit } from 'lucide-react';
+import { User as UserIcon, Scale, Ruler, Activity, LogOut, Edit, Calendar, Clock, Dumbbell, TrendingUp, History } from 'lucide-react';
+import { Workout } from '@/types';
+import { getExerciseById } from '@/data/exercises';
 
 export default function ProfilePage() {
   const { user, updateUser, logout } = useAuth();
@@ -16,6 +18,10 @@ export default function ProfilePage() {
   const [email, setEmail] = useState('');
   const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [totalWorkouts, setTotalWorkouts] = useState(0);
+  const [totalVolume, setTotalVolume] = useState(0);
+  const [thisWeekWorkouts, setThisWeekWorkouts] = useState(0);
 
   useEffect(() => {
     if (user) {
@@ -24,7 +30,33 @@ export default function ProfilePage() {
       setWeight(user.weight?.toString() || '');
       setHeight(user.height?.toString() || '');
     }
+    loadWorkoutHistory();
   }, [user]);
+
+  const loadWorkoutHistory = () => {
+    const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+    const sortedWorkouts = storedWorkouts.sort((a: Workout, b: Workout) =>
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    setWorkouts(sortedWorkouts.slice(0, 5)); // Últimos 5 entrenamientos
+    setTotalWorkouts(storedWorkouts.length);
+
+    // Calcular volumen total
+    const volume = storedWorkouts.reduce((sum: number, w: Workout) => sum + (w.totalVolume || 0), 0);
+    setTotalVolume(volume);
+
+    // Calcular entrenamientos de esta semana
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+
+    const thisWeek = storedWorkouts.filter((w: Workout) => {
+      const workoutDate = new Date(w.date);
+      return workoutDate >= startOfWeek;
+    });
+    setThisWeekWorkouts(thisWeek.length);
+  };
 
   const handleSave = () => {
     updateUser({
@@ -175,6 +207,108 @@ export default function ProfilePage() {
             </>
           )}
         </div>
+
+        {/* Workout Statistics */}
+        {!isEditing && (
+          <div className="bg-slate-800/60 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-2xl p-6 mb-4">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-slate-700/50 dark:bg-slate-200 p-2 rounded-lg">
+                <TrendingUp className="w-5 h-5 text-slate-300 dark:text-slate-700" />
+              </div>
+              <h2 className="text-lg font-bold text-white dark:text-slate-900">Estadísticas de Entrenamiento</h2>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 mb-6">
+              <div className="bg-slate-700/30 dark:bg-slate-200 rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold text-emerald-400 dark:text-emerald-600">{thisWeekWorkouts}</p>
+                <p className="text-slate-400 dark:text-slate-600 text-xs mt-1">Esta semana</p>
+              </div>
+              <div className="bg-slate-700/30 dark:bg-slate-200 rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold text-blue-400 dark:text-blue-600">{totalWorkouts}</p>
+                <p className="text-slate-400 dark:text-slate-600 text-xs mt-1">Total sesiones</p>
+              </div>
+              <div className="bg-slate-700/30 dark:bg-slate-200 rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold text-purple-400 dark:text-purple-600">
+                  {totalVolume > 1000 ? `${(totalVolume / 1000).toFixed(1)}k` : totalVolume}
+                </p>
+                <p className="text-slate-400 dark:text-slate-600 text-xs mt-1">kg levantados</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Recent Workouts */}
+        {!isEditing && workouts.length > 0 && (
+          <div className="bg-slate-800/60 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-2xl p-6 mb-4">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-slate-700/50 dark:bg-slate-200 p-2 rounded-lg">
+                  <History className="w-5 h-5 text-slate-300 dark:text-slate-700" />
+                </div>
+                <h2 className="text-lg font-bold text-white dark:text-slate-900">Últimos Entrenamientos</h2>
+              </div>
+              <button
+                onClick={() => router.push('/history')}
+                className="text-blue-400 dark:text-blue-600 hover:text-blue-300 dark:hover:text-blue-700 text-sm font-medium transition-colors"
+              >
+                Ver todos →
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {workouts.map((workout) => (
+                <div
+                  key={workout.id}
+                  onClick={() => router.push('/history')}
+                  className="bg-slate-700/30 dark:bg-slate-200 rounded-xl p-4 cursor-pointer hover:bg-slate-700/50 dark:hover:bg-slate-300 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-white dark:text-slate-900 font-bold text-lg mb-1 truncate">
+                        {workout.routineName}
+                      </h3>
+                      <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-600">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(workout.date).toLocaleDateString('es-ES', {
+                            day: '2-digit',
+                            month: 'short'
+                          })}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {workout.duration} min
+                        </span>
+                        {workout.rpe && (
+                          <span className="flex items-center gap-1">
+                            RPE: {workout.rpe}/10
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {workout.totalVolume && (
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-purple-400 dark:text-purple-600 font-bold text-lg">
+                          {workout.totalVolume}kg
+                        </p>
+                        <p className="text-slate-400 dark:text-slate-600 text-xs">Volumen</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 text-slate-400 dark:text-slate-600 text-xs">
+                    <Dumbbell className="w-3 h-3" />
+                    <span>{workout.exercises.length} ejercicios</span>
+                    <span>•</span>
+                    <span>
+                      {workout.exercises.reduce((total, ex) => total + ex.sets.length, 0)} series completadas
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         {isEditing ? (
