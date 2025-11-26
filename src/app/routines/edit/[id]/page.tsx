@@ -13,7 +13,8 @@ import {
   GripVertical,
   Trash2,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Link2
 } from 'lucide-react';
 
 export default function EditRoutinePage() {
@@ -30,6 +31,8 @@ export default function EditRoutinePage() {
   const [multiSelectMode, setMultiSelectMode] = useState<string[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [supersets, setSupersets] = useState<Record<string, string>>({});
+  const [showSupersetPicker, setShowSupersetPicker] = useState<string | null>(null);
 
   const days: DayOfWeek[] = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
   const categories = ['Todos', 'Pecho', 'Espalda', 'Piernas', 'Hombros', 'Brazos', 'Core', 'Cardio'];
@@ -43,6 +46,15 @@ export default function EditRoutinePage() {
         setName(routine.name);
         setDay(routine.day);
         setSelectedExercises(routine.exercises.map((e: any) => e.exerciseId));
+
+        // Cargar supersets existentes
+        const existingSupersets: Record<string, string> = {};
+        routine.exercises.forEach((ex: any) => {
+          if (ex.isSupersetWith) {
+            existingSupersets[ex.exerciseId] = ex.isSupersetWith;
+          }
+        });
+        setSupersets(existingSupersets);
       } else {
         router.push('/routines');
       }
@@ -115,6 +127,31 @@ export default function EditRoutinePage() {
     setSelectedExercises(newExercises);
   };
 
+  const toggleSuperset = (exerciseId: string, partnerIndex: number) => {
+    const partnerId = selectedExercises[partnerIndex];
+    const newSupersets = { ...supersets };
+
+    // Si ya está en biserie con este ejercicio, quitarla
+    if (supersets[exerciseId] === partnerId) {
+      delete newSupersets[exerciseId];
+      delete newSupersets[partnerId];
+    } else {
+      // Si ya tiene otra biserie, quitarla primero
+      if (supersets[exerciseId]) {
+        delete newSupersets[supersets[exerciseId]];
+      }
+      if (supersets[partnerId]) {
+        delete newSupersets[supersets[partnerId]];
+      }
+
+      // Crear nueva biserie bidireccional
+      newSupersets[exerciseId] = partnerId;
+      newSupersets[partnerId] = exerciseId;
+    }
+
+    setSupersets(newSupersets);
+  };
+
   const handleSave = () => {
     if (!name.trim() || selectedExercises.length === 0) {
       alert('Por favor ingresa un nombre y selecciona al menos un ejercicio');
@@ -151,6 +188,7 @@ export default function EditRoutinePage() {
         exerciseId: id,
         sets: routines[routineIndex].exercises.find((e: any) => e.exerciseId === id)?.sets || 4,
         reps: routines[routineIndex].exercises.find((e: any) => e.exerciseId === id)?.reps || 12,
+        isSupersetWith: supersets[id] || undefined,
       })),
       duration: selectedExercises.length * 5,
     };
@@ -256,46 +294,138 @@ export default function EditRoutinePage() {
                 const exercise = exercisesDatabase.find(ex => ex.id === exerciseId);
                 if (!exercise) return null;
 
+                const supersetPartner = supersets[exerciseId];
+                const supersetPartnerExercise = supersetPartner
+                  ? exercisesDatabase.find(ex => ex.id === supersetPartner)
+                  : null;
+
                 return (
-                  <div
-                    key={exerciseId}
-                    draggable
-                    onDragStart={() => handleDragStart(index)}
-                    onDragOver={(e) => handleDragOver(e, index)}
-                    onDragEnd={handleDragEnd}
-                    className={`bg-slate-700/30 rounded-lg p-4 flex items-center gap-3 cursor-move hover:bg-slate-700/50 transition-colors ${
-                      draggedIndex === index ? 'opacity-50' : ''
-                    }`}
-                  >
-                    <GripVertical className="w-5 h-5 text-slate-500" />
-                    <div className="flex-1">
-                      <p className="text-white font-medium">{exercise.name}</p>
-                      <p className="text-slate-400 text-sm">
-                        {exercise.category} • {exercise.muscleGroup}
-                      </p>
+                  <div key={exerciseId}>
+                    <div
+                      draggable
+                      onDragStart={() => handleDragStart(index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragEnd={handleDragEnd}
+                      className={`bg-slate-700/30 rounded-lg p-4 flex items-center gap-3 cursor-move hover:bg-slate-700/50 transition-colors ${
+                        draggedIndex === index ? 'opacity-50' : ''
+                      } ${supersetPartner ? 'border-2 border-orange-500/50' : ''}`}
+                    >
+                      <GripVertical className="w-5 h-5 text-slate-500" />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-white font-medium">{exercise.name}</p>
+                          {supersetPartner && (
+                            <span className="bg-orange-500/20 text-orange-400 text-xs px-2 py-0.5 rounded-full">
+                              Biserie
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-slate-400 text-sm">
+                          {exercise.category} • {exercise.muscleGroup}
+                        </p>
+                        {supersetPartnerExercise && (
+                          <p className="text-orange-400 text-xs mt-1">
+                            ↔️ {supersetPartnerExercise.name}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowSupersetPicker(exerciseId);
+                          }}
+                          className={`p-2 rounded-lg transition-colors ${
+                            supersetPartner
+                              ? 'text-orange-400 bg-orange-500/20 hover:bg-orange-500/30'
+                              : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                          }`}
+                          title="Configurar biserie"
+                        >
+                          <Link2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => moveExercise(index, 'up')}
+                          disabled={index === 0}
+                          className="p-1 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <ChevronUp className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => moveExercise(index, 'down')}
+                          disabled={index === selectedExercises.length - 1}
+                          className="p-1 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleRemoveExercise(exerciseId)}
+                          className="p-2 text-red-400 hover:text-red-300 ml-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => moveExercise(index, 'up')}
-                        disabled={index === 0}
-                        className="p-1 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <ChevronUp className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => moveExercise(index, 'down')}
-                        disabled={index === selectedExercises.length - 1}
-                        className="p-1 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <ChevronDown className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleRemoveExercise(exerciseId)}
-                        className="p-2 text-red-400 hover:text-red-300 ml-2"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+
+                    {/* Superset Picker Dropdown */}
+                    {showSupersetPicker === exerciseId && (
+                      <div className="mt-2 bg-slate-800 border border-slate-600 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-white font-medium text-sm">Selecciona ejercicio para biserie</h4>
+                          <button
+                            onClick={() => setShowSupersetPicker(null)}
+                            className="text-slate-400 hover:text-white"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {supersetPartner && (
+                            <button
+                              onClick={() => {
+                                toggleSuperset(exerciseId, selectedExercises.indexOf(supersetPartner));
+                                setShowSupersetPicker(null);
+                              }}
+                              className="w-full text-left p-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded-lg text-red-400 text-sm transition-colors"
+                            >
+                              ✖️ Quitar biserie
+                            </button>
+                          )}
+                          {selectedExercises.map((otherId, otherIndex) => {
+                            if (otherId === exerciseId) return null;
+                            const otherExercise = exercisesDatabase.find(ex => ex.id === otherId);
+                            if (!otherExercise) return null;
+
+                            const isPartner = supersetPartner === otherId;
+                            const hasOtherSuperset = supersets[otherId] && supersets[otherId] !== exerciseId;
+
+                            return (
+                              <button
+                                key={otherId}
+                                onClick={() => {
+                                  if (!hasOtherSuperset || isPartner) {
+                                    toggleSuperset(exerciseId, otherIndex);
+                                    setShowSupersetPicker(null);
+                                  }
+                                }}
+                                disabled={hasOtherSuperset && !isPartner}
+                                className={`w-full text-left p-2 rounded-lg text-sm transition-colors ${
+                                  isPartner
+                                    ? 'bg-orange-500/20 border border-orange-500 text-orange-400'
+                                    : hasOtherSuperset
+                                    ? 'bg-slate-700/30 text-slate-500 cursor-not-allowed'
+                                    : 'bg-slate-700/50 hover:bg-slate-700 text-white'
+                                }`}
+                              >
+                                {isPartner && '✓ '}
+                                {otherExercise.name}
+                                {hasOtherSuperset && !isPartner && ' (ya en biserie)'}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
