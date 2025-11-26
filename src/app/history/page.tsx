@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import { Workout } from '@/types';
-import { Calendar, Clock, Dumbbell, TrendingUp } from 'lucide-react';
+import { Calendar, Clock, Dumbbell, TrendingUp, Trash2 } from 'lucide-react';
 import { getExerciseById } from '@/data/exercises';
 
 export default function HistoryPage() {
@@ -22,8 +22,21 @@ export default function HistoryPage() {
     const date = new Date(dateString);
     const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    
+
     return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+  };
+
+  const handleDeleteWorkout = (workoutId: string) => {
+    if (!confirm('¿Estás seguro de que deseas eliminar esta sesión de entrenamiento? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+    const updatedWorkouts = storedWorkouts.filter((w: Workout) => w.id !== workoutId);
+    localStorage.setItem('gym-tracker-workouts', JSON.stringify(updatedWorkouts));
+
+    // Recargar la lista
+    loadWorkouts();
   };
 
   if (workouts.length === 0) {
@@ -123,12 +136,21 @@ export default function HistoryPage() {
                     )}
                   </div>
                 </div>
-                {workout.rpe && (
-                  <div className="text-center bg-orange-500/20 dark:bg-orange-100 rounded-lg px-3 py-2">
-                    <p className="text-xs text-orange-400 dark:text-orange-600">RPE</p>
-                    <p className="text-2xl font-bold text-orange-500">{workout.rpe}/10</p>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  {workout.rpe && (
+                    <div className="text-center bg-orange-500/20 dark:bg-orange-100 rounded-lg px-3 py-2">
+                      <p className="text-xs text-orange-400 dark:text-orange-600">RPE</p>
+                      <p className="text-2xl font-bold text-orange-500">{workout.rpe}/10</p>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => handleDeleteWorkout(workout.id)}
+                    className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-lg transition-colors"
+                    title="Eliminar sesión"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-3 mb-4">
