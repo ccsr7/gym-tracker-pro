@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import { Routine, DayOfWeek, RoutineExercise } from '@/types';
 import { exercisesDatabase } from '@/data/exercises';
+import { estimateRoutineDuration } from '@/lib/duration-utils';
 import {
   Plus,
   X,
@@ -195,12 +196,16 @@ export default function CreateRoutinePage() {
       routines.splice(existingIndex, 1);
     }
 
+    // Calcular duración basada en datos históricos o estimación inteligente
+    const totalSets = selectedExercises.reduce((sum, ex) => sum + ex.sets, 0);
+    const estimatedDuration = isRestDay ? 0 : estimateRoutineDuration(selectedExercises.length, totalSets);
+
     const newRoutine: Routine = {
       id: Date.now().toString(),
       name: finalName,
       day,
       exercises: isRestDay ? [] : selectedExercises,
-      duration: isRestDay ? 0 : selectedExercises.length * 5,
+      duration: estimatedDuration,
       isRestDay,
     };
 

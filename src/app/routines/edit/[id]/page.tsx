@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import { Routine, DayOfWeek } from '@/types';
 import { exercisesDatabase } from '@/data/exercises';
+import { estimateRoutineDuration } from '@/lib/duration-utils';
 import {
   Plus,
   X,
@@ -226,17 +227,24 @@ export default function EditRoutinePage() {
       }
     }
 
+    // Construir ejercicios con sus datos
+    const exercisesWithData = isRestDay ? [] : selectedExercises.map(id => ({
+      exerciseId: id,
+      sets: routines[routineIndex].exercises.find((e: any) => e.exerciseId === id)?.sets || 4,
+      reps: routines[routineIndex].exercises.find((e: any) => e.exerciseId === id)?.reps || 12,
+      isSupersetWith: supersets[id] || undefined,
+    }));
+
+    // Calcular duración basada en datos históricos o estimación inteligente
+    const totalSets = exercisesWithData.reduce((sum, ex) => sum + ex.sets, 0);
+    const estimatedDuration = isRestDay ? 0 : estimateRoutineDuration(selectedExercises.length, totalSets);
+
     const updatedRoutine: Routine = {
       id: routineId,
       name: finalName,
       day,
-      exercises: isRestDay ? [] : selectedExercises.map(id => ({
-        exerciseId: id,
-        sets: routines[routineIndex].exercises.find((e: any) => e.exerciseId === id)?.sets || 4,
-        reps: routines[routineIndex].exercises.find((e: any) => e.exerciseId === id)?.reps || 12,
-        isSupersetWith: supersets[id] || undefined,
-      })),
-      duration: isRestDay ? 0 : selectedExercises.length * 5,
+      exercises: exercisesWithData,
+      duration: estimatedDuration,
       isRestDay,
     };
 
