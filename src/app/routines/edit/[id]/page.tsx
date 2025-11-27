@@ -33,6 +33,7 @@ export default function EditRoutinePage() {
   const [loading, setLoading] = useState(true);
   const [supersets, setSupersets] = useState<Record<string, string>>({});
   const [showSupersetPicker, setShowSupersetPicker] = useState<string | null>(null);
+  const [isRestDay, setIsRestDay] = useState(false);
 
   const days: DayOfWeek[] = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
   const categories = ['Todos', 'Pecho', 'Espalda', 'Piernas', 'Hombros', 'Brazos', 'Core', 'Cardio'];
@@ -48,6 +49,17 @@ export default function EditRoutinePage() {
   ];
 
   // Obtener color para una biserie específica
+  // Auto-rellenar nombre cuando se activa día de descanso
+  const handleRestDayToggle = () => {
+    const newIsRestDay = !isRestDay;
+    setIsRestDay(newIsRestDay);
+
+    // Si se activa día de descanso y el nombre está vacío, auto-rellenar
+    if (newIsRestDay && !name.trim()) {
+      setName('Día de Descanso');
+    }
+  };
+
   const getSupersetColor = (exerciseId: string) => {
     const partnerId = supersets[exerciseId];
     if (!partnerId) return null;
@@ -74,6 +86,7 @@ export default function EditRoutinePage() {
       if (routine) {
         setName(routine.name);
         setDay(routine.day);
+        setIsRestDay(routine.isRestDay || false);
         setSelectedExercises(routine.exercises.map((e: any) => e.exerciseId));
 
         // Cargar supersets existentes
@@ -182,10 +195,14 @@ export default function EditRoutinePage() {
   };
 
   const handleSave = () => {
-    if (!name.trim() || selectedExercises.length === 0) {
-      alert('Por favor ingresa un nombre y selecciona al menos un ejercicio');
+    // Validar según si es día de descanso o no
+    if (!isRestDay && selectedExercises.length === 0) {
+      alert('Por favor selecciona al menos un ejercicio o marca como día de descanso');
       return;
     }
+
+    // Si no hay nombre, usar uno por defecto
+    const finalName = name.trim() || (isRestDay ? 'Día de Descanso' : 'Nueva Rutina');
 
     const routines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
     const routineIndex = routines.findIndex((r: Routine) => r.id === routineId);
@@ -211,15 +228,16 @@ export default function EditRoutinePage() {
 
     const updatedRoutine: Routine = {
       id: routineId,
-      name,
+      name: finalName,
       day,
-      exercises: selectedExercises.map(id => ({
+      exercises: isRestDay ? [] : selectedExercises.map(id => ({
         exerciseId: id,
         sets: routines[routineIndex].exercises.find((e: any) => e.exerciseId === id)?.sets || 4,
         reps: routines[routineIndex].exercises.find((e: any) => e.exerciseId === id)?.reps || 12,
         isSupersetWith: supersets[id] || undefined,
       })),
-      duration: selectedExercises.length * 5,
+      duration: isRestDay ? 0 : selectedExercises.length * 5,
+      isRestDay,
     };
 
     routines[routineIndex] = updatedRoutine;
@@ -292,20 +310,44 @@ export default function EditRoutinePage() {
           </div>
         </div>
 
-        {/* Selected Exercises */}
+        {/* Rest Day Toggle */}
         <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-white">
-              Ejercicios ({selectedExercises.length})
-            </h3>
+          <label className="flex items-center justify-between cursor-pointer">
+            <div>
+              <p className="text-lg font-medium text-white">Día de Descanso</p>
+              <p className="text-sm text-slate-400">Marcar este día como descanso programado</p>
+            </div>
             <button
-              onClick={() => setShowExercisePicker(true)}
-              className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
+              type="button"
+              onClick={handleRestDayToggle}
+              className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                isRestDay ? 'bg-purple-500' : 'bg-slate-700'
+              }`}
             >
-              <Plus className="w-4 h-4" />
-              Agregar
+              <span
+                className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                  isRestDay ? 'translate-x-7' : 'translate-x-1'
+                }`}
+              />
             </button>
-          </div>
+          </label>
+        </div>
+
+        {/* Selected Exercises - Only show if not rest day */}
+        {!isRestDay && (
+          <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white">
+                Ejercicios ({selectedExercises.length})
+              </h3>
+              <button
+                onClick={() => setShowExercisePicker(true)}
+                className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Agregar
+              </button>
+            </div>
 
           {selectedExercises.length === 0 ? (
             <div className="text-center py-12">
@@ -461,7 +503,8 @@ export default function EditRoutinePage() {
               })}
             </div>
           )}
-        </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex gap-3 mb-4">
