@@ -41,12 +41,12 @@ export default function EditRoutinePage() {
 
   // Colores para diferentes biseries
   const supersetColors = [
-    { border: 'border-orange-500/50', bg: 'bg-orange-500/20', text: 'text-orange-400', hover: 'hover:bg-orange-500/30' },
-    { border: 'border-blue-500/50', bg: 'bg-blue-500/20', text: 'text-blue-400', hover: 'hover:bg-blue-500/30' },
-    { border: 'border-purple-500/50', bg: 'bg-purple-500/20', text: 'text-purple-400', hover: 'hover:bg-purple-500/30' },
-    { border: 'border-pink-500/50', bg: 'bg-pink-500/20', text: 'text-pink-400', hover: 'hover:bg-pink-500/30' },
-    { border: 'border-emerald-500/50', bg: 'bg-emerald-500/20', text: 'text-emerald-400', hover: 'hover:bg-emerald-500/30' },
-    { border: 'border-cyan-500/50', bg: 'bg-cyan-500/20', text: 'text-cyan-400', hover: 'hover:bg-cyan-500/30' },
+    { border: 'border-orange-500/50', bg: 'bg-orange-500/20', text: 'text-orange-400', textDark: 'text-orange-600', hover: 'hover:bg-orange-500/30', hoverTextDark: 'hover:text-orange-700' },
+    { border: 'border-blue-500/50', bg: 'bg-blue-500/20', text: 'text-blue-400', textDark: 'text-blue-600', hover: 'hover:bg-blue-500/30', hoverTextDark: 'hover:text-blue-700' },
+    { border: 'border-purple-500/50', bg: 'bg-purple-500/20', text: 'text-purple-400', textDark: 'text-purple-600', hover: 'hover:bg-purple-500/30', hoverTextDark: 'hover:text-purple-700' },
+    { border: 'border-pink-500/50', bg: 'bg-pink-500/20', text: 'text-pink-400', textDark: 'text-pink-600', hover: 'hover:bg-pink-500/30', hoverTextDark: 'hover:text-pink-700' },
+    { border: 'border-emerald-500/50', bg: 'bg-emerald-500/20', text: 'text-emerald-400', textDark: 'text-emerald-600', hover: 'hover:bg-emerald-500/30', hoverTextDark: 'hover:text-emerald-700' },
+    { border: 'border-cyan-500/50', bg: 'bg-cyan-500/20', text: 'text-cyan-400', textDark: 'text-cyan-600', hover: 'hover:bg-cyan-500/30', hoverTextDark: 'hover:text-cyan-700' },
   ];
 
   // Obtener color para una biserie específica
@@ -278,13 +278,13 @@ export default function EditRoutinePage() {
 
       <div className="container mx-auto px-4 pt-20 py-8 pb-24 md:pt-8 max-w-4xl">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white mb-2">Editar Rutina</h1>
-          <p className="text-slate-400">Modifica tu rutina de entrenamiento</p>
+          <h1 className="text-3xl font-bold text-white dark:text-slate-900 mb-2">Editar Rutina</h1>
+          <p className="text-slate-400 dark:text-slate-600">Modifica tu rutina de entrenamiento</p>
         </div>
 
         {/* Routine Name */}
-        <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-4">
-          <label className="block text-sm font-medium text-slate-300 mb-2">
+        <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-6 mb-4">
+          <label className="block text-sm font-medium text-slate-300 dark:text-slate-700 mb-2">
             Nombre de la Rutina
           </label>
           <input
@@ -292,13 +292,13 @@ export default function EditRoutinePage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ej: Rutina de Pecho y Tríceps"
-            className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-4 py-3 bg-slate-700/50 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
 
         {/* Day Selection */}
-        <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-4">
-          <label className="block text-sm font-medium text-slate-300 mb-3">
+        <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-6 mb-4">
+          <label className="block text-sm font-medium text-slate-300 dark:text-slate-700 mb-3">
             Día de la Semana
           </label>
           <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
@@ -309,7 +309,7 @@ export default function EditRoutinePage() {
                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   day === d
                     ? 'bg-emerald-500 text-white'
-                    : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
+                    : 'bg-slate-700/50 dark:bg-slate-200 text-slate-300 dark:text-slate-700 hover:bg-slate-700 dark:hover:bg-slate-300'
                 }`}
               >
                 {d.substring(0, 3)}
@@ -319,17 +319,17 @@ export default function EditRoutinePage() {
         </div>
 
         {/* Rest Day Toggle */}
-        <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-4">
+        <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-6 mb-4">
           <label className="flex items-center justify-between cursor-pointer">
             <div>
-              <p className="text-lg font-medium text-white">Día de Descanso</p>
-              <p className="text-sm text-slate-400">Marcar este día como descanso programado</p>
+              <p className="text-lg font-medium text-white dark:text-slate-900">Día de Descanso</p>
+              <p className="text-sm text-slate-400 dark:text-slate-600">Marcar este día como descanso programado</p>
             </div>
             <button
               type="button"
               onClick={handleRestDayToggle}
               className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
-                isRestDay ? 'bg-purple-500' : 'bg-slate-700'
+                isRestDay ? 'bg-purple-500' : 'bg-slate-700 dark:bg-slate-300'
               }`}
             >
               <span
@@ -343,9 +343,9 @@ export default function EditRoutinePage() {
 
         {/* Selected Exercises - Only show if not rest day */}
         {!isRestDay && (
-          <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-4">
+          <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-6 mb-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-white">
+              <h3 className="text-lg font-bold text-white dark:text-slate-900">
                 Ejercicios ({selectedExercises.length})
               </h3>
               <button
@@ -359,10 +359,10 @@ export default function EditRoutinePage() {
 
           {selectedExercises.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-slate-400 mb-4">No hay ejercicios agregados</p>
+              <p className="text-slate-400 dark:text-slate-600 mb-4">No hay ejercicios agregados</p>
               <button
                 onClick={() => setShowExercisePicker(true)}
-                className="text-emerald-400 hover:text-emerald-300 text-sm font-medium"
+                className="text-emerald-400 dark:text-emerald-600 hover:text-emerald-300 dark:hover:text-emerald-700 text-sm font-medium"
               >
                 Agregar ejercicios
               </button>
@@ -386,25 +386,25 @@ export default function EditRoutinePage() {
                       onDragStart={() => handleDragStart(index)}
                       onDragOver={(e) => handleDragOver(e, index)}
                       onDragEnd={handleDragEnd}
-                      className={`bg-slate-700/30 rounded-lg p-4 flex items-center gap-3 cursor-move hover:bg-slate-700/50 transition-colors ${
+                      className={`bg-slate-700/30 dark:bg-white border dark:border-slate-300 rounded-lg p-4 flex items-center gap-3 cursor-move hover:bg-slate-700/50 dark:hover:bg-slate-50 transition-colors ${
                         draggedIndex === index ? 'opacity-50' : ''
                       } ${supersetPartner && supersetColor ? `border-2 ${supersetColor.border}` : ''}`}
                     >
-                      <GripVertical className="w-5 h-5 text-slate-500" />
+                      <GripVertical className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="text-white font-medium">{exercise.name}</p>
+                          <p className="text-white dark:text-slate-900 font-medium">{exercise.name}</p>
                           {supersetPartner && supersetColor && (
-                            <span className={`${supersetColor.bg} ${supersetColor.text} text-xs px-2 py-0.5 rounded-full`}>
+                            <span className={`${supersetColor.bg} ${supersetColor.text} dark:${supersetColor.textDark} text-xs px-2 py-0.5 rounded-full`}>
                               Biserie
                             </span>
                           )}
                         </div>
-                        <p className="text-slate-400 text-sm">
+                        <p className="text-slate-400 dark:text-slate-600 text-sm">
                           {exercise.category} • {exercise.muscleGroup}
                         </p>
                         {supersetPartnerExercise && supersetColor && (
-                          <p className={`${supersetColor.text} text-xs mt-1`}>
+                          <p className={`${supersetColor.text} dark:${supersetColor.textDark} text-xs mt-1`}>
                             ↔️ {supersetPartnerExercise.name}
                           </p>
                         )}
@@ -417,8 +417,8 @@ export default function EditRoutinePage() {
                           }}
                           className={`p-2 rounded-lg transition-colors ${
                             supersetPartner && supersetColor
-                              ? `${supersetColor.text} ${supersetColor.bg} ${supersetColor.hover}`
-                              : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                              ? `${supersetColor.text} dark:${supersetColor.textDark} ${supersetColor.bg} ${supersetColor.hover} dark:${supersetColor.hoverTextDark}`
+                              : 'text-slate-400 dark:text-slate-600 hover:text-white dark:hover:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-200'
                           }`}
                           title="Configurar biserie"
                         >
@@ -427,20 +427,20 @@ export default function EditRoutinePage() {
                         <button
                           onClick={() => moveExercise(index, 'up')}
                           disabled={index === 0}
-                          className="p-1 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                          className="p-1 text-slate-400 dark:text-slate-600 hover:text-white dark:hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                           <ChevronUp className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => moveExercise(index, 'down')}
                           disabled={index === selectedExercises.length - 1}
-                          className="p-1 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                          className="p-1 text-slate-400 dark:text-slate-600 hover:text-white dark:hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                           <ChevronDown className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleRemoveExercise(exerciseId)}
-                          className="p-2 text-red-400 hover:text-red-300 ml-2"
+                          className="p-2 text-red-400 dark:text-red-600 hover:text-red-300 dark:hover:text-red-700 ml-2"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -449,12 +449,12 @@ export default function EditRoutinePage() {
 
                     {/* Superset Picker Dropdown */}
                     {showSupersetPicker === exerciseId && (
-                      <div className="mt-2 bg-slate-800 border border-slate-600 rounded-lg p-4">
+                      <div className="mt-2 bg-slate-800 dark:bg-slate-100 border border-slate-600 dark:border-slate-300 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-3">
-                          <h4 className="text-white font-medium text-sm">Selecciona ejercicio para biserie</h4>
+                          <h4 className="text-white dark:text-slate-900 font-medium text-sm">Selecciona ejercicio para biserie</h4>
                           <button
                             onClick={() => setShowSupersetPicker(null)}
-                            className="text-slate-400 hover:text-white"
+                            className="text-slate-400 dark:text-slate-600 hover:text-white dark:hover:text-slate-900"
                           >
                             <X className="w-4 h-4" />
                           </button>
