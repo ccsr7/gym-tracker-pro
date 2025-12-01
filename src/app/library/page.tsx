@@ -119,15 +119,15 @@ export default function LibraryPage() {
           </div>
 
           {/* Exercise Grid */}
-          <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StaggerContainer className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {exercises.map((exercise) => (
               <StaggerItem key={exercise.id}>
                 <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl overflow-hidden hover:border-emerald-500/50 transition-all">
-                  <div className="relative aspect-video bg-slate-700/50 dark:bg-slate-200 flex items-center justify-center overflow-hidden">
+                  <div className="relative aspect-[3/4] bg-slate-700/50 dark:bg-slate-200 flex items-center justify-center overflow-hidden">
                     <img
                       src={exercise.image}
                       alt={exercise.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                       onError={(e) => {
                         // Fallback to emoji if image fails to load
                         const target = e.target as HTMLImageElement;
