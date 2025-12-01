@@ -83,6 +83,7 @@ export default function Dashboard() {
   const loadTodayRoutine = () => {
     const today = getSpanishDay(new Date());
     const routines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
+    // Buscar la rutina del día (puede ser null, una rutina normal, o un día de descanso)
     const routine = routines.find((r: Routine) => r.day === today);
     setTodayRoutine(routine || null);
   };
@@ -95,10 +96,20 @@ export default function Dashboard() {
     if (inProgressKey) {
       const data = JSON.parse(localStorage.getItem(inProgressKey) || '{}');
       if (data.routineId && data.routineName) {
-        setInProgressWorkout({
-          routineId: data.routineId,
-          routineName: data.routineName
-        });
+        // Verificar que la rutina no sea un día de descanso
+        const routines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
+        const routine = routines.find((r: Routine) => r.id === data.routineId);
+
+        // Solo mostrar si la rutina existe y NO es un día de descanso
+        if (routine && !routine.isRestDay) {
+          setInProgressWorkout({
+            routineId: data.routineId,
+            routineName: data.routineName
+          });
+        } else {
+          // Limpiar entrenamientos en progreso de días de descanso
+          localStorage.removeItem(inProgressKey);
+        }
       }
     }
   };

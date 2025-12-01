@@ -237,7 +237,7 @@ export default function EditRoutinePage() {
 
     // Calcular duración basada en datos históricos o estimación inteligente
     const totalSets = exercisesWithData.reduce((sum, ex) => sum + ex.sets, 0);
-    const estimatedDuration = isRestDay ? 0 : estimateRoutineDuration(selectedExercises.length, totalSets);
+    const estimatedDuration = isRestDay ? 0 : estimateRoutineDuration(selectedExercises.length, totalSets, routineId);
 
     const updatedRoutine: Routine = {
       id: routineId,

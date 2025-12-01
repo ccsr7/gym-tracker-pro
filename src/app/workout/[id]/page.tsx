@@ -250,7 +250,7 @@ export default function WorkoutPage() {
       routineId: routine.id,
       routineName: routine.name,
       exercises: workoutExercises,
-      duration: elapsedTime,
+      duration: Math.round(elapsedTime / 60), // Convertir segundos a minutos
       notes,
       rpe,
       totalVolume
