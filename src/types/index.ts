@@ -1,8 +1,11 @@
+export type TrainingGoal = 'strength' | 'hypertrophy' | 'endurance';
+
 export interface User {
   name: string;
   email: string;
   weight?: number;
   height?: number;
+  trainingGoal?: TrainingGoal;
 }
 
 export interface Exercise {

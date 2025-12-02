@@ -18,6 +18,7 @@ export default function ProfilePage() {
   const [email, setEmail] = useState('');
   const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
+  const [trainingGoal, setTrainingGoal] = useState<'strength' | 'hypertrophy' | 'endurance'>('hypertrophy');
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [totalWorkouts, setTotalWorkouts] = useState(0);
   const [totalVolume, setTotalVolume] = useState(0);
@@ -29,6 +30,7 @@ export default function ProfilePage() {
       setEmail(user.email);
       setWeight(user.weight?.toString() || '');
       setHeight(user.height?.toString() || '');
+      setTrainingGoal(user.trainingGoal || 'hypertrophy');
     }
     loadWorkoutHistory();
   }, [user]);
@@ -64,6 +66,7 @@ export default function ProfilePage() {
       email,
       weight: weight ? parseFloat(weight) : undefined,
       height: height ? parseFloat(height) : undefined,
+      trainingGoal,
     });
     setIsEditing(false);
   };
@@ -173,6 +176,73 @@ export default function ProfilePage() {
                   onChange={(e) => setHeight(e.target.value)}
                   className="w-full px-4 py-3 bg-slate-700/50 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-400 dark:text-slate-600 mb-2">
+                  <TrendingUp className="w-4 h-4 inline mr-1" />
+                  Objetivo de Entrenamiento
+                </label>
+                <div className="grid grid-cols-1 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setTrainingGoal('strength')}
+                    className={`p-4 rounded-lg border-2 transition-all text-left ${
+                      trainingGoal === 'strength'
+                        ? 'border-blue-500 bg-blue-500/20 dark:bg-blue-100'
+                        : 'border-slate-600 dark:border-slate-300 bg-slate-700/30 dark:bg-slate-50 hover:border-blue-400'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">💪</span>
+                      <div>
+                        <p className={`font-bold ${trainingGoal === 'strength' ? 'text-blue-400 dark:text-blue-600' : 'text-white dark:text-slate-900'}`}>
+                          Fuerza
+                        </p>
+                        <p className="text-sm text-slate-400 dark:text-slate-600">1-6 reps • Cargas pesadas • 3-5 min descanso</p>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTrainingGoal('hypertrophy')}
+                    className={`p-4 rounded-lg border-2 transition-all text-left ${
+                      trainingGoal === 'hypertrophy'
+                        ? 'border-purple-500 bg-purple-500/20 dark:bg-purple-100'
+                        : 'border-slate-600 dark:border-slate-300 bg-slate-700/30 dark:bg-slate-50 hover:border-purple-400'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">🏋️</span>
+                      <div>
+                        <p className={`font-bold ${trainingGoal === 'hypertrophy' ? 'text-purple-400 dark:text-purple-600' : 'text-white dark:text-slate-900'}`}>
+                          Hipertrofia
+                        </p>
+                        <p className="text-sm text-slate-400 dark:text-slate-600">6-12 reps • Volumen moderado • 1-2 min descanso</p>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTrainingGoal('endurance')}
+                    className={`p-4 rounded-lg border-2 transition-all text-left ${
+                      trainingGoal === 'endurance'
+                        ? 'border-green-500 bg-green-500/20 dark:bg-green-100'
+                        : 'border-slate-600 dark:border-slate-300 bg-slate-700/30 dark:bg-slate-50 hover:border-green-400'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">⚡</span>
+                      <div>
+                        <p className={`font-bold ${trainingGoal === 'endurance' ? 'text-green-400 dark:text-green-600' : 'text-white dark:text-slate-900'}`}>
+                          Resistencia
+                        </p>
+                        <p className="text-sm text-slate-400 dark:text-slate-600">15+ reps • Cargas ligeras • 30-60 seg descanso</p>
+                      </div>
+                    </div>
+                  </button>
+                </div>
               </div>
             </div>
           ) : (

@@ -21,7 +21,9 @@
       "Bash(.gitignore)",
       "Bash(git pull:*)",
       "Bash(git stash:*)",
-      "Bash(timeout 5 bash:*)"
+      "Bash(timeout 5 bash:*)",
+      "Bash(taskkill:*)",
+      "Bash(del nul)"
     ],
     "deny": [],
     "ask": []
