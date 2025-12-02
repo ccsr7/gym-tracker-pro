@@ -298,7 +298,6 @@ export default function WorkoutPage() {
     const workouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
 
     return workouts
-      .filter((w: Workout) => w.routineId === routineId)
       .map((w: Workout) => {
         const exercise = w.exercises.find(ex => ex.exerciseId === exerciseId);
         if (!exercise) return null;
