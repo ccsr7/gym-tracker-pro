@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { memo } from 'react';
-import { Home, Library, CalendarDays, User, Dumbbell, Moon, Sun, BarChart3, Calculator } from 'lucide-react';
+import { Home, Library, CalendarDays, User, Dumbbell, Moon, Sun, BarChart3, Calculator, Trophy } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 import { useAuth } from '@/lib/auth-context';
 
@@ -26,6 +26,7 @@ function Navigation() {
     { icon: Library, label: 'Biblioteca', path: '/library', color: 'bg-gradient-to-br from-purple-500 to-purple-600' },
     { icon: CalendarDays, label: 'Rutinas', path: '/routines', color: 'bg-gradient-to-br from-emerald-500 to-emerald-600' },
     { icon: BarChart3, label: 'Estadísticas', path: '/stats', color: 'bg-gradient-to-br from-indigo-500 to-indigo-600' },
+    { icon: Trophy, label: 'Logros', path: '/achievements', color: 'bg-gradient-to-br from-yellow-500 to-amber-600' },
   ];
 
   return (

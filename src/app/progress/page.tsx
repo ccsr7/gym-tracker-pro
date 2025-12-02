@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import { Workout } from '@/types';
 import { getExerciseById } from '@/data/exercises';
-import { TrendingUp, Calendar, Award, Dumbbell, ChevronDown } from 'lucide-react';
+import { TrendingUp, Calendar, Award, Dumbbell, ChevronDown, BarChart3 } from 'lucide-react';
+import { getWeeklyVolumeStats } from '@/lib/volume-stats';
 
 export default function ProgressPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -120,6 +121,75 @@ export default function ProgressPage() {
           <h1 className="text-3xl font-bold text-white dark:text-slate-900 mb-2">Progreso por Ejercicio</h1>
           <p className="text-slate-400 dark:text-slate-600">Visualiza tu evolución y récords personales</p>
         </div>
+
+        {/* Weekly Volume Chart */}
+        {(() => {
+          const weeklyData = getWeeklyVolumeStats(workouts, 8);
+          const maxVolume = Math.max(...weeklyData.map(w => w.totalVolume), 1);
+
+          return (
+            <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-6 mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <BarChart3 className="w-6 h-6 text-emerald-500" />
+                <h3 className="text-lg font-bold text-white dark:text-slate-900">Volumen Semanal (últimas 8 semanas)</h3>
+              </div>
+
+              <div className="flex items-end justify-between gap-2 h-48">
+                {weeklyData.map((week, index) => {
+                  const height = (week.totalVolume / maxVolume) * 100;
+                  const isCurrentWeek = index === weeklyData.length - 1;
+
+                  return (
+                    <div key={index} className="flex-1 flex flex-col items-center gap-2">
+                      <div className="w-full flex flex-col items-center justify-end h-full">
+                        {week.totalVolume > 0 && (
+                          <div className="text-center mb-1">
+                            <p className="text-xs font-bold text-emerald-400 dark:text-emerald-600">
+                              {Math.round(week.totalVolume / 1000)}k
+                            </p>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-600">
+                              {week.workoutCount} 🏋️
+                            </p>
+                          </div>
+                        )}
+                        <div
+                          className={`w-full rounded-t-lg transition-all ${
+                            isCurrentWeek
+                              ? 'bg-emerald-500'
+                              : week.totalVolume > 0
+                              ? 'bg-blue-500'
+                              : 'bg-slate-700/30 dark:bg-slate-300'
+                          }`}
+                          style={{ height: `${height || 5}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-slate-400 dark:text-slate-600 font-medium">
+                        {week.week}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {weeklyData.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-slate-700/50 dark:border-slate-300 flex items-center justify-between text-sm">
+                  <div>
+                    <p className="text-slate-400 dark:text-slate-600">Promedio semanal</p>
+                    <p className="text-white dark:text-slate-900 font-bold">
+                      {Math.round(weeklyData.reduce((sum, w) => sum + w.totalVolume, 0) / weeklyData.length / 1000)}k kg
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-slate-400 dark:text-slate-600">Total (8 semanas)</p>
+                    <p className="text-white dark:text-slate-900 font-bold">
+                      {Math.round(weeklyData.reduce((sum, w) => sum + w.totalVolume, 0) / 1000)}k kg
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Exercise Selector */}
         <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-4 mb-6">

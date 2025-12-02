@@ -22,7 +22,9 @@ import {
   Pie,
   Cell
 } from 'recharts';
-import { TrendingUp, BarChart3, Calendar, Dumbbell } from 'lucide-react';
+import { TrendingUp, BarChart3, Calendar, Dumbbell, Award, Clock, Zap, Download, FileText, FileJson } from 'lucide-react';
+import { getPersonalRecords, getTrainingFrequency, getTimeUnderTension } from '@/lib/volume-stats';
+import { exportToCSV, exportToJSON, downloadFile, generateFilename } from '@/lib/data-export';
 
 export default function StatsPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -167,7 +169,56 @@ export default function StatsPage() {
     return Array.from(uniqueExercises).map(id => getExerciseById(id)).filter(Boolean);
   }, [workouts]);
 
+  // Advanced stats: PR, Frequency, TUT
+  const advancedStats = useMemo(() => {
+    const personalRecords = getPersonalRecords(workouts);
+    const trainingFrequency = getTrainingFrequency(workouts, 4);
+    const timeUnderTension = getTimeUnderTension(workouts);
+
+    // Get top 5 PRs
+    const topPRs = Array.from(personalRecords.values())
+      .sort((a, b) => b.maxWeight - a.maxWeight)
+      .slice(0, 5)
+      .map(pr => {
+        const exercise = getExerciseById(pr.exerciseId);
+        return {
+          exerciseName: exercise?.name || 'Unknown',
+          maxWeight: pr.maxWeight,
+          date: new Date(pr.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+        };
+      });
+
+    return {
+      topPRs,
+      trainingFrequency,
+      timeUnderTension,
+      totalPRs: personalRecords.size
+    };
+  }, [workouts]);
+
   const COLORS = ['#3b82f6', '#a855f7', '#ec4899', '#f97316', '#10b981', '#06b6d4', '#eab308'];
+
+  const handleExportCSV = () => {
+    if (workouts.length === 0) {
+      alert('No hay datos para exportar');
+      return;
+    }
+
+    const csvContent = exportToCSV(workouts);
+    const filename = generateFilename('csv');
+    downloadFile(csvContent, filename, 'text/csv;charset=utf-8;');
+  };
+
+  const handleExportJSON = () => {
+    if (workouts.length === 0) {
+      alert('No hay datos para exportar');
+      return;
+    }
+
+    const jsonContent = exportToJSON(workouts);
+    const filename = generateFilename('json');
+    downloadFile(jsonContent, filename, 'application/json;charset=utf-8;');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dark:from-white dark:via-slate-50 dark:to-slate-100">
@@ -201,6 +252,131 @@ export default function StatsPage() {
             </button>
           ))}
         </div>
+
+        {/* Data Export Section */}
+        {workouts.length > 0 && (
+          <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-6 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Download className="w-6 h-6 text-blue-500" />
+              <h3 className="text-lg font-bold text-white dark:text-slate-900">Exportar Datos</h3>
+            </div>
+            <p className="text-slate-400 dark:text-slate-600 text-sm mb-4">
+              Descarga todos tus entrenamientos en formato CSV o JSON
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleExportCSV}
+                className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-blue-500/50"
+              >
+                <FileText className="w-5 h-5" />
+                Exportar CSV
+              </button>
+              <button
+                onClick={handleExportJSON}
+                className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-purple-500/50"
+              >
+                <FileJson className="w-5 h-5" />
+                Exportar JSON
+              </button>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-600 mt-3 text-center">
+              {workouts.length} {workouts.length === 1 ? 'entrenamiento' : 'entrenamientos'} disponibles para exportar
+            </p>
+          </div>
+        )}
+
+        {/* Advanced Statistics */}
+        {workouts.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {/* Personal Records */}
+            <div className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 dark:from-emerald-100 dark:to-emerald-50 border border-emerald-500/30 dark:border-emerald-200 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-emerald-500/30 dark:bg-emerald-200 rounded-lg">
+                  <Award className="w-6 h-6 text-emerald-400 dark:text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white dark:text-emerald-900">Récords Personales</h3>
+                  <p className="text-xs text-emerald-300 dark:text-emerald-700">{advancedStats.totalPRs} ejercicios</p>
+                </div>
+              </div>
+              {advancedStats.topPRs.length > 0 ? (
+                <div className="space-y-2">
+                  {advancedStats.topPRs.map((pr, index) => (
+                    <div key={index} className="flex items-center justify-between text-sm">
+                      <span className="text-emerald-100 dark:text-emerald-900 truncate flex-1 mr-2">
+                        {pr.exerciseName}
+                      </span>
+                      <div className="text-right">
+                        <span className="font-bold text-white dark:text-emerald-900">{pr.maxWeight} kg</span>
+                        <span className="text-xs text-emerald-300 dark:text-emerald-700 ml-2">{pr.date}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-emerald-200 dark:text-emerald-800 text-sm">Completa entrenamientos para ver tus récords</p>
+              )}
+            </div>
+
+            {/* Training Frequency */}
+            <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 dark:from-blue-100 dark:to-blue-50 border border-blue-500/30 dark:border-blue-200 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-blue-500/30 dark:bg-blue-200 rounded-lg">
+                  <Calendar className="w-6 h-6 text-blue-400 dark:text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white dark:text-blue-900">Frecuencia</h3>
+                  <p className="text-xs text-blue-300 dark:text-blue-700">Últimas 4 semanas</p>
+                </div>
+              </div>
+              <div className="text-center py-4">
+                <p className="text-5xl font-bold text-white dark:text-blue-900 mb-2">
+                  {advancedStats.trainingFrequency}
+                </p>
+                <p className="text-blue-200 dark:text-blue-800 text-sm">
+                  entrenamientos por semana
+                </p>
+                <div className="mt-4 pt-4 border-t border-blue-500/30 dark:border-blue-200">
+                  <p className="text-xs text-blue-300 dark:text-blue-700">
+                    {advancedStats.trainingFrequency >= 4 ? '🔥 Excelente consistencia!' :
+                     advancedStats.trainingFrequency >= 3 ? '💪 Buen ritmo' :
+                     advancedStats.trainingFrequency >= 2 ? '👍 Mantenlo así' :
+                     '⚡ Puedes aumentar la frecuencia'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Time Under Tension */}
+            <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/10 dark:from-purple-100 dark:to-purple-50 border border-purple-500/30 dark:border-purple-200 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-purple-500/30 dark:bg-purple-200 rounded-lg">
+                  <Zap className="w-6 h-6 text-purple-400 dark:text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white dark:text-purple-900">Tiempo Bajo Tensión</h3>
+                  <p className="text-xs text-purple-300 dark:text-purple-700">Total acumulado</p>
+                </div>
+              </div>
+              <div className="text-center py-4">
+                <p className="text-5xl font-bold text-white dark:text-purple-900 mb-2">
+                  {advancedStats.timeUnderTension}
+                </p>
+                <p className="text-purple-200 dark:text-purple-800 text-sm mb-1">
+                  minutos totales
+                </p>
+                <p className="text-xs text-purple-300 dark:text-purple-700">
+                  {(advancedStats.timeUnderTension / 60).toFixed(1)} horas de trabajo muscular
+                </p>
+                <div className="mt-4 pt-4 border-t border-purple-500/30 dark:border-purple-200">
+                  <p className="text-xs text-purple-300 dark:text-purple-700">
+                    ~3 segundos por repetición
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
