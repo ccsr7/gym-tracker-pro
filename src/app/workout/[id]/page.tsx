@@ -84,12 +84,12 @@ export default function WorkoutPage() {
         .filter((w: Workout) => w.routineId === routineId)
         .sort((a: Workout, b: Workout) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
 
+      // Guardar datos para mostrar "Última vez" (usando peso máximo y reps promedio)
       const lastWeights: Record<string, { weight: number; reps: number }> = {};
       if (lastWorkout) {
         lastWorkout.exercises.forEach((ex: WorkoutExercise) => {
           const completedSets = ex.sets.filter(s => s.completed);
           if (completedSets.length > 0) {
-            // Usar el peso máximo de las series completadas
             const maxWeight = Math.max(...completedSets.map(s => s.weight));
             const avgReps = Math.round(completedSets.reduce((sum, s) => sum + s.reps, 0) / completedSets.length);
             lastWeights[ex.exerciseId] = { weight: maxWeight, reps: avgReps };
@@ -98,17 +98,58 @@ export default function WorkoutPage() {
       }
       setLastWorkoutData(lastWeights);
 
-      // Inicializar workout exercises basados en la rutina con pesos y reps previos si existen
-      const initialWorkout: WorkoutExercise[] = foundRoutine.exercises.map((ex: any) => ({
-        exerciseId: ex.exerciseId,
-        sets: Array(ex.sets).fill(null).map(() => ({
-          reps: lastWeights[ex.exerciseId]?.reps || 0, // Solo usar último entrenamiento, no el valor por defecto de la rutina
-          weight: lastWeights[ex.exerciseId]?.weight || 0,
-          completed: false
-        })),
-        isSupersetWith: ex.isSupersetWith,
-        notes: '' // Inicializar notas vacías para cada ejercicio
-      }));
+      // Inicializar workout exercises basados en la rutina
+      const initialWorkout: WorkoutExercise[] = foundRoutine.exercises.map((ex: any) => {
+        // Buscar el ejercicio en el último entrenamiento
+        const lastExercise = lastWorkout?.exercises.find((lastEx: WorkoutExercise) => lastEx.exerciseId === ex.exerciseId);
+
+        let sets: WorkoutSet[];
+        if (lastExercise) {
+          // Usar las series exactas del último entrenamiento (solo las completadas)
+          const completedSets = lastExercise.sets.filter((s: WorkoutSet) => s.completed);
+          if (completedSets.length > 0) {
+            // Crear el mismo número de series que en la rutina, usando los datos del último entrenamiento
+            sets = Array(ex.sets).fill(null).map((_, idx) => {
+              // Si hay una serie correspondiente en el último entrenamiento, usar sus datos
+              if (completedSets[idx]) {
+                return {
+                  reps: completedSets[idx].reps,
+                  weight: completedSets[idx].weight,
+                  completed: false
+                };
+              }
+              // Si no hay serie correspondiente, usar la última serie completada como referencia
+              const lastSet = completedSets[completedSets.length - 1];
+              return {
+                reps: lastSet.reps,
+                weight: lastSet.weight,
+                completed: false
+              };
+            });
+          } else {
+            // No hay series completadas, inicializar vacío
+            sets = Array(ex.sets).fill(null).map(() => ({
+              reps: 0,
+              weight: 0,
+              completed: false
+            }));
+          }
+        } else {
+          // No hay datos del último entrenamiento, inicializar vacío
+          sets = Array(ex.sets).fill(null).map(() => ({
+            reps: 0,
+            weight: 0,
+            completed: false
+          }));
+        }
+
+        return {
+          exerciseId: ex.exerciseId,
+          sets,
+          isSupersetWith: ex.isSupersetWith,
+          notes: ''
+        };
+      });
       setWorkoutExercises(initialWorkout);
     }
   }, [routineId]);
