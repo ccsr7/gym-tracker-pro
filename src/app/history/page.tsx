@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
-import { Workout } from '@/types';
-import { Calendar, Clock, Dumbbell, TrendingUp, Trash2 } from 'lucide-react';
+import { Workout, WorkoutExercise, WorkoutSet } from '@/types';
+import { Calendar, Clock, Dumbbell, TrendingUp, Trash2, Edit2, Save, X } from 'lucide-react';
 import { getExerciseById } from '@/data/exercises';
 
 export default function HistoryPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
+  const [editedWorkout, setEditedWorkout] = useState<Workout | null>(null);
 
   useEffect(() => {
     loadWorkouts();
@@ -37,6 +39,47 @@ export default function HistoryPage() {
 
     // Recargar la lista
     loadWorkouts();
+  };
+
+  const handleEditWorkout = (workout: Workout) => {
+    setEditingWorkout(workout);
+    setEditedWorkout(JSON.parse(JSON.stringify(workout))); // Deep copy
+  };
+
+  const handleCancelEdit = () => {
+    setEditingWorkout(null);
+    setEditedWorkout(null);
+  };
+
+  const handleSetChange = (exerciseIdx: number, setIdx: number, field: 'reps' | 'weight', value: number) => {
+    if (!editedWorkout) return;
+
+    const updated = { ...editedWorkout };
+    updated.exercises[exerciseIdx].sets[setIdx][field] = value;
+
+    // Recalcular volumen total
+    const totalVolume = updated.exercises.reduce((total, ex) => {
+      return total + ex.sets.reduce((exTotal, set) => {
+        return exTotal + (set.completed ? set.reps * set.weight : 0);
+      }, 0);
+    }, 0);
+    updated.totalVolume = totalVolume;
+
+    setEditedWorkout(updated);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editedWorkout) return;
+
+    const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+    const updatedWorkouts = storedWorkouts.map((w: Workout) =>
+      w.id === editedWorkout.id ? editedWorkout : w
+    );
+    localStorage.setItem('gym-tracker-workouts', JSON.stringify(updatedWorkouts));
+
+    // Recargar lista y cerrar modal
+    loadWorkouts();
+    handleCancelEdit();
   };
 
   if (workouts.length === 0) {
@@ -153,6 +196,14 @@ export default function HistoryPage() {
                       <p className="text-xl md:text-2xl font-bold text-orange-500">{workout.rpe}/10</p>
                     </div>
                   )}
+                  {/* Botón de editar */}
+                  <button
+                    onClick={() => handleEditWorkout(workout)}
+                    className="p-2 text-blue-400 dark:text-blue-600 hover:text-blue-300 dark:hover:text-blue-700 hover:bg-blue-500/20 dark:hover:bg-blue-100 rounded-lg transition-colors"
+                    title="Editar sesión"
+                  >
+                    <Edit2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </button>
                   {/* Botón de eliminar en desktop */}
                   <button
                     onClick={() => handleDeleteWorkout(workout.id)}
@@ -212,6 +263,128 @@ export default function HistoryPage() {
             </div>
           ))}
         </div>
+
+        {/* Modal de Edición */}
+        {editingWorkout && editedWorkout && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-slate-800 dark:bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col my-8">
+              {/* Header */}
+              <div className="p-6 border-b border-slate-700 dark:border-slate-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold text-white dark:text-slate-900">Editar Entrenamiento</h3>
+                    <p className="text-slate-400 dark:text-slate-600 text-sm">{editedWorkout.routineName}</p>
+                  </div>
+                  <button
+                    onClick={handleCancelEdit}
+                    className="p-2 text-slate-400 dark:text-slate-600 hover:text-white dark:hover:text-slate-900 hover:bg-slate-700/50 dark:hover:bg-slate-200 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="space-y-4">
+                  {editedWorkout.exercises.map((workoutEx, exerciseIdx) => {
+                    const exercise = getExerciseById(workoutEx.exerciseId);
+                    if (!exercise) return null;
+
+                    return (
+                      <div
+                        key={exerciseIdx}
+                        className="bg-slate-700/30 dark:bg-slate-100 border border-slate-600 dark:border-slate-300 rounded-lg p-4"
+                      >
+                        <h4 className="text-lg text-white dark:text-slate-900 font-bold mb-4">{exercise.name}</h4>
+
+                        <div className="space-y-3">
+                          {workoutEx.sets.map((set, setIdx) => (
+                            <div
+                              key={setIdx}
+                              className={`flex items-center gap-3 p-3 rounded-lg ${
+                                set.completed
+                                  ? 'bg-slate-600/50 dark:bg-white'
+                                  : 'bg-slate-600/30 dark:bg-slate-50 opacity-60'
+                              }`}
+                            >
+                              <div className="flex-shrink-0 w-16">
+                                <p className="text-slate-400 dark:text-slate-600 text-sm font-medium">
+                                  Serie {setIdx + 1}
+                                </p>
+                              </div>
+
+                              <div className="flex-1 flex items-center gap-3">
+                                <div className="flex-1">
+                                  <label className="block text-xs text-slate-400 dark:text-slate-600 mb-1">Peso (kg)</label>
+                                  <input
+                                    type="number"
+                                    value={set.weight}
+                                    onChange={(e) => handleSetChange(exerciseIdx, setIdx, 'weight', parseFloat(e.target.value) || 0)}
+                                    className="w-full px-3 py-2 bg-slate-700 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 text-center font-bold"
+                                    disabled={!set.completed}
+                                    step="0.5"
+                                  />
+                                </div>
+
+                                <div className="flex-1">
+                                  <label className="block text-xs text-slate-400 dark:text-slate-600 mb-1">Reps</label>
+                                  <input
+                                    type="number"
+                                    value={set.reps}
+                                    onChange={(e) => handleSetChange(exerciseIdx, setIdx, 'reps', parseInt(e.target.value) || 0)}
+                                    className="w-full px-3 py-2 bg-slate-700 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 text-center font-bold"
+                                    disabled={!set.completed}
+                                  />
+                                </div>
+
+                                <div className="flex-shrink-0 w-20">
+                                  <p className="text-xs text-slate-400 dark:text-slate-600 mb-1">Volumen</p>
+                                  <p className="text-emerald-400 dark:text-emerald-600 font-bold text-sm">
+                                    {set.completed ? set.weight * set.reps : 0}kg
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="mt-3 pt-3 border-t border-slate-600 dark:border-slate-300">
+                          <p className="text-sm text-slate-400 dark:text-slate-600">
+                            Volumen total: <span className="text-emerald-400 dark:text-emerald-600 font-bold">
+                              {workoutEx.sets
+                                .filter(s => s.completed)
+                                .reduce((sum, s) => sum + (s.weight * s.reps), 0)}kg
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 border-t border-slate-700 dark:border-slate-200">
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleCancelEdit}
+                    className="flex-1 py-3 bg-slate-700 dark:bg-slate-200 hover:bg-slate-600 dark:hover:bg-slate-300 text-white dark:text-slate-900 rounded-lg font-medium transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleSaveEdit}
+                    className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <Save className="w-5 h-5" />
+                    Guardar Cambios
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
