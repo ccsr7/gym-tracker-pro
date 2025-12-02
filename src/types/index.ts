@@ -34,6 +34,7 @@ export interface WorkoutExercise {
   exerciseId: string;
   sets: WorkoutSet[];
   isSupersetWith?: string; // ID del ejercicio con el que forma biserie
+  notes?: string; // Notas específicas de este ejercicio en este entrenamiento
 }
 
 export interface Routine {

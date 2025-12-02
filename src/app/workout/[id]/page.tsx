@@ -100,7 +100,8 @@ export default function WorkoutPage() {
           weight: lastWeights[ex.exerciseId]?.weight || 0,
           completed: false
         })),
-        isSupersetWith: ex.isSupersetWith
+        isSupersetWith: ex.isSupersetWith,
+        notes: '' // Inicializar notas vacías para cada ejercicio
       }));
       setWorkoutExercises(initialWorkout);
     }
@@ -232,6 +233,12 @@ export default function WorkoutPage() {
   const handleRemoveSet = (exerciseIdx: number, setIdx: number) => {
     const updated = [...workoutExercises];
     updated[exerciseIdx].sets.splice(setIdx, 1);
+    setWorkoutExercises(updated);
+  };
+
+  const handleExerciseNoteChange = (exerciseIdx: number, note: string) => {
+    const updated = [...workoutExercises];
+    updated[exerciseIdx].notes = note;
     setWorkoutExercises(updated);
   };
 
@@ -382,11 +389,49 @@ export default function WorkoutPage() {
               <div>
                 <h2 className="text-2xl font-bold text-white dark:text-slate-900">{exercise.name}</h2>
                 <p className="text-slate-400 dark:text-slate-600">{exercise.category} • {exercise.muscleGroup}</p>
-                {lastWorkoutData[currentExercise.exerciseId] && (
-                  <p className="text-blue-400 dark:text-blue-600 text-sm mt-1">
-                    Última vez: {lastWorkoutData[currentExercise.exerciseId].weight}kg × {lastWorkoutData[currentExercise.exerciseId].reps} reps
-                  </p>
-                )}
+                {lastWorkoutData[currentExercise.exerciseId] && (() => {
+                  const lastData = lastWorkoutData[currentExercise.exerciseId];
+                  const completedSets = currentExercise.sets.filter(s => s.completed);
+
+                  if (completedSets.length > 0) {
+                    const currentMaxWeight = Math.max(...completedSets.map(s => s.weight));
+                    const currentAvgReps = Math.round(completedSets.reduce((sum, s) => sum + s.reps, 0) / completedSets.length);
+                    const weightDiff = currentMaxWeight - lastData.weight;
+                    const repsDiff = currentAvgReps - lastData.reps;
+
+                    let statusColor = 'text-yellow-400 dark:text-yellow-600';
+                    let statusIcon = '⚠️';
+                    let statusText = 'Sin cambios';
+
+                    if (weightDiff > 0 || (weightDiff === 0 && repsDiff > 0)) {
+                      statusColor = 'text-emerald-400 dark:text-emerald-600';
+                      statusIcon = '✅';
+                      statusText = weightDiff > 0 ? `+${weightDiff}kg` : `+${repsDiff} reps`;
+                    } else if (weightDiff < 0 || repsDiff < 0) {
+                      statusColor = 'text-red-400 dark:text-red-600';
+                      statusIcon = '❌';
+                      statusText = weightDiff < 0 ? `${weightDiff}kg` : `${repsDiff} reps`;
+                    }
+
+                    return (
+                      <div className="mt-1">
+                        <p className="text-slate-400 dark:text-slate-600 text-sm">
+                          Última vez: {lastData.weight}kg × {lastData.reps} reps
+                        </p>
+                        <p className={`${statusColor} text-sm font-bold flex items-center gap-1`}>
+                          <span>{statusIcon}</span>
+                          <span>{statusText}</span>
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <p className="text-blue-400 dark:text-blue-600 text-sm mt-1">
+                      Última vez: {lastData.weight}kg × {lastData.reps} reps
+                    </p>
+                  );
+                })()}
               </div>
               <div className="text-right">
                 <p className="text-4xl font-bold text-emerald-500">{completedSets}/{totalSets}</p>
@@ -508,12 +553,26 @@ export default function WorkoutPage() {
                 Siguiente
               </button>
             </div>
+
+            {/* Notas del Ejercicio Actual */}
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-slate-300 dark:text-slate-700 mb-2">
+                Notas de este ejercicio (opcional)
+              </label>
+              <textarea
+                value={currentExercise?.notes || ''}
+                onChange={(e) => handleExerciseNoteChange(currentExerciseIndex, e.target.value)}
+                placeholder="Ej: Sentí dolor en el hombro, mejorar técnica, etc."
+                className="w-full px-4 py-3 bg-slate-700/50 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 placeholder-slate-500 dark:placeholder-slate-400 resize-none text-sm"
+                rows={2}
+              />
+            </div>
           </div>
         )}
 
-        {/* Notas y RPE */}
+        {/* Notas Generales y RPE */}
         <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-6 mb-6">
-          <h3 className="text-lg font-bold text-white dark:text-slate-900 mb-4">Notas del Entrenamiento</h3>
+          <h3 className="text-lg font-bold text-white dark:text-slate-900 mb-4">Resumen del Entrenamiento</h3>
 
           <div className="mb-4">
             <label className="block text-sm text-slate-400 dark:text-slate-600 mb-2">
@@ -533,13 +592,18 @@ export default function WorkoutPage() {
             </div>
           </div>
 
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Añade notas sobre tu entrenamiento (cómo te sentiste, ajustes realizados, etc.)"
-            className="w-full px-4 py-3 bg-slate-700/50 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 resize-none"
-            rows={4}
-          />
+          <div>
+            <label className="block text-sm font-medium text-slate-300 dark:text-slate-700 mb-2">
+              Notas generales (opcional)
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Notas generales sobre tu entrenamiento (cómo te sentiste, sueño, nutrición, etc.)"
+              className="w-full px-4 py-3 bg-slate-700/50 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 placeholder-slate-500 dark:placeholder-slate-400 resize-none"
+              rows={3}
+            />
+          </div>
         </div>
 
         {/* Acciones finales */}
