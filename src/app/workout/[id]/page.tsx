@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import { Routine, WorkoutExercise, WorkoutSet, Workout } from '@/types';
 import { getExerciseById } from '@/data/exercises';
-import { Play, Pause, Check, Plus, Trash2, Timer, Save, X } from 'lucide-react';
+import { Play, Pause, Check, Plus, Trash2, Timer, Save, X, History, TrendingUp } from 'lucide-react';
 
 export default function WorkoutPage() {
   const router = useRouter();
@@ -25,6 +25,8 @@ export default function WorkoutPage() {
   const [rpe, setRpe] = useState<number>(5);
   const [lastWorkoutData, setLastWorkoutData] = useState<Record<string, { weight: number; reps: number }>>({});
   const [workoutId, setWorkoutId] = useState<string>(`workout-in-progress-${routineId}`);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyExerciseId, setHistoryExerciseId] = useState<string | null>(null);
 
   useEffect(() => {
     // Cargar duración de descanso preferida
@@ -242,6 +244,41 @@ export default function WorkoutPage() {
     setWorkoutExercises(updated);
   };
 
+  const getExerciseHistory = (exerciseId: string) => {
+    const workouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+
+    return workouts
+      .filter((w: Workout) => w.routineId === routineId)
+      .map((w: Workout) => {
+        const exercise = w.exercises.find(ex => ex.exerciseId === exerciseId);
+        if (!exercise) return null;
+
+        const completedSets = exercise.sets.filter(s => s.completed);
+        if (completedSets.length === 0) return null;
+
+        const maxWeight = Math.max(...completedSets.map(s => s.weight));
+        const avgReps = Math.round(completedSets.reduce((sum, s) => sum + s.reps, 0) / completedSets.length);
+        const totalVolume = completedSets.reduce((sum, s) => sum + (s.weight * s.reps), 0);
+
+        return {
+          date: new Date(w.date),
+          maxWeight,
+          avgReps,
+          totalVolume,
+          sets: completedSets.length,
+          notes: exercise.notes
+        };
+      })
+      .filter((h: any) => h !== null)
+      .sort((a: any, b: any) => b.date.getTime() - a.date.getTime())
+      .slice(0, 10);
+  };
+
+  const showHistory = (exerciseId: string) => {
+    setHistoryExerciseId(exerciseId);
+    setShowHistoryModal(true);
+  };
+
   const handleSaveWorkout = () => {
     if (!routine) return;
 
@@ -386,8 +423,17 @@ export default function WorkoutPage() {
         {exercise && currentExercise && (
           <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-2xl font-bold text-white dark:text-slate-900">{exercise.name}</h2>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-2xl font-bold text-white dark:text-slate-900">{exercise.name}</h2>
+                  <button
+                    onClick={() => showHistory(currentExercise.exerciseId)}
+                    className="p-2 text-blue-400 dark:text-blue-600 hover:text-blue-300 dark:hover:text-blue-700 hover:bg-slate-700/50 dark:hover:bg-slate-200 rounded-lg transition-colors"
+                    title="Ver historial"
+                  >
+                    <History className="w-5 h-5" />
+                  </button>
+                </div>
                 <p className="text-slate-400 dark:text-slate-600">{exercise.category} • {exercise.muscleGroup}</p>
                 {lastWorkoutData[currentExercise.exerciseId] && (() => {
                   const lastData = lastWorkoutData[currentExercise.exerciseId];
@@ -623,6 +669,109 @@ export default function WorkoutPage() {
             Guardar Entrenamiento
           </button>
         </div>
+
+        {/* Modal de Historial */}
+        {showHistoryModal && historyExerciseId && (() => {
+          const history = getExerciseHistory(historyExerciseId);
+          const exercise = getExerciseById(historyExerciseId);
+
+          return (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-slate-800 dark:bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+                {/* Header */}
+                <div className="p-6 border-b border-slate-700 dark:border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <TrendingUp className="w-6 h-6 text-emerald-500" />
+                      <div>
+                        <h3 className="text-xl font-bold text-white dark:text-slate-900">{exercise?.name}</h3>
+                        <p className="text-slate-400 dark:text-slate-600 text-sm">Últimos 10 entrenamientos</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowHistoryModal(false)}
+                      className="p-2 text-slate-400 dark:text-slate-600 hover:text-white dark:hover:text-slate-900 hover:bg-slate-700/50 dark:hover:bg-slate-200 rounded-lg transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-6">
+                  {history.length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-slate-400 dark:text-slate-600">No hay historial de entrenamientos para este ejercicio</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {history.map((h: any, index: number) => {
+                        const prevH = history[index + 1];
+                        let trendIcon = null;
+                        let trendColor = '';
+
+                        if (prevH) {
+                          if (h.maxWeight > prevH.maxWeight || (h.maxWeight === prevH.maxWeight && h.avgReps > prevH.avgReps)) {
+                            trendIcon = '📈';
+                            trendColor = 'text-emerald-500';
+                          } else if (h.maxWeight < prevH.maxWeight || h.avgReps < prevH.avgReps) {
+                            trendIcon = '📉';
+                            trendColor = 'text-red-500';
+                          } else {
+                            trendIcon = '➡️';
+                            trendColor = 'text-yellow-500';
+                          }
+                        }
+
+                        return (
+                          <div
+                            key={index}
+                            className="bg-slate-700/30 dark:bg-slate-100 border border-slate-600 dark:border-slate-300 rounded-lg p-4"
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <p className="text-white dark:text-slate-900 font-medium">
+                                  {h.date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </p>
+                                {trendIcon && (
+                                  <span className={`text-lg ${trendColor}`}>{trendIcon}</span>
+                                )}
+                              </div>
+                              <div className="text-sm text-slate-400 dark:text-slate-600">
+                                {h.sets} {h.sets === 1 ? 'serie' : 'series'}
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-4 mb-2">
+                              <div>
+                                <p className="text-xs text-slate-500 dark:text-slate-600">Peso máx</p>
+                                <p className="text-lg font-bold text-emerald-400 dark:text-emerald-600">{h.maxWeight}kg</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-slate-500 dark:text-slate-600">Reps prom</p>
+                                <p className="text-lg font-bold text-blue-400 dark:text-blue-600">{h.avgReps}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-slate-500 dark:text-slate-600">Volumen</p>
+                                <p className="text-lg font-bold text-purple-400 dark:text-purple-600">{h.totalVolume}kg</p>
+                              </div>
+                            </div>
+
+                            {h.notes && (
+                              <div className="mt-2 pt-2 border-t border-slate-600 dark:border-slate-300">
+                                <p className="text-xs text-slate-400 dark:text-slate-600 italic">{h.notes}</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
