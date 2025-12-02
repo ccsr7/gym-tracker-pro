@@ -5,12 +5,15 @@ import { useRouter, useParams } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import { Routine, WorkoutExercise, WorkoutSet, Workout } from '@/types';
 import { getExerciseById } from '@/data/exercises';
-import { Play, Pause, Check, Plus, Trash2, Timer, Save, X, History, TrendingUp } from 'lucide-react';
+import { Play, Pause, Check, Plus, Trash2, Timer, Save, X, History, TrendingUp, Lightbulb } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
+import { getProgressionSuggestion } from '@/lib/progression-suggestions';
 
 export default function WorkoutPage() {
   const router = useRouter();
   const params = useParams();
   const routineId = params.id as string;
+  const { user } = useAuth();
 
   const [routine, setRoutine] = useState<Routine | null>(null);
   const [workoutExercises, setWorkoutExercises] = useState<WorkoutExercise[]>([]);
@@ -27,6 +30,7 @@ export default function WorkoutPage() {
   const [workoutId, setWorkoutId] = useState<string>(`workout-in-progress-${routineId}`);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historyExerciseId, setHistoryExerciseId] = useState<string | null>(null);
+  const [progressionSuggestion, setProgressionSuggestion] = useState<any>(null);
 
   useEffect(() => {
     // Cargar duración de descanso preferida
@@ -154,6 +158,52 @@ export default function WorkoutPage() {
       localStorage.setItem(inProgressKey, JSON.stringify(dataToSave));
     }
   }, [workoutExercises, currentExerciseIndex, notes, rpe, routine, routineId, startTime, restEndTime, isResting]);
+
+  // Calcular sugerencias de progresión
+  useEffect(() => {
+    if (workoutExercises.length === 0 || !user?.trainingGoal) {
+      setProgressionSuggestion(null);
+      return;
+    }
+
+    const currentExercise = workoutExercises[currentExerciseIndex];
+    if (!currentExercise) return;
+
+    const completedSets = currentExercise.sets.filter(s => s.completed);
+    if (completedSets.length === 0) {
+      setProgressionSuggestion(null);
+      return;
+    }
+
+    // Obtener historial del ejercicio
+    const history = getExerciseHistory(currentExercise.exerciseId);
+    if (history.length === 0) {
+      setProgressionSuggestion(null);
+      return;
+    }
+
+    // Calcular datos actuales
+    const currentMaxWeight = Math.max(...completedSets.map(s => s.weight));
+    const currentAvgReps = Math.round(completedSets.reduce((sum, s) => sum + s.reps, 0) / completedSets.length);
+
+    // Formatear historial para la función de sugerencias
+    const formattedHistory = history.map((h: any) => ({
+      date: h.date,
+      maxWeight: h.maxWeight,
+      avgReps: h.avgReps,
+      sets: h.sets
+    }));
+
+    // Obtener sugerencia
+    const suggestion = getProgressionSuggestion(
+      formattedHistory,
+      currentMaxWeight,
+      currentAvgReps,
+      user.trainingGoal
+    );
+
+    setProgressionSuggestion(suggestion);
+  }, [currentExerciseIndex, workoutExercises, user?.trainingGoal]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -612,6 +662,50 @@ export default function WorkoutPage() {
                 className="w-full px-4 py-3 bg-slate-700/50 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 placeholder-slate-500 dark:placeholder-slate-400 resize-none text-sm"
                 rows={2}
               />
+            </div>
+          </div>
+        )}
+
+        {/* Sugerencia de Progresión */}
+        {progressionSuggestion && (
+          <div className="bg-gradient-to-r from-slate-800/60 via-slate-800/40 to-slate-800/60 dark:from-slate-50 dark:via-slate-100 dark:to-slate-50 backdrop-blur-sm border-2 border-slate-700/50 dark:border-slate-300 rounded-xl p-5 mb-6 shadow-lg">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 text-3xl mt-1">
+                {progressionSuggestion.icon}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <Lightbulb className={`w-5 h-5 ${progressionSuggestion.color}`} />
+                  <h3 className={`text-lg font-bold ${progressionSuggestion.color}`}>
+                    {progressionSuggestion.message}
+                  </h3>
+                </div>
+                <p className="text-slate-300 dark:text-slate-700 text-sm leading-relaxed mb-3">
+                  {progressionSuggestion.reasoning}
+                </p>
+                {(progressionSuggestion.suggestedWeight || progressionSuggestion.suggestedReps || progressionSuggestion.suggestedSets) && (
+                  <div className="flex flex-wrap gap-3 mt-3">
+                    {progressionSuggestion.suggestedWeight && (
+                      <div className="bg-slate-700/50 dark:bg-white/80 border border-slate-600 dark:border-slate-300 rounded-lg px-4 py-2">
+                        <p className="text-xs text-slate-400 dark:text-slate-600 uppercase tracking-wide">Peso Sugerido</p>
+                        <p className="text-lg font-bold text-white dark:text-slate-900">{progressionSuggestion.suggestedWeight}kg</p>
+                      </div>
+                    )}
+                    {progressionSuggestion.suggestedReps && (
+                      <div className="bg-slate-700/50 dark:bg-white/80 border border-slate-600 dark:border-slate-300 rounded-lg px-4 py-2">
+                        <p className="text-xs text-slate-400 dark:text-slate-600 uppercase tracking-wide">Reps Sugeridas</p>
+                        <p className="text-lg font-bold text-white dark:text-slate-900">{progressionSuggestion.suggestedReps}</p>
+                      </div>
+                    )}
+                    {progressionSuggestion.suggestedSets && (
+                      <div className="bg-slate-700/50 dark:bg-white/80 border border-slate-600 dark:border-slate-300 rounded-lg px-4 py-2">
+                        <p className="text-xs text-slate-400 dark:text-slate-600 uppercase tracking-wide">Series Sugeridas</p>
+                        <p className="text-lg font-bold text-white dark:text-slate-900">{progressionSuggestion.suggestedSets}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
