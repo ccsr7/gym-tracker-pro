@@ -3,22 +3,70 @@
 import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import { Workout, WorkoutExercise, WorkoutSet } from '@/types';
-import { Calendar, Clock, Dumbbell, TrendingUp, Trash2, Edit2, Save, X } from 'lucide-react';
+import { Calendar, Clock, Dumbbell, TrendingUp, Trash2, Edit2, Save, X, Search, Filter, SlidersHorizontal } from 'lucide-react';
 import { getExerciseById } from '@/data/exercises';
 
 export default function HistoryPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [filteredWorkouts, setFilteredWorkouts] = useState<Workout[]>([]);
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
   const [editedWorkout, setEditedWorkout] = useState<Workout | null>(null);
+
+  // Filtros y búsqueda
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRoutine, setSelectedRoutine] = useState<string>('all');
+  const [dateFilter, setDateFilter] = useState<'all' | '7days' | '30days' | '90days'>('all');
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     loadWorkouts();
   }, []);
 
+  useEffect(() => {
+    applyFilters();
+  }, [workouts, searchTerm, selectedRoutine, dateFilter]);
+
   const loadWorkouts = () => {
     const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
     setWorkouts(storedWorkouts.reverse()); // Most recent first
   };
+
+  const applyFilters = () => {
+    let filtered = [...workouts];
+
+    // Filtro de búsqueda (busca en nombre de rutina, ejercicios, notas)
+    if (searchTerm) {
+      filtered = filtered.filter(workout => {
+        const routineMatch = workout.routineName.toLowerCase().includes(searchTerm.toLowerCase());
+        const notesMatch = workout.notes?.toLowerCase().includes(searchTerm.toLowerCase());
+        const exerciseMatch = workout.exercises.some(ex => {
+          const exercise = getExerciseById(ex.exerciseId);
+          return exercise?.name.toLowerCase().includes(searchTerm.toLowerCase());
+        });
+        return routineMatch || notesMatch || exerciseMatch;
+      });
+    }
+
+    // Filtro de rutina
+    if (selectedRoutine !== 'all') {
+      filtered = filtered.filter(w => w.routineName === selectedRoutine);
+    }
+
+    // Filtro de fecha
+    if (dateFilter !== 'all') {
+      const now = new Date();
+      const daysMap = { '7days': 7, '30days': 30, '90days': 90 };
+      const days = daysMap[dateFilter];
+      const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+      filtered = filtered.filter(w => new Date(w.date) >= cutoffDate);
+    }
+
+    setFilteredWorkouts(filtered);
+  };
+
+  // Obtener rutinas únicas para el filtro
+  const uniqueRoutines = Array.from(new Set(workouts.map(w => w.routineName)));
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -113,6 +161,107 @@ export default function HistoryPage() {
           <p className="text-slate-400 dark:text-slate-600">Revisa tus entrenamientos pasados y tu progreso</p>
         </div>
 
+        {/* Search and Filters */}
+        <div className="mb-6 space-y-3">
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-600" />
+            <input
+              type="text"
+              placeholder="Buscar por rutina, ejercicio o notas..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 bg-slate-800/40 dark:bg-white border border-slate-700/50 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          {/* Filter Toggle Button */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors ${
+              showFilters
+                ? 'bg-emerald-500 text-white'
+                : 'bg-slate-800/40 dark:bg-slate-200 text-slate-300 dark:text-slate-700 border border-slate-700/50 dark:border-slate-300'
+            }`}
+          >
+            <SlidersHorizontal className="w-5 h-5" />
+            Filtros {(selectedRoutine !== 'all' || dateFilter !== 'all') && '(activos)'}
+          </button>
+
+          {/* Filters Panel */}
+          {showFilters && (
+            <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-4 space-y-4">
+              {/* Date Filter */}
+              <div>
+                <label className="block text-sm text-slate-400 dark:text-slate-600 mb-2">Período</label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {[
+                    { label: 'Todos', value: 'all' as const },
+                    { label: 'Últimos 7 días', value: '7days' as const },
+                    { label: 'Últimos 30 días', value: '30days' as const },
+                    { label: 'Últimos 90 días', value: '90days' as const }
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => setDateFilter(option.value)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        dateFilter === option.value
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-slate-700/50 dark:bg-white text-slate-300 dark:text-slate-700 hover:bg-slate-700 dark:hover:bg-slate-200'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Routine Filter */}
+              {uniqueRoutines.length > 0 && (
+                <div>
+                  <label className="block text-sm text-slate-400 dark:text-slate-600 mb-2">Rutina</label>
+                  <select
+                    value={selectedRoutine}
+                    onChange={(e) => setSelectedRoutine(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-700/50 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="all">Todas las rutinas</option>
+                    {uniqueRoutines.map((routine) => (
+                      <option key={routine} value={routine}>
+                        {routine}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Clear Filters */}
+              {(selectedRoutine !== 'all' || dateFilter !== 'all' || searchTerm) && (
+                <button
+                  onClick={() => {
+                    setSelectedRoutine('all');
+                    setDateFilter('all');
+                    setSearchTerm('');
+                  }}
+                  className="w-full py-2 bg-slate-700/50 dark:bg-slate-200 hover:bg-slate-700 dark:hover:bg-slate-300 text-white dark:text-slate-900 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Limpiar Filtros
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Results Count */}
+          <div className="flex items-center justify-between text-sm">
+            <p className="text-slate-400 dark:text-slate-600">
+              {filteredWorkouts.length} {filteredWorkouts.length === 1 ? 'resultado' : 'resultados'}
+              {filteredWorkouts.length !== workouts.length && (
+                <span className="ml-1">de {workouts.length} totales</span>
+              )}
+            </p>
+          </div>
+        </div>
+
         {/* Stats Overview */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-4">
@@ -150,7 +299,18 @@ export default function HistoryPage() {
 
         {/* Workouts List */}
         <div className="space-y-4">
-          {workouts.map((workout) => (
+          {filteredWorkouts.length === 0 ? (
+            <div className="text-center py-12 bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl">
+              <Search className="w-16 h-16 text-slate-600 dark:text-slate-400 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-white dark:text-slate-900 mb-2">No se encontraron entrenamientos</h3>
+              <p className="text-slate-400 dark:text-slate-600">
+                {searchTerm || selectedRoutine !== 'all' || dateFilter !== 'all'
+                  ? 'Intenta ajustar tus filtros de búsqueda'
+                  : 'Completa tu primer entrenamiento para ver tu historial aquí'}
+              </p>
+            </div>
+          ) : (
+            filteredWorkouts.map((workout) => (
             <div
               key={workout.id}
               className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-4 md:p-6 hover:border-emerald-500/50 transition-all"
@@ -261,7 +421,8 @@ export default function HistoryPage() {
                 </div>
               )}
             </div>
-          ))}
+          ))
+          )}
         </div>
 
         {/* Modal de Edición */}

@@ -4,13 +4,18 @@ import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import { Workout } from '@/types';
 import { getExerciseById } from '@/data/exercises';
-import { TrendingUp, Calendar, Award, Dumbbell, ChevronDown, BarChart3 } from 'lucide-react';
+import { TrendingUp, Calendar, Award, Dumbbell, ChevronDown, BarChart3, GitCompare, X } from 'lucide-react';
 import { getWeeklyVolumeStats } from '@/lib/volume-stats';
 
 export default function ProgressPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
   const [exerciseOptions, setExerciseOptions] = useState<Array<{ id: string; name: string }>>([]);
+
+  // Comparison mode
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareWorkout1, setCompareWorkout1] = useState<string | null>(null);
+  const [compareWorkout2, setCompareWorkout2] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -193,7 +198,18 @@ export default function ProgressPage() {
 
         {/* Exercise Selector */}
         <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-4 mb-6">
-          <label className="block text-sm text-slate-400 dark:text-slate-600 mb-2">Seleccionar Ejercicio</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm text-slate-400 dark:text-slate-600">Seleccionar Ejercicio</label>
+            {selectedExerciseId && progressData.length >= 2 && (
+              <button
+                onClick={() => setCompareMode(true)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                <GitCompare className="w-4 h-4" />
+                Comparar
+              </button>
+            )}
+          </div>
           <div className="relative">
             <select
               value={selectedExerciseId || ''}
@@ -308,6 +324,190 @@ export default function ProgressPage() {
               </div>
             </div>
           </>
+        )}
+
+        {/* Compare Mode Modal */}
+        {compareMode && selectedExerciseId && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-slate-800 dark:bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+              {/* Header */}
+              <div className="p-6 border-b border-slate-700 dark:border-slate-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <GitCompare className="w-6 h-6 text-blue-500" />
+                    <div>
+                      <h3 className="text-xl font-bold text-white dark:text-slate-900">Comparar Sesiones</h3>
+                      <p className="text-slate-400 dark:text-slate-600 text-sm">{selectedExercise?.name}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setCompareMode(false);
+                      setCompareWorkout1(null);
+                      setCompareWorkout2(null);
+                    }}
+                    className="p-2 text-slate-400 dark:text-slate-600 hover:text-white dark:hover:text-slate-900 hover:bg-slate-700/50 dark:hover:bg-slate-200 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Selector 1 */}
+                  <div>
+                    <label className="block text-sm text-slate-400 dark:text-slate-600 mb-2">Primera Sesión</label>
+                    <select
+                      value={compareWorkout1 || ''}
+                      onChange={(e) => setCompareWorkout1(e.target.value)}
+                      className="w-full px-4 py-3 bg-slate-700/50 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 mb-4"
+                    >
+                      <option value="">Seleccionar sesión...</option>
+                      {progressData.map((data, idx) => (
+                        <option key={idx} value={idx}>
+                          {data.date.toLocaleDateString('es-ES')} - {data.maxWeight}kg × {data.sets} series
+                        </option>
+                      ))}
+                    </select>
+
+                    {compareWorkout1 !== null && progressData[parseInt(compareWorkout1)] && (() => {
+                      const data = progressData[parseInt(compareWorkout1)];
+                      return (
+                        <div className="bg-slate-700/30 dark:bg-slate-100 border border-slate-600 dark:border-slate-300 rounded-lg p-4">
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <p className="text-xs text-slate-500 dark:text-slate-600">Fecha</p>
+                              <p className="text-white dark:text-slate-900 font-bold">
+                                {data.date.toLocaleDateString('es-ES')}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 dark:text-slate-600">Peso Máx</p>
+                              <p className="text-emerald-400 dark:text-emerald-600 font-bold text-lg">{data.maxWeight}kg</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 dark:text-slate-600">Series</p>
+                              <p className="text-white dark:text-slate-900 font-bold">{data.sets}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 dark:text-slate-600">Reps Totales</p>
+                              <p className="text-white dark:text-slate-900 font-bold">{data.totalReps}</p>
+                            </div>
+                            <div className="col-span-2">
+                              <p className="text-xs text-slate-500 dark:text-slate-600">Volumen Total</p>
+                              <p className="text-purple-400 dark:text-purple-600 font-bold text-lg">{data.volume}kg</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Selector 2 */}
+                  <div>
+                    <label className="block text-sm text-slate-400 dark:text-slate-600 mb-2">Segunda Sesión</label>
+                    <select
+                      value={compareWorkout2 || ''}
+                      onChange={(e) => setCompareWorkout2(e.target.value)}
+                      className="w-full px-4 py-3 bg-slate-700/50 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 mb-4"
+                    >
+                      <option value="">Seleccionar sesión...</option>
+                      {progressData.map((data, idx) => (
+                        <option key={idx} value={idx}>
+                          {data.date.toLocaleDateString('es-ES')} - {data.maxWeight}kg × {data.sets} series
+                        </option>
+                      ))}
+                    </select>
+
+                    {compareWorkout2 !== null && progressData[parseInt(compareWorkout2)] && (() => {
+                      const data = progressData[parseInt(compareWorkout2)];
+                      return (
+                        <div className="bg-slate-700/30 dark:bg-slate-100 border border-slate-600 dark:border-slate-300 rounded-lg p-4">
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <p className="text-xs text-slate-500 dark:text-slate-600">Fecha</p>
+                              <p className="text-white dark:text-slate-900 font-bold">
+                                {data.date.toLocaleDateString('es-ES')}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 dark:text-slate-600">Peso Máx</p>
+                              <p className="text-emerald-400 dark:text-emerald-600 font-bold text-lg">{data.maxWeight}kg</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 dark:text-slate-600">Series</p>
+                              <p className="text-white dark:text-slate-900 font-bold">{data.sets}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 dark:text-slate-600">Reps Totales</p>
+                              <p className="text-white dark:text-slate-900 font-bold">{data.totalReps}</p>
+                            </div>
+                            <div className="col-span-2">
+                              <p className="text-xs text-slate-500 dark:text-slate-600">Volumen Total</p>
+                              <p className="text-purple-400 dark:text-purple-600 font-bold text-lg">{data.volume}kg</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Comparison Summary */}
+                {compareWorkout1 !== null && compareWorkout2 !== null && (() => {
+                  const data1 = progressData[parseInt(compareWorkout1)];
+                  const data2 = progressData[parseInt(compareWorkout2)];
+
+                  const weightDiff = data2.maxWeight - data1.maxWeight;
+                  const volumeDiff = data2.volume - data1.volume;
+                  const repsDiff = data2.totalReps - data1.totalReps;
+
+                  return (
+                    <div className="mt-6 bg-gradient-to-r from-blue-500/20 to-purple-500/20 dark:from-blue-100 dark:to-purple-100 border-2 border-blue-500/50 dark:border-blue-300 rounded-xl p-6">
+                      <h4 className="text-lg font-bold text-white dark:text-slate-900 mb-4 flex items-center gap-2">
+                        <TrendingUp className="w-5 h-5 text-blue-500" />
+                        Diferencias
+                      </h4>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="text-center">
+                          <p className="text-xs text-slate-400 dark:text-slate-600 mb-1">Peso Máximo</p>
+                          <p className={`text-2xl font-bold ${
+                            weightDiff > 0 ? 'text-emerald-500' :
+                            weightDiff < 0 ? 'text-red-500' :
+                            'text-yellow-500'
+                          }`}>
+                            {weightDiff > 0 ? '+' : ''}{weightDiff}kg
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs text-slate-400 dark:text-slate-600 mb-1">Volumen Total</p>
+                          <p className={`text-2xl font-bold ${
+                            volumeDiff > 0 ? 'text-emerald-500' :
+                            volumeDiff < 0 ? 'text-red-500' :
+                            'text-yellow-500'
+                          }`}>
+                            {volumeDiff > 0 ? '+' : ''}{Math.round(volumeDiff)}kg
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs text-slate-400 dark:text-slate-600 mb-1">Reps Totales</p>
+                          <p className={`text-2xl font-bold ${
+                            repsDiff > 0 ? 'text-emerald-500' :
+                            repsDiff < 0 ? 'text-red-500' :
+                            'text-yellow-500'
+                          }`}>
+                            {repsDiff > 0 ? '+' : ''}{repsDiff}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

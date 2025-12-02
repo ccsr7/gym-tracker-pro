@@ -7,7 +7,7 @@ import PageTransition, { StaggerContainer, StaggerItem } from '@/components/Page
 import RoutineImportExport from '@/components/RoutineImportExport';
 import { Routine, DayOfWeek } from '@/types';
 import { getDayColor, getDayInitial } from '@/lib/utils';
-import { Plus, Clock, Dumbbell, Calendar, Edit, Download } from 'lucide-react';
+import { Plus, Clock, Dumbbell, Calendar, Edit, Download, Sparkles } from 'lucide-react';
 import { getExerciseById } from '@/data/exercises';
 
 export default function RoutinesPage() {
@@ -57,6 +57,13 @@ export default function RoutinesPage() {
             <p className="text-slate-400 dark:text-slate-600">Organiza tus entrenamientos por días de la semana</p>
           </div>
           <div className="flex gap-2">
+            <button
+              onClick={() => router.push('/routines/templates')}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-lg hover:shadow-yellow-500/50"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span className="hidden sm:inline">Plantillas</span>
+            </button>
             <button
               onClick={() => setShowImportExport(true)}
               className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
