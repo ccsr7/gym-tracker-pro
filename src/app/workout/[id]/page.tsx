@@ -646,9 +646,9 @@ export default function WorkoutPage() {
                     </div>
 
                     {/* Inputs y botón de completar */}
-                    <div className="flex items-end gap-2">
+                    <div className="flex items-end gap-3">
                       <div className="flex-1">
-                        <label className="text-xs text-slate-400 dark:text-slate-600 block mb-1.5">Peso (kg)</label>
+                        <label className="text-sm text-slate-400 dark:text-slate-600 block mb-2 font-medium">Peso (kg)</label>
                         <input
                           type="number"
                           value={set.weight === 0 ? '' : set.weight}
@@ -660,13 +660,13 @@ export default function WorkoutPage() {
                             handleSetFocus(currentExerciseIndex, idx);
                             e.target.select(); // Seleccionar todo el texto al hacer focus
                           }}
-                          className="w-full px-3 py-3 bg-slate-600/50 dark:bg-slate-100 border border-slate-500 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 font-bold text-center text-lg"
+                          className="w-full px-4 py-4 bg-slate-600/50 dark:bg-slate-100 border-2 border-slate-500 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 font-bold text-center text-2xl"
                           disabled={set.completed}
                           placeholder="0"
                         />
                       </div>
                       <div className="flex-1">
-                        <label className="text-xs text-slate-400 dark:text-slate-600 block mb-1.5">Reps</label>
+                        <label className="text-sm text-slate-400 dark:text-slate-600 block mb-2 font-medium">Reps</label>
                         <input
                           type="number"
                           value={set.reps === 0 ? '' : set.reps}
@@ -678,23 +678,23 @@ export default function WorkoutPage() {
                             handleSetFocus(currentExerciseIndex, idx);
                             e.target.select(); // Seleccionar todo el texto al hacer focus
                           }}
-                          className="w-full px-3 py-3 bg-slate-600/50 dark:bg-slate-100 border border-slate-500 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 font-bold text-center text-lg"
+                          className="w-full px-4 py-4 bg-slate-600/50 dark:bg-slate-100 border-2 border-slate-500 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 font-bold text-center text-2xl"
                           disabled={set.completed}
                           placeholder="0"
                         />
                       </div>
                       <button
                         onClick={() => handleToggleSet(currentExerciseIndex, idx)}
-                        className={`w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-lg ${
+                        className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-lg ${
                           set.completed
                             ? 'bg-emerald-500 hover:bg-emerald-600'
                             : 'bg-slate-700 dark:bg-slate-300 hover:bg-slate-600 dark:hover:bg-slate-400'
                         }`}
                       >
                         {set.completed ? (
-                          <Check className="w-6 h-6 text-white" />
+                          <Check className="w-7 h-7 text-white" />
                         ) : (
-                          <Play className="w-6 h-6 text-white dark:text-slate-900" />
+                          <Play className="w-7 h-7 text-white dark:text-slate-900" />
                         )}
                       </button>
                     </div>
