@@ -203,11 +203,16 @@ export default function CalculatorPage() {
 
           {/* Warning for high reps */}
           {parseInt(reps) > 8 && parseInt(reps) <= 12 && (
-            <div className="bg-yellow-500/10 dark:bg-yellow-100 border border-yellow-500/30 dark:border-yellow-300 rounded-lg p-3 mb-4 flex gap-3">
+            <div className="bg-yellow-500/10 dark:bg-yellow-100 border border-yellow-500/30 dark:border-yellow-300 rounded-lg p-4 mb-4 flex gap-3">
               <AlertCircle className="w-5 h-5 text-yellow-400 dark:text-yellow-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-yellow-300 dark:text-yellow-700">
-                Con más de 8 repeticiones, la estimación puede ser menos precisa. Para mejores resultados,
-                usa un peso con el que puedas hacer máximo 8 repeticiones.
+              <div>
+                <p className="text-sm font-semibold text-yellow-300 dark:text-yellow-700 mb-1">
+                  Precaución: Mayor margen de error
+                </p>
+                <p className="text-sm text-yellow-300 dark:text-yellow-700">
+                  Con más de 8 repeticiones, la estimación de 1RM puede ser menos precisa. Para mejores resultados,
+                  usa un peso con el que puedas hacer entre 3 y 8 repeticiones como máximo.
+                </p>
               </div>
             </div>
           )}
