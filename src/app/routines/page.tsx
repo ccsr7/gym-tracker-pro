@@ -51,34 +51,75 @@ export default function RoutinesPage() {
 
       <PageTransition>
         <div className="container mx-auto px-4 pt-20 py-8 pb-24 md:pt-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-white dark:text-slate-900 mb-2">Mis Rutinas</h1>
-            <p className="text-slate-400 dark:text-slate-600">Organiza tus entrenamientos por días de la semana</p>
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-white dark:text-slate-900 mb-2">Mis Rutinas</h1>
+              <p className="text-slate-400 dark:text-slate-600">Organiza tus entrenamientos por días de la semana</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowImportExport(true)}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">Importar</span>
+              </button>
+              <button
+                onClick={() => router.push('/routines/create')}
+                className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Nueva</span>
+              </button>
+            </div>
           </div>
-          <div className="flex gap-2">
+
+          {/* Templates Banner - Highlighted */}
+          {routines.length === 0 && (
+            <div className="bg-gradient-to-r from-yellow-500/20 to-amber-500/20 dark:from-yellow-100 dark:to-amber-100 border-2 border-yellow-500/50 dark:border-yellow-400 rounded-xl p-4 md:p-6 mb-6">
+              <div className="flex flex-col md:flex-row items-center gap-4">
+                <div className="bg-yellow-500/20 dark:bg-yellow-200 p-3 rounded-xl flex-shrink-0">
+                  <Sparkles className="w-8 h-8 text-yellow-500" />
+                </div>
+                <div className="flex-1 text-center md:text-left">
+                  <h3 className="text-xl font-bold text-white dark:text-slate-900 mb-1">
+                    ¡Empieza rápido con una plantilla!
+                  </h3>
+                  <p className="text-yellow-200 dark:text-yellow-800 text-sm">
+                    Descubre rutinas profesionales como Push/Pull/Legs, Full Body y más
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push('/routines/templates')}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 transition-all shadow-lg hover:shadow-yellow-500/50"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  Ver Plantillas
+                </button>
+              </div>
+            </div>
+          )}
+
+          {routines.length > 0 && (
             <button
               onClick={() => router.push('/routines/templates')}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-lg hover:shadow-yellow-500/50"
+              className="w-full bg-gradient-to-r from-yellow-500/10 to-amber-500/10 dark:from-yellow-50 dark:to-amber-50 border border-yellow-500/30 dark:border-yellow-300 rounded-xl p-4 mb-6 hover:border-yellow-500/50 dark:hover:border-yellow-400 transition-all group"
             >
-              <Sparkles className="w-4 h-4" />
-              <span className="hidden sm:inline">Plantillas</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-yellow-500/20 dark:bg-yellow-200 p-2 rounded-lg">
+                    <Sparkles className="w-5 h-5 text-yellow-500" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-white dark:text-slate-900 font-bold">Plantillas de Rutinas</p>
+                    <p className="text-yellow-300 dark:text-yellow-700 text-xs">Push/Pull/Legs, Full Body, Upper/Lower y más</p>
+                  </div>
+                </div>
+                <div className="text-yellow-500 group-hover:translate-x-1 transition-transform">→</div>
+              </div>
             </button>
-            <button
-              onClick={() => setShowImportExport(true)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Importar/Exportar</span>
-            </button>
-            <button
-              onClick={() => router.push('/routines/create')}
-              className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Nueva Rutina</span>
-            </button>
-          </div>
+          )}
         </div>
 
         {/* Weekly Grid */}

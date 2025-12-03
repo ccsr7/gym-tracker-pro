@@ -416,28 +416,75 @@ export default function Dashboard() {
           )}
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-2 gap-3">
-            <ScaleCard>
-              <button
-                onClick={() => router.push('/library')}
-                className="w-full bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-4 hover:border-purple-500/50 dark:hover:border-purple-400 transition-all"
-              >
-                <Dumbbell className="w-6 h-6 text-purple-500 mb-2" />
-                <p className="text-sm font-bold text-white dark:text-slate-900">Biblioteca</p>
-                <p className="text-xs text-slate-400 dark:text-slate-600">Ejercicios</p>
-              </button>
-            </ScaleCard>
+          <div className="mb-4">
+            <h2 className="text-lg font-bold text-white dark:text-slate-900 mb-3">Accesos Rápidos</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <ScaleCard>
+                <button
+                  onClick={() => router.push('/library')}
+                  className="w-full bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-4 hover:border-purple-500/50 dark:hover:border-purple-400 transition-all"
+                >
+                  <Dumbbell className="w-6 h-6 text-purple-500 mb-2" />
+                  <p className="text-sm font-bold text-white dark:text-slate-900">Biblioteca</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-600">Ejercicios</p>
+                </button>
+              </ScaleCard>
 
-            <ScaleCard>
-              <button
-                onClick={() => router.push('/stats')}
-                className="w-full bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-4 hover:border-indigo-500/50 dark:hover:border-indigo-400 transition-all"
-              >
-                <BarChart3 className="w-6 h-6 text-indigo-500 mb-2" />
-                <p className="text-sm font-bold text-white dark:text-slate-900">Estadísticas</p>
-                <p className="text-xs text-slate-400 dark:text-slate-600">Progreso</p>
-              </button>
-            </ScaleCard>
+              <ScaleCard>
+                <button
+                  onClick={() => router.push('/routines')}
+                  className="w-full bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-4 hover:border-emerald-500/50 dark:hover:border-emerald-400 transition-all"
+                >
+                  <Calendar className="w-6 h-6 text-emerald-500 mb-2" />
+                  <p className="text-sm font-bold text-white dark:text-slate-900">Rutinas</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-600">Ver todas</p>
+                </button>
+              </ScaleCard>
+
+              <ScaleCard>
+                <button
+                  onClick={() => router.push('/routines/templates')}
+                  className="w-full bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-4 hover:border-yellow-500/50 dark:hover:border-yellow-400 transition-all"
+                >
+                  <Trophy className="w-6 h-6 text-yellow-500 mb-2" />
+                  <p className="text-sm font-bold text-white dark:text-slate-900">Plantillas</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-600">Predefinidas</p>
+                </button>
+              </ScaleCard>
+
+              <ScaleCard>
+                <button
+                  onClick={() => router.push('/stats')}
+                  className="w-full bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-4 hover:border-indigo-500/50 dark:hover:border-indigo-400 transition-all"
+                >
+                  <BarChart3 className="w-6 h-6 text-indigo-500 mb-2" />
+                  <p className="text-sm font-bold text-white dark:text-slate-900">Estadísticas</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-600">Progreso</p>
+                </button>
+              </ScaleCard>
+
+              <ScaleCard>
+                <button
+                  onClick={() => router.push('/history')}
+                  className="w-full bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-4 hover:border-blue-500/50 dark:hover:border-blue-400 transition-all"
+                >
+                  <Clock className="w-6 h-6 text-blue-500 mb-2" />
+                  <p className="text-sm font-bold text-white dark:text-slate-900">Historial</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-600">Sesiones</p>
+                </button>
+              </ScaleCard>
+
+              <ScaleCard>
+                <button
+                  onClick={() => router.push('/progress')}
+                  className="w-full bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-4 hover:border-pink-500/50 dark:hover:border-pink-400 transition-all"
+                >
+                  <TrendingUp className="w-6 h-6 text-pink-500 mb-2" />
+                  <p className="text-sm font-bold text-white dark:text-slate-900">Ejercicios</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-600">Por ejercicio</p>
+                </button>
+              </ScaleCard>
+            </div>
           </div>
         </div>
       </PageTransition>

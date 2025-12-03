@@ -12,12 +12,13 @@ function Navigation() {
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
 
-  // Navegación principal (mobile bottom bar)
+  // Navegación principal (mobile bottom bar) - 5 items más importantes
   const navItems = [
     { icon: Home, label: 'Inicio', path: '/', color: 'bg-gradient-to-br from-blue-500 to-blue-600' },
-    { icon: Library, label: 'Ejercicios', path: '/library', color: 'bg-gradient-to-br from-purple-500 to-purple-600' },
     { icon: CalendarDays, label: 'Rutinas', path: '/routines', color: 'bg-gradient-to-br from-emerald-500 to-emerald-600' },
-    { icon: BarChart3, label: 'Progreso', path: '/stats', color: 'bg-gradient-to-br from-indigo-500 to-indigo-600' },
+    { icon: Dumbbell, label: 'Entrenar', path: '/library', color: 'bg-gradient-to-br from-orange-500 to-orange-600' },
+    { icon: BarChart3, label: 'Stats', path: '/stats', color: 'bg-gradient-to-br from-indigo-500 to-indigo-600' },
+    { icon: Trophy, label: 'Logros', path: '/achievements', color: 'bg-gradient-to-br from-yellow-500 to-amber-600' },
   ];
 
   // Navegación desktop (todas las secciones)
@@ -162,9 +163,9 @@ function Navigation() {
         </div>
       </div>
 
-      {/* Mobile Navigation - Bottom Bar (4 items) */}
+      {/* Mobile Navigation - Bottom Bar (5 items) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 dark:bg-white/95 backdrop-blur-lg border-t border-slate-700/50 dark:border-slate-200 z-50 pb-safe">
-        <div className="grid grid-cols-4 gap-1 px-2 py-2">
+        <div className="grid grid-cols-5 gap-1 px-1 py-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.path;
@@ -174,14 +175,14 @@ function Navigation() {
                 key={item.path}
                 href={item.path}
                 prefetch={true}
-                className={`flex flex-col items-center justify-center py-3 px-2 rounded-xl transition-all ${
+                className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all ${
                   isActive
                     ? `${item.color} text-white shadow-lg scale-105`
                     : 'text-slate-400 dark:text-slate-600 hover:bg-slate-800/50 dark:hover:bg-slate-100'
                 }`}
               >
-                <Icon className="w-6 h-6 mb-1" />
-                <span className="text-xs font-medium">{item.label}</span>
+                <Icon className="w-5 h-5 mb-0.5" />
+                <span className="text-[10px] font-medium leading-tight">{item.label}</span>
               </Link>
             );
           })}
