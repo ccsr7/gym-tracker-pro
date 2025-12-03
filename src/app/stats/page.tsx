@@ -22,9 +22,9 @@ import {
   Pie,
   Cell
 } from 'recharts';
-import { TrendingUp, BarChart3, Calendar, Dumbbell, Award, Clock, Zap, Download, FileText, FileJson } from 'lucide-react';
+import { TrendingUp, BarChart3, Calendar, Dumbbell, Award, Clock, Zap, Download, FileText, FileType } from 'lucide-react';
 import { getPersonalRecords, getTrainingFrequency, getTimeUnderTension } from '@/lib/volume-stats';
-import { exportToCSV, exportToJSON, downloadFile, generateFilename } from '@/lib/data-export';
+import { exportToCSV, exportToPDF, downloadFile, generateFilename } from '@/lib/data-export';
 
 export default function StatsPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -209,15 +209,15 @@ export default function StatsPage() {
     downloadFile(csvContent, filename, 'text/csv;charset=utf-8;');
   };
 
-  const handleExportJSON = () => {
+  const handleExportPDF = () => {
     if (workouts.length === 0) {
       alert('No hay datos para exportar');
       return;
     }
 
-    const jsonContent = exportToJSON(workouts);
-    const filename = generateFilename('json');
-    downloadFile(jsonContent, filename, 'application/json;charset=utf-8;');
+    const pdf = exportToPDF(workouts);
+    const filename = generateFilename('pdf');
+    pdf.save(filename);
   };
 
   return (
@@ -257,11 +257,11 @@ export default function StatsPage() {
         {workouts.length > 0 && (
           <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-6 mb-6">
             <div className="flex items-center gap-2 mb-4">
-              <Download className="w-6 h-6 text-blue-500" />
+              <Download className="w-6 h-6 text-emerald-500" />
               <h3 className="text-lg font-bold text-white dark:text-slate-900">Exportar Datos</h3>
             </div>
             <p className="text-slate-400 dark:text-slate-600 text-sm mb-4">
-              Descarga todos tus entrenamientos en formato CSV o JSON
+              Descarga todos tus entrenamientos en formato profesional CSV o PDF
             </p>
             <div className="flex gap-3">
               <button
@@ -272,11 +272,11 @@ export default function StatsPage() {
                 Exportar CSV
               </button>
               <button
-                onClick={handleExportJSON}
-                className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-purple-500/50"
+                onClick={handleExportPDF}
+                className="flex-1 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-red-500/50"
               >
-                <FileJson className="w-5 h-5" />
-                Exportar JSON
+                <FileType className="w-5 h-5" />
+                Exportar PDF
               </button>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-600 mt-3 text-center">
