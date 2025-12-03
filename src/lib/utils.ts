@@ -65,3 +65,67 @@ export function getDayInitial(day: string): string {
   };
   return initials[day] || '';
 }
+
+/**
+ * Calcula la racha actual de entrenamientos consecutivos
+ * La racha se rompe si se pierde un día de entrenamiento programado (no cuenta días de descanso)
+ */
+export function calculateWorkoutStreak(workouts: any[], routines: any[]): number {
+  if (workouts.length === 0 || routines.length === 0) return 0;
+
+  // Ordenar workouts por fecha descendente (más reciente primero)
+  const sortedWorkouts = [...workouts].sort((a, b) =>
+    new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+
+  // Obtener días de la semana con entrenamientos programados (no días de descanso)
+  const workoutDays = routines
+    .filter((r: any) => !r.isRestDay)
+    .map((r: any) => r.day);
+
+  if (workoutDays.length === 0) return 0;
+
+  const daysOrder = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+  // Crear un mapa de días con entrenamientos programados
+  const programmedDaysSet = new Set(workoutDays);
+
+  let streak = 0;
+  let currentDate = new Date();
+  currentDate.setHours(0, 0, 0, 0);
+
+  // Crear un Set de fechas con entrenamientos completados (formato YYYY-MM-DD)
+  const completedDates = new Set(
+    sortedWorkouts.map((w: any) => {
+      const date = new Date(w.date);
+      date.setHours(0, 0, 0, 0);
+      return date.toISOString().split('T')[0];
+    })
+  );
+
+  // Iterar hacia atrás desde hoy hasta encontrar un día de entrenamiento perdido
+  for (let i = 0; i < 365; i++) { // Límite de 365 días para evitar loops infinitos
+    const checkDate = new Date(currentDate);
+    checkDate.setDate(currentDate.getDate() - i);
+    const dayName = getSpanishDay(checkDate);
+    const dateStr = checkDate.toISOString().split('T')[0];
+
+    // Si es un día programado para entrenar
+    if (programmedDaysSet.has(dayName)) {
+      // Si hay un entrenamiento completado en esta fecha
+      if (completedDates.has(dateStr)) {
+        streak++;
+      } else {
+        // Si es hoy o en el futuro, no romper la racha aún
+        if (checkDate.getTime() >= new Date().setHours(0, 0, 0, 0)) {
+          continue;
+        }
+        // Si es en el pasado y no se completó, se rompe la racha
+        break;
+      }
+    }
+    // Si no es un día programado (día de descanso), continuar sin afectar la racha
+  }
+
+  return streak;
+}

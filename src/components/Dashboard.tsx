@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { getSpanishDay } from '@/lib/utils';
-import { Flame, Target, Calendar, Play, Dumbbell, BarChart3, Trophy, TrendingUp, Clock, X } from 'lucide-react';
+import { getSpanishDay, calculateWorkoutStreak } from '@/lib/utils';
+import { Flame, Target, Calendar, Play, Dumbbell, BarChart3, Trophy, TrendingUp, Clock, X, Sparkles, ChevronRight, Zap } from 'lucide-react';
 import Navigation from './Navigation';
 import PageTransition, { StaggerContainer, StaggerItem, ScaleCard } from './PageTransition';
-import { Routine, Workout } from '@/types';
+import { Routine, Workout, RoutineExercise } from '@/types';
 import { getExerciseById } from '@/data/exercises';
 import { useRouter } from 'next/navigation';
+import { getDailyRestContent } from '@/data/rest-day-content';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -18,6 +19,7 @@ export default function Dashboard() {
   const [weekWorkouts, setWeekWorkouts] = useState(0);
   const [totalWorkouts, setTotalWorkouts] = useState(0);
   const [totalVolume, setTotalVolume] = useState(0);
+  const [workoutStreak, setWorkoutStreak] = useState(0);
   const [inProgressWorkout, setInProgressWorkout] = useState<{ routineId: string; routineName: string } | null>(null);
   const [lastCompletedWorkout, setLastCompletedWorkout] = useState<Workout | null>(null);
   const [showWorkoutSummary, setShowWorkoutSummary] = useState(false);
@@ -63,6 +65,7 @@ export default function Dashboard() {
 
   const loadStats = () => {
     const workouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+    const routines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
     setTotalWorkouts(workouts.length);
 
     const today = new Date();
@@ -78,6 +81,10 @@ export default function Dashboard() {
     // Calculate total volume
     const volume = workouts.reduce((sum: number, w: any) => sum + (w.totalVolume || 0), 0);
     setTotalVolume(volume);
+
+    // Calculate workout streak
+    const streak = calculateWorkoutStreak(workouts, routines);
+    setWorkoutStreak(streak);
   };
 
   const loadTodayRoutine = () => {
@@ -132,6 +139,52 @@ export default function Dashboard() {
     if (todayRoutine) {
       router.push(`/workout/${todayRoutine.id}`);
     }
+  };
+
+  const getNextWorkoutDay = () => {
+    const routines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
+    const today = getSpanishDay(new Date());
+    const daysOrder = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+    const todayIndex = daysOrder.indexOf(today);
+
+    // Buscar el próximo día con rutina (que no sea descanso)
+    for (let i = 1; i <= 7; i++) {
+      const nextDayIndex = (todayIndex + i) % 7;
+      const nextDay = daysOrder[nextDayIndex];
+      const nextRoutine = routines.find((r: Routine) => r.day === nextDay && !r.isRestDay);
+
+      if (nextRoutine) {
+        return {
+          day: nextDay,
+          routine: nextRoutine,
+          daysAway: i === 1 ? 'Mañana' : i === 2 ? 'Pasado mañana' : `En ${i} días`
+        };
+      }
+    }
+
+    return null;
+  };
+
+  const getWeekStats = () => {
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+
+    const workouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+    const routines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
+    const thisWeekWorkouts = workouts.filter((w: Workout) => {
+      const workoutDate = new Date(w.date);
+      return workoutDate >= startOfWeek;
+    });
+
+    // Contar días de descanso programados en esta semana
+    const restDays = routines.filter((r: Routine) => r.isRestDay).length;
+
+    return {
+      workoutsCompleted: thisWeekWorkouts.length,
+      restDays: restDays
+    };
   };
 
   return (
@@ -215,16 +268,22 @@ export default function Dashboard() {
               </ScaleCard>
             </StaggerItem>
 
-            {/* Today */}
+            {/* Workout Streak */}
             <StaggerItem>
-              <ScaleCard className="bg-gradient-to-br from-orange-500/20 to-orange-600/10 dark:from-orange-100 dark:to-orange-50 backdrop-blur-sm border border-orange-500/30 dark:border-orange-200 rounded-xl p-4 cursor-pointer">
-                <Calendar className="w-6 h-6 md:w-8 md:h-8 text-orange-500 mb-2" />
-                <p className="text-xl md:text-2xl font-bold text-white dark:text-orange-600">
-                  {getSpanishDay(currentDate)}
+              <ScaleCard className="bg-gradient-to-br from-orange-500/20 to-orange-600/10 dark:from-orange-100 dark:to-orange-50 backdrop-blur-sm border border-orange-500/30 dark:border-orange-200 rounded-xl p-4 cursor-pointer relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-orange-500/10 rounded-full -mr-10 -mt-10" />
+                <Zap className="w-6 h-6 md:w-8 md:h-8 text-orange-500 mb-2 relative z-10" />
+                <p className="text-2xl md:text-3xl font-bold text-white dark:text-orange-600 relative z-10">
+                  {workoutStreak}
                 </p>
-                <p className="text-xs text-orange-300 dark:text-orange-600 font-medium">
-                  {currentDate.toLocaleDateString('es-ES', { month: 'long' }).charAt(0).toUpperCase() + currentDate.toLocaleDateString('es-ES', { month: 'long' }).slice(1)} {currentDate.getDate()}
+                <p className="text-xs text-orange-300 dark:text-orange-600 font-medium relative z-10">
+                  {workoutStreak === 1 ? 'día de racha' : 'días de racha'}
                 </p>
+                {workoutStreak > 0 && (
+                  <div className="absolute bottom-1 right-2 text-2xl opacity-20">
+                    🔥
+                  </div>
+                )}
               </ScaleCard>
             </StaggerItem>
           </StaggerContainer>
@@ -300,15 +359,109 @@ export default function Dashboard() {
               </button>
             </div>
           ) : (
-            <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-8 md:p-12 text-center mb-6">
-              <Calendar className="w-12 h-12 md:w-16 md:h-16 text-purple-500 mx-auto mb-3" />
-              <h3 className="text-xl md:text-2xl font-bold text-white dark:text-slate-900 mb-2">Día de Descanso</h3>
-              <p className="text-sm text-slate-400 dark:text-slate-600 mb-4">
-                {todayRoutine?.isRestDay ? todayRoutine.name : 'No hay entrenamientos hoy. ¡Recupérate!'}
-              </p>
+            <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 dark:from-blue-100 dark:to-purple-100 backdrop-blur-sm border border-blue-500/30 dark:border-blue-300 rounded-xl p-6 md:p-8 mb-6">
+              {/* Header */}
+              <div className="text-center mb-6">
+                <div className="inline-block bg-blue-500/10 dark:bg-blue-200 p-4 rounded-full mb-3">
+                  <Calendar className="w-10 h-10 md:w-12 md:h-12 text-blue-400 dark:text-blue-600" />
+                </div>
+                <h3 className="text-2xl md:text-3xl font-bold text-white dark:text-slate-900 mb-2">
+                  Día de Descanso Activo
+                </h3>
+              </div>
+
+              {/* Daily Content - Quote or Tip */}
+              {(() => {
+                const dailyContent = getDailyRestContent();
+                return (
+                  <div className="bg-white/10 dark:bg-white/50 backdrop-blur-sm border border-white/20 dark:border-blue-200 rounded-lg p-5 mb-6">
+                    <div className="flex items-start gap-3">
+                      <span className="text-3xl">{dailyContent.icon}</span>
+                      <div>
+                        <p className="text-sm font-semibold text-blue-300 dark:text-blue-700 mb-1">
+                          {dailyContent.type === 'motivation' ? 'Frase del día' : 'Consejo de recuperación'}
+                        </p>
+                        <p className="text-base text-white dark:text-slate-900 font-medium leading-relaxed">
+                          {dailyContent.content}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Stats and Next Workout Grid */}
+              <div className="grid md:grid-cols-2 gap-4 mb-6">
+                {/* Week Stats */}
+                {(() => {
+                  const stats = getWeekStats();
+                  return (
+                    <div className="bg-white/10 dark:bg-white/50 backdrop-blur-sm border border-white/20 dark:border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Sparkles className="w-5 h-5 text-purple-400 dark:text-purple-600" />
+                        <h4 className="text-sm font-bold text-white dark:text-slate-900">Esta Semana</h4>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-slate-300 dark:text-slate-700">Entrenamientos</span>
+                          <span className="font-bold text-emerald-400 dark:text-emerald-700">{stats.workoutsCompleted}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-slate-300 dark:text-slate-700">Días de descanso</span>
+                          <span className="font-bold text-blue-400 dark:text-blue-700">{stats.restDays}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Next Workout */}
+                {(() => {
+                  const nextWorkout = getNextWorkoutDay();
+                  if (!nextWorkout) return null;
+
+                  const exercises = nextWorkout.routine.exercises.slice(0, 2);
+                  const remainingCount = nextWorkout.routine.exercises.length - exercises.length;
+
+                  return (
+                    <div className="bg-white/10 dark:bg-white/50 backdrop-blur-sm border border-white/20 dark:border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <ChevronRight className="w-5 h-5 text-emerald-400 dark:text-emerald-600" />
+                        <h4 className="text-sm font-bold text-white dark:text-slate-900">Próximo Entrenamiento</h4>
+                      </div>
+                      <p className="text-sm text-slate-300 dark:text-slate-700 mb-2">
+                        {nextWorkout.daysAway} • {nextWorkout.day}
+                      </p>
+                      <p className="text-base font-bold text-white dark:text-slate-900 mb-2">
+                        {nextWorkout.routine.name}
+                      </p>
+                      <p className="text-xs text-slate-400 dark:text-slate-600 mb-2">
+                        {nextWorkout.routine.exercises.length} ejercicios • ~{nextWorkout.routine.duration} min
+                      </p>
+                      <div className="space-y-1">
+                        {exercises.map((ex: RoutineExercise) => {
+                          const exercise = getExerciseById(ex.exerciseId);
+                          return (
+                            <p key={ex.exerciseId} className="text-xs text-slate-300 dark:text-slate-700">
+                              • {exercise?.name || 'Ejercicio'}
+                            </p>
+                          );
+                        })}
+                        {remainingCount > 0 && (
+                          <p className="text-xs text-slate-400 dark:text-slate-600 italic">
+                            +{remainingCount} más...
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Action Button */}
               <button
                 onClick={() => router.push('/routines')}
-                className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-medium transition-colors text-sm"
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-blue-500/50"
               >
                 Ver Mis Rutinas
               </button>

@@ -265,7 +265,7 @@ export default function ProfilePage() {
               </div>
 
               {/* BMI Display */}
-              <div className="bg-slate-700/30 dark:bg-slate-200 rounded-xl p-4">
+              <div className="bg-slate-700/30 dark:bg-slate-200 rounded-xl p-4 mb-4">
                 <p className="text-slate-400 dark:text-slate-600 text-sm mb-2">Índice de Masa Corporal (IMC)</p>
                 <div className="flex items-baseline gap-3">
                   <p className="text-white dark:text-slate-900 font-bold text-4xl">{bmi || '21.2'}</p>
@@ -273,6 +273,41 @@ export default function ProfilePage() {
                     {bmiCategory || 'Normal'}
                   </span>
                 </div>
+              </div>
+
+              {/* Training Goal Display */}
+              <div className="bg-slate-700/30 dark:bg-slate-200 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <TrendingUp className="w-4 h-4 text-slate-400 dark:text-slate-600" />
+                  <p className="text-slate-400 dark:text-slate-600 text-sm">Objetivo de Entrenamiento</p>
+                </div>
+                {user?.trainingGoal === 'strength' && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">💪</span>
+                    <div>
+                      <p className="text-blue-400 dark:text-blue-600 font-bold text-lg">Fuerza</p>
+                      <p className="text-slate-400 dark:text-slate-600 text-xs">1-6 reps • Cargas pesadas • 3-5 min descanso</p>
+                    </div>
+                  </div>
+                )}
+                {(user?.trainingGoal === 'hypertrophy' || !user?.trainingGoal) && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">🏋️</span>
+                    <div>
+                      <p className="text-purple-400 dark:text-purple-600 font-bold text-lg">Hipertrofia</p>
+                      <p className="text-slate-400 dark:text-slate-600 text-xs">6-12 reps • Volumen moderado • 1-2 min descanso</p>
+                    </div>
+                  </div>
+                )}
+                {user?.trainingGoal === 'endurance' && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">⚡</span>
+                    <div>
+                      <p className="text-green-400 dark:text-green-600 font-bold text-lg">Resistencia</p>
+                      <p className="text-slate-400 dark:text-slate-600 text-xs">15+ reps • Cargas ligeras • 30-60 seg descanso</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           )}

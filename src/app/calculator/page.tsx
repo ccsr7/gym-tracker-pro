@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import PageTransition from '@/components/PageTransition';
 import { calculate1RM } from '@/lib/utils';
 import { Calculator, Info, TrendingUp, Target, Zap, Dumbbell, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
+import type { TrainingGoal } from '@/types';
 
 type TrainingZone = {
   name: string;
@@ -17,9 +19,17 @@ type TrainingZone = {
 };
 
 export default function CalculatorPage() {
+  const { user } = useAuth();
   const [weight, setWeight] = useState('');
   const [reps, setReps] = useState('');
   const [result, setResult] = useState<number | null>(null);
+  const [userGoal, setUserGoal] = useState<TrainingGoal>('hypertrophy');
+
+  useEffect(() => {
+    if (user?.trainingGoal) {
+      setUserGoal(user.trainingGoal);
+    }
+  }, [user]);
 
   const handleCalculate = () => {
     const w = parseFloat(weight);
@@ -32,6 +42,19 @@ export default function CalculatorPage() {
       alert('Para mejor precisión, usa un peso con el que puedas hacer máximo 12 repeticiones');
     } else {
       alert('Por favor ingresa valores válidos');
+    }
+  };
+
+  const getRecommendedZoneName = (): string => {
+    switch (userGoal) {
+      case 'strength':
+        return 'Fuerza';
+      case 'hypertrophy':
+        return 'Hipertrofia';
+      case 'endurance':
+        return 'Resistencia Muscular';
+      default:
+        return 'Hipertrofia';
     }
   };
 
@@ -253,10 +276,13 @@ export default function CalculatorPage() {
                 <div className="grid gap-4">
                   {getTrainingZones().map((zone) => {
                     const Icon = zone.icon;
+                    const isRecommended = zone.name === getRecommendedZoneName();
                     return (
                       <div
                         key={zone.percent}
-                        className={`bg-gradient-to-br ${zone.color} backdrop-blur-sm rounded-xl p-5 hover:scale-[1.02] transition-all border`}
+                        className={`bg-gradient-to-br ${zone.color} backdrop-blur-sm rounded-xl p-5 hover:scale-[1.02] transition-all border ${
+                          isRecommended ? 'ring-2 ring-yellow-400 dark:ring-yellow-500 shadow-lg shadow-yellow-500/20' : ''
+                        }`}
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-3">
@@ -264,7 +290,14 @@ export default function CalculatorPage() {
                               <Icon className="w-5 h-5 text-white dark:text-slate-900" />
                             </div>
                             <div>
-                              <h4 className="text-white dark:text-slate-900 font-bold text-lg">{zone.name}</h4>
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-white dark:text-slate-900 font-bold text-lg">{zone.name}</h4>
+                                {isRecommended && (
+                                  <span className="bg-yellow-400 dark:bg-yellow-500 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full">
+                                    ⭐ Recomendado
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-slate-300 dark:text-slate-700 text-sm">{zone.description}</p>
                             </div>
                           </div>
