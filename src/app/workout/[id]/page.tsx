@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import { Routine, WorkoutExercise, WorkoutSet, Workout } from '@/types';
 import { getExerciseById } from '@/data/exercises';
-import { Play, Pause, Check, Plus, Trash2, Timer, Save, X, History, TrendingUp, Lightbulb } from 'lucide-react';
+import { Play, Pause, Check, Plus, Trash2, Timer, Save, X, History, TrendingUp, Lightbulb, Link2 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { getProgressionSuggestion } from '@/lib/progression-suggestions';
 
@@ -286,29 +286,57 @@ export default function WorkoutPage() {
 
   const handleToggleSet = (exerciseIdx: number, setIdx: number) => {
     const updated = [...workoutExercises];
-    updated[exerciseIdx].sets[setIdx].completed = !updated[exerciseIdx].sets[setIdx].completed;
+    const isCompleting = !updated[exerciseIdx].sets[setIdx].completed;
+    updated[exerciseIdx].sets[setIdx].completed = isCompleting;
     setWorkoutExercises(updated);
 
     // Auto-iniciar descanso si completó la serie
-    if (updated[exerciseIdx].sets[setIdx].completed && !isResting) {
+    if (isCompleting && !isResting) {
+      const currentExercise = updated[exerciseIdx];
+
+      // BISERIE: Si forma parte de una biserie, alternar al otro ejercicio
+      if (currentExercise.isSupersetWith) {
+        const supersetPartnerIdx = updated.findIndex(ex => ex.exerciseId === currentExercise.isSupersetWith);
+
+        if (supersetPartnerIdx !== -1) {
+          const partnerExercise = updated[supersetPartnerIdx];
+
+          // Verificar si el ejercicio partner tiene una serie pendiente en el mismo índice
+          const partnerSet = partnerExercise.sets[setIdx];
+
+          if (partnerSet && !partnerSet.completed) {
+            // Cambiar al ejercicio de la biserie sin descanso
+            setTimeout(() => {
+              setCurrentExerciseIndex(supersetPartnerIdx);
+            }, 200);
+            return; // No iniciar descanso aún
+          } else {
+            // Si el partner ya completó esta serie, verificar si quedan más series
+            const hasMoreSets = currentExercise.sets.some((s, idx) => idx > setIdx && !s.completed) ||
+                               partnerExercise.sets.some((s, idx) => idx > setIdx && !s.completed);
+
+            if (hasMoreSets) {
+              // Hay más series, volver al primer ejercicio de la biserie
+              setTimeout(() => {
+                setCurrentExerciseIndex(Math.min(exerciseIdx, supersetPartnerIdx));
+              }, 200);
+
+              // Iniciar descanso después de completar ambas series de la biserie
+              const endTime = Date.now() + (restDuration * 1000);
+              setRestEndTime(endTime);
+              setRestTimer(restDuration);
+              setIsResting(true);
+            }
+          }
+          return;
+        }
+      }
+
+      // Si NO es biserie, descanso normal
       const endTime = Date.now() + (restDuration * 1000);
       setRestEndTime(endTime);
       setRestTimer(restDuration);
       setIsResting(true);
-
-      // Auto-avance en biseries: cambiar al otro ejercicio de la biserie
-      const currentExercise = updated[exerciseIdx];
-      if (currentExercise.isSupersetWith) {
-        // Buscar el ejercicio con el que forma biserie
-        const supersetPartnerIdx = updated.findIndex(ex => ex.exerciseId === currentExercise.isSupersetWith);
-
-        if (supersetPartnerIdx !== -1) {
-          // Cambiar al ejercicio de la biserie
-          setTimeout(() => {
-            setCurrentExerciseIndex(supersetPartnerIdx);
-          }, 100); // Pequeño delay para que se vea el cambio
-        }
-      }
     }
   };
 
@@ -514,8 +542,20 @@ export default function WorkoutPage() {
           <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-2xl font-bold text-white dark:text-slate-900">{exercise.name}</h2>
+                  {currentExercise.isSupersetWith && (() => {
+                    const partnerExercise = workoutExercises.find(ex => ex.exerciseId === currentExercise.isSupersetWith);
+                    const partnerExerciseData = partnerExercise ? getExerciseById(partnerExercise.exerciseId) : null;
+                    return (
+                      <div className="flex items-center gap-2 bg-purple-500/20 dark:bg-purple-100 border border-purple-500/50 dark:border-purple-300 px-3 py-1 rounded-full">
+                        <Link2 className="w-4 h-4 text-purple-400 dark:text-purple-600" />
+                        <span className="text-sm font-medium text-purple-300 dark:text-purple-700">
+                          Biserie con {partnerExerciseData?.name || 'otro ejercicio'}
+                        </span>
+                      </div>
+                    );
+                  })()}
                   <button
                     onClick={() => showHistory(currentExercise.exerciseId)}
                     className="p-2 text-blue-400 dark:text-blue-600 hover:text-blue-300 dark:hover:text-blue-700 hover:bg-slate-700/50 dark:hover:bg-slate-200 rounded-lg transition-colors"
