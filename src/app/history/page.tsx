@@ -5,6 +5,7 @@ import Navigation from '@/components/Navigation';
 import { Workout, WorkoutExercise, WorkoutSet } from '@/types';
 import { Calendar, Clock, Dumbbell, TrendingUp, Trash2, Edit2, Save, X, Search, Filter, SlidersHorizontal } from 'lucide-react';
 import { getExerciseById } from '@/data/exercises';
+import { formatWorkoutDuration } from '@/lib/utils';
 
 export default function HistoryPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -335,7 +336,7 @@ export default function HistoryPage() {
                   <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm text-slate-400 dark:text-slate-600">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {Math.floor(workout.duration / 60)}:{(workout.duration % 60).toString().padStart(2, '0')}
+                      {formatWorkoutDuration(workout.duration)}
                     </span>
                     <span className="flex items-center gap-1">
                       <Dumbbell className="w-3 h-3" />

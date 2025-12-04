@@ -129,3 +129,17 @@ export function calculateWorkoutStreak(workouts: any[], routines: any[]): number
 
   return streak;
 }
+
+/**
+ * Formatea la duración de un entrenamiento
+ * @param minutes - Duración en minutos
+ * @returns String formateado (ej: "45 min", "1h 30m")
+ */
+export function formatWorkoutDuration(minutes: number): string {
+  if (minutes >= 60) {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  }
+  return `${minutes} min`;
+}
