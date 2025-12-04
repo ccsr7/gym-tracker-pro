@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import { Routine, WorkoutExercise, WorkoutSet, Workout } from '@/types';
@@ -35,6 +35,9 @@ export default function WorkoutPage() {
   const [progressionSuggestion, setProgressionSuggestion] = useState<any>(null);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [exerciseIndexToReplace, setExerciseIndexToReplace] = useState<number | null>(null);
+
+  // Refs para scroll automático a las series
+  const setRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   useEffect(() => {
     // Cargar duración de descanso preferida
@@ -293,6 +296,24 @@ export default function WorkoutPage() {
     const isCompleting = !updated[exerciseIdx].sets[setIdx].completed;
     updated[exerciseIdx].sets[setIdx].completed = isCompleting;
     setWorkoutExercises(updated);
+
+    // Scroll automático a la siguiente serie si se completó
+    if (isCompleting) {
+      const nextSetIdx = setIdx + 1;
+      if (nextSetIdx < updated[exerciseIdx].sets.length) {
+        // Hay una siguiente serie, hacer scroll a ella
+        setTimeout(() => {
+          const nextSetKey = `set-${exerciseIdx}-${nextSetIdx}`;
+          const nextSetElement = setRefs.current[nextSetKey];
+          if (nextSetElement) {
+            nextSetElement.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center'
+            });
+          }
+        }, 300); // Pequeño delay para que se vea la animación de completar
+      }
+    }
 
     // Auto-iniciar descanso si completó la serie
     if (isCompleting && !isResting) {
@@ -656,6 +677,9 @@ export default function WorkoutPage() {
               {currentExercise.sets.map((set, idx) => (
                 <div
                   key={idx}
+                  ref={(el) => {
+                    setRefs.current[`set-${currentExerciseIndex}-${idx}`] = el;
+                  }}
                   className={`rounded-lg border-2 transition-all ${
                     set.completed
                       ? 'bg-emerald-500/20 border-emerald-500/50 dark:bg-emerald-100 dark:border-emerald-300'
