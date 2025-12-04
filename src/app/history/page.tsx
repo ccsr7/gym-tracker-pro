@@ -293,7 +293,7 @@ export default function HistoryPage() {
           <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-4">
             <p className="text-slate-400 dark:text-slate-600 text-sm mb-1">Tiempo Total</p>
             <p className="text-3xl font-bold text-purple-500">
-              {Math.round(workouts.reduce((acc, w) => acc + w.duration, 0) / 60)}h
+              {formatWorkoutDuration(workouts.reduce((acc, w) => acc + w.duration, 0))}
             </p>
           </div>
         </div>
