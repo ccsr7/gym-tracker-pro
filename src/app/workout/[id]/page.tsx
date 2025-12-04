@@ -297,6 +297,24 @@ export default function WorkoutPage() {
     updated[exerciseIdx].sets[setIdx].completed = isCompleting;
     setWorkoutExercises(updated);
 
+    // Verificar si es la última serie del último ejercicio
+    if (isCompleting) {
+      const isLastExercise = exerciseIdx === updated.length - 1;
+      const isLastSet = setIdx === updated[exerciseIdx].sets.length - 1;
+
+      if (isLastExercise && isLastSet) {
+        // Es la última serie del último ejercicio, preguntar si quiere finalizar
+        setTimeout(() => {
+          const shouldFinish = window.confirm(
+            '¡Has completado la última serie! ¿Deseas finalizar y guardar el entrenamiento?'
+          );
+          if (shouldFinish) {
+            handleSaveWorkout();
+          }
+        }, 500); // Pequeño delay para que se vea la animación primero
+      }
+    }
+
     // Scroll automático a la siguiente serie si se completó
     if (isCompleting) {
       const nextSetIdx = setIdx + 1;
