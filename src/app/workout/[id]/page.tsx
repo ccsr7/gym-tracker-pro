@@ -5,9 +5,11 @@ import { useRouter, useParams } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import { Routine, WorkoutExercise, WorkoutSet, Workout } from '@/types';
 import { getExerciseById } from '@/data/exercises';
-import { Play, Pause, Check, Plus, Trash2, Timer, Save, X, History, TrendingUp, Lightbulb, Link2 } from 'lucide-react';
+import { Play, Pause, Check, Plus, Trash2, Timer, Save, X, History, TrendingUp, Lightbulb, Link2, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { getProgressionSuggestion } from '@/lib/progression-suggestions';
+import ExercisePickerModal from '@/components/ExercisePickerModal';
+import { generateSetsForExercise } from '@/lib/exercise-utils';
 
 export default function WorkoutPage() {
   const router = useRouter();
@@ -31,6 +33,8 @@ export default function WorkoutPage() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historyExerciseId, setHistoryExerciseId] = useState<string | null>(null);
   const [progressionSuggestion, setProgressionSuggestion] = useState<any>(null);
+  const [showExercisePicker, setShowExercisePicker] = useState(false);
+  const [exerciseIndexToReplace, setExerciseIndexToReplace] = useState<number | null>(null);
 
   useEffect(() => {
     // Cargar duración de descanso preferida
@@ -397,6 +401,28 @@ export default function WorkoutPage() {
     setShowHistoryModal(true);
   };
 
+  const handleReplaceExercise = (newExerciseId: string) => {
+    if (exerciseIndexToReplace === null) return;
+
+    const updated = [...workoutExercises];
+    const oldExercise = updated[exerciseIndexToReplace];
+    const numSets = oldExercise.sets.length;
+
+    // Generar sets para el nuevo ejercicio (con historial o en 0)
+    const newSets = generateSetsForExercise(newExerciseId, numSets);
+
+    updated[exerciseIndexToReplace] = {
+      exerciseId: newExerciseId,
+      sets: newSets,
+      isSupersetWith: oldExercise.isSupersetWith, // Preservar biserie
+      notes: '' // Limpiar notas ya que es un ejercicio diferente
+    };
+
+    setWorkoutExercises(updated);
+    setShowExercisePicker(false);
+    setExerciseIndexToReplace(null);
+  };
+
   const handleSaveWorkout = () => {
     if (!routine) return;
 
@@ -556,6 +582,16 @@ export default function WorkoutPage() {
                       </div>
                     );
                   })()}
+                  <button
+                    onClick={() => {
+                      setExerciseIndexToReplace(currentExerciseIndex);
+                      setShowExercisePicker(true);
+                    }}
+                    className="p-2 text-emerald-400 dark:text-emerald-600 hover:text-emerald-300 dark:hover:text-emerald-700 hover:bg-slate-700/50 dark:hover:bg-slate-200 rounded-lg transition-colors"
+                    title="Cambiar ejercicio"
+                  >
+                    <RefreshCw className="w-5 h-5" />
+                  </button>
                   <button
                     onClick={() => showHistory(currentExercise.exerciseId)}
                     className="p-2 text-blue-400 dark:text-blue-600 hover:text-blue-300 dark:hover:text-blue-700 hover:bg-slate-700/50 dark:hover:bg-slate-200 rounded-lg transition-colors"
@@ -946,6 +982,20 @@ export default function WorkoutPage() {
             </div>
           );
         })()}
+
+        {/* Modal de Selección de Ejercicio */}
+        {exercise && currentExercise && (
+          <ExercisePickerModal
+            isOpen={showExercisePicker}
+            onClose={() => {
+              setShowExercisePicker(false);
+              setExerciseIndexToReplace(null);
+            }}
+            currentExerciseId={currentExercise.exerciseId}
+            onSelectExercise={handleReplaceExercise}
+            isSupersetExercise={!!currentExercise.isSupersetWith}
+          />
+        )}
       </div>
     </div>
   );
