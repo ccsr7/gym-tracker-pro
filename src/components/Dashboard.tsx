@@ -10,10 +10,13 @@ import { Routine, Workout, RoutineExercise } from '@/types';
 import { getExerciseById } from '@/data/exercises';
 import { useRouter } from 'next/navigation';
 import { getDailyRestContent } from '@/data/rest-day-content';
+import { useConfirm } from '@/hooks/useConfirm';
+import ConfirmDialog from './ui/ConfirmDialog';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const router = useRouter();
+  const { confirm, confirmState } = useConfirm();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [todayRoutine, setTodayRoutine] = useState<Routine | null>(null);
   const [weekWorkouts, setWeekWorkouts] = useState(0);
@@ -127,8 +130,18 @@ export default function Dashboard() {
     }
   };
 
-  const discardWorkout = () => {
-    if (inProgressWorkout && confirm('¿Estás seguro de que quieres descartar este entrenamiento?')) {
+  const discardWorkout = async () => {
+    if (!inProgressWorkout) return;
+
+    const shouldDiscard = await confirm({
+      title: '¿Descartar entrenamiento?',
+      message: '¿Estás seguro de que quieres descartar este entrenamiento? No podrás recuperar el progreso.',
+      confirmText: 'Descartar',
+      cancelText: 'Cancelar',
+      type: 'danger',
+    });
+
+    if (shouldDiscard) {
       const inProgressKey = `workout-in-progress-${inProgressWorkout.routineId}`;
       localStorage.removeItem(inProgressKey);
       setInProgressWorkout(null);
@@ -641,6 +654,9 @@ export default function Dashboard() {
           </div>
         </div>
       </PageTransition>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog {...confirmState} />
     </div>
   );
 }
