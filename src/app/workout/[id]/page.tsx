@@ -320,85 +320,84 @@ export default function WorkoutPage() {
     updated[exerciseIdx].sets[setIdx].completed = isCompleting;
     setWorkoutExercises(updated);
 
-    // Verificar si es la última serie del último ejercicio
-    if (isCompleting) {
-      const isLastExercise = exerciseIdx === updated.length - 1;
-      const isLastSet = setIdx === updated[exerciseIdx].sets.length - 1;
+    // Solo procesar si se está COMPLETANDO (no descompletando)
+    if (!isCompleting) return;
 
-      if (isLastExercise && isLastSet) {
-        // Es la última serie del último ejercicio, preguntar si quiere finalizar
-        setTimeout(() => {
-          const shouldFinish = window.confirm(
-            '¡Has completado la última serie! ¿Deseas finalizar y guardar el entrenamiento?'
-          );
-          if (shouldFinish) {
-            handleSaveWorkout();
-          }
-        }, 500); // Pequeño delay para que se vea la animación primero
-      }
-    }
+    const currentExercise = updated[exerciseIdx];
 
-    // Scroll automático a la siguiente serie si se completó
-    if (isCompleting) {
-      const nextSetIdx = setIdx + 1;
-      if (nextSetIdx < updated[exerciseIdx].sets.length) {
-        // Hay una siguiente serie, hacer scroll a ella
-        setTimeout(() => {
-          const nextSetKey = `set-${exerciseIdx}-${nextSetIdx}`;
-          const nextSetElement = setRefs.current[nextSetKey];
-          if (nextSetElement) {
-            nextSetElement.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center'
-            });
-          }
-        }, 300); // Pequeño delay para que se vea la animación de completar
-      }
-    }
+    // BISERIE: Si forma parte de una biserie, alternar al otro ejercicio
+    if (currentExercise.isSupersetWith) {
+      const supersetPartnerIdx = updated.findIndex(ex => ex.exerciseId === currentExercise.isSupersetWith);
 
-    // Auto-iniciar descanso si completó la serie
-    if (isCompleting && !isResting) {
-      const currentExercise = updated[exerciseIdx];
+      if (supersetPartnerIdx !== -1) {
+        const partnerExercise = updated[supersetPartnerIdx];
+        const partnerSet = partnerExercise.sets[setIdx];
 
-      // BISERIE: Si forma parte de una biserie, alternar al otro ejercicio
-      if (currentExercise.isSupersetWith) {
-        const supersetPartnerIdx = updated.findIndex(ex => ex.exerciseId === currentExercise.isSupersetWith);
+        // Si el partner tiene una serie pendiente en el mismo índice, cambiar a ese ejercicio
+        if (partnerSet && !partnerSet.completed) {
+          setTimeout(() => {
+            setCurrentExerciseIndex(supersetPartnerIdx);
+          }, 300);
+          return; // No iniciar descanso ni scroll, solo cambiar de ejercicio
+        } else {
+          // Ambos ejercicios completaron esta serie, verificar si hay más series
+          const hasMoreSets = currentExercise.sets.some((s, idx) => idx > setIdx && !s.completed) ||
+                             partnerExercise.sets.some((s, idx) => idx > setIdx && !s.completed);
 
-        if (supersetPartnerIdx !== -1) {
-          const partnerExercise = updated[supersetPartnerIdx];
-
-          // Verificar si el ejercicio partner tiene una serie pendiente en el mismo índice
-          const partnerSet = partnerExercise.sets[setIdx];
-
-          if (partnerSet && !partnerSet.completed) {
-            // Cambiar al ejercicio de la biserie sin descanso
-            setTimeout(() => {
-              setCurrentExerciseIndex(supersetPartnerIdx);
-            }, 200);
-            return; // No iniciar descanso aún
-          } else {
-            // Si el partner ya completó esta serie, verificar si quedan más series
-            const hasMoreSets = currentExercise.sets.some((s, idx) => idx > setIdx && !s.completed) ||
-                               partnerExercise.sets.some((s, idx) => idx > setIdx && !s.completed);
-
-            if (hasMoreSets) {
-              // Hay más series, volver al primer ejercicio de la biserie
-              setTimeout(() => {
-                setCurrentExerciseIndex(Math.min(exerciseIdx, supersetPartnerIdx));
-              }, 200);
-
-              // Iniciar descanso después de completar ambas series de la biserie
+          if (hasMoreSets) {
+            // Iniciar descanso después de completar la ronda de biserie
+            if (!isResting) {
               const endTime = Date.now() + (restDuration * 1000);
               setRestEndTime(endTime);
               setRestTimer(restDuration);
               setIsResting(true);
             }
+
+            // Volver al primer ejercicio de la biserie para la siguiente ronda
+            setTimeout(() => {
+              setCurrentExerciseIndex(Math.min(exerciseIdx, supersetPartnerIdx));
+            }, 400);
           }
           return;
         }
       }
+    }
 
-      // Si NO es biserie, descanso normal
+    // NO es biserie - comportamiento normal
+
+    // Verificar si es la última serie del último ejercicio
+    const isLastExercise = exerciseIdx === updated.length - 1;
+    const isLastSet = setIdx === updated[exerciseIdx].sets.length - 1;
+
+    if (isLastExercise && isLastSet) {
+      setTimeout(() => {
+        const shouldFinish = window.confirm(
+          '¡Has completado la última serie! ¿Deseas finalizar y guardar el entrenamiento?'
+        );
+        if (shouldFinish) {
+          handleSaveWorkout();
+        }
+      }, 500);
+      return;
+    }
+
+    // Scroll automático a la siguiente serie
+    const nextSetIdx = setIdx + 1;
+    if (nextSetIdx < updated[exerciseIdx].sets.length) {
+      setTimeout(() => {
+        const nextSetKey = `set-${exerciseIdx}-${nextSetIdx}`;
+        const nextSetElement = setRefs.current[nextSetKey];
+        if (nextSetElement) {
+          nextSetElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
+        }
+      }, 300);
+    }
+
+    // Iniciar descanso
+    if (!isResting) {
       const endTime = Date.now() + (restDuration * 1000);
       setRestEndTime(endTime);
       setRestTimer(restDuration);
