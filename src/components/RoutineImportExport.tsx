@@ -5,6 +5,9 @@ import { Routine } from '@/types';
 import { getExerciseById } from '@/data/exercises';
 import { X, Download, Upload, FileText, Copy, Check } from 'lucide-react';
 import jsPDF from 'jspdf';
+import { useConfirm } from '@/hooks/useConfirm';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { useToast } from '@/hooks/useToast';
 
 interface RoutineImportExportProps {
   onClose: () => void;
@@ -12,6 +15,9 @@ interface RoutineImportExportProps {
 }
 
 export default function RoutineImportExport({ onClose, onImport }: RoutineImportExportProps) {
+  const toast = useToast();
+  const { confirm, confirmState } = useConfirm();
+
   const [activeTab, setActiveTab] = useState<'export' | 'import'>('export');
   const [selectedRoutines, setSelectedRoutines] = useState<string[]>([]);
   const [exportCode, setExportCode] = useState('');
@@ -65,7 +71,7 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const importRoutines = () => {
+  const importRoutines = async () => {
     try {
       // Try to get data from localStorage using the short code
       const exportKey = `gym-export-${importCode.trim().toUpperCase()}`;
@@ -80,13 +86,13 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
         try {
           decoded = JSON.parse(atob(importCode));
         } catch {
-          alert('Código inválido. Verifica que el código sea correcto.');
+          toast.error('Código inválido. Verifica que el código sea correcto.');
           return;
         }
       }
 
       if (!decoded.routines || !Array.isArray(decoded.routines)) {
-        alert('Código inválido. Por favor verifica el código e intenta nuevamente.');
+        toast.error('Código inválido. Por favor verifica el código e intenta nuevamente.');
         return;
       }
 
@@ -99,7 +105,15 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
 
       if (conflicts.length > 0) {
         const conflictDays = conflicts.map((r: Routine) => r.day).join(', ');
-        if (!confirm(`Ya existen rutinas para: ${conflictDays}. ¿Deseas reemplazarlas?`)) {
+        const shouldReplace = await confirm({
+          title: 'Conflicto de rutinas',
+          message: `Ya existen rutinas para: ${conflictDays}. ¿Deseas reemplazarlas?`,
+          confirmText: 'Reemplazar',
+          cancelText: 'Cancelar',
+          type: 'warning',
+        });
+
+        if (!shouldReplace) {
           return;
         }
         // Remove conflicting routines
@@ -120,11 +134,11 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
       const updatedRoutines = [...existingRoutines, ...importedRoutines];
       localStorage.setItem('gym-tracker-routines', JSON.stringify(updatedRoutines));
 
-      alert(`${importedRoutines.length} rutina(s) importada(s) exitosamente.`);
+      toast.success(`${importedRoutines.length} rutina(s) importada(s) exitosamente`);
       onImport();
       onClose();
     } catch (error) {
-      alert('Error al importar rutinas. Verifica que el código sea válido.');
+      toast.error('Error al importar rutinas. Verifica que el código sea válido.');
       console.error(error);
     }
   };
@@ -132,7 +146,7 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
   const exportToPDF = () => {
     const selectedRoutineData = routines.filter(r => selectedRoutines.includes(r.id));
     if (selectedRoutineData.length === 0) {
-      alert('Selecciona al menos una rutina para exportar');
+      toast.warning('Selecciona al menos una rutina para exportar');
       return;
     }
 
@@ -561,6 +575,9 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
           )}
         </div>
       </div>
+
+      {/* Dialog de Confirmación */}
+      <ConfirmDialog {...confirmState} />
     </div>
   );
 }

@@ -67,50 +67,59 @@ export default function WorkoutPage() {
   });
 
   useEffect(() => {
-    // Cargar duración de descanso preferida
-    const savedRestDuration = localStorage.getItem('gym-tracker-rest-duration');
-    if (savedRestDuration) {
-      setRestDuration(parseInt(savedRestDuration));
-    }
-
-    const storedRoutines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
-    const foundRoutine = storedRoutines.find((r: Routine) => r.id === routineId);
-
-    if (foundRoutine) {
-      setRoutine(foundRoutine);
-
-      // Verificar si hay un workout en progreso para esta rutina
-      const inProgressKey = `workout-in-progress-${routineId}`;
-      const savedInProgress = localStorage.getItem(inProgressKey);
-
-      if (savedInProgress) {
-        const inProgressData = JSON.parse(savedInProgress);
-        // Preguntar si quiere continuar
-        if (confirm('Tienes un entrenamiento en progreso. ¿Quieres continuar donde lo dejaste?')) {
-          setWorkoutExercises(inProgressData.exercises);
-          setCurrentExerciseIndex(inProgressData.currentExerciseIndex || 0);
-          setStartTime(inProgressData.startTime);
-          setNotes(inProgressData.notes || '');
-          setRpe(inProgressData.rpe || 5);
-
-          // Restaurar el estado del descanso si había uno activo
-          if (inProgressData.isResting && inProgressData.restEndTime) {
-            const now = Date.now();
-            const remaining = Math.ceil((inProgressData.restEndTime - now) / 1000);
-
-            if (remaining > 0) {
-              // El descanso todavía está activo
-              setRestEndTime(inProgressData.restEndTime);
-              setRestTimer(remaining);
-              setIsResting(true);
-            }
-          }
-          return;
-        } else {
-          // Limpiar el workout en progreso si decide no continuar
-          localStorage.removeItem(inProgressKey);
-        }
+    const initializeWorkout = async () => {
+      // Cargar duración de descanso preferida
+      const savedRestDuration = localStorage.getItem('gym-tracker-rest-duration');
+      if (savedRestDuration) {
+        setRestDuration(parseInt(savedRestDuration));
       }
+
+      const storedRoutines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
+      const foundRoutine = storedRoutines.find((r: Routine) => r.id === routineId);
+
+      if (foundRoutine) {
+        setRoutine(foundRoutine);
+
+        // Verificar si hay un workout en progreso para esta rutina
+        const inProgressKey = `workout-in-progress-${routineId}`;
+        const savedInProgress = localStorage.getItem(inProgressKey);
+
+        if (savedInProgress) {
+          const inProgressData = JSON.parse(savedInProgress);
+          // Preguntar si quiere continuar
+          const shouldContinue = await showConfirmDialog({
+            title: 'Entrenamiento en progreso',
+            message: 'Tienes un entrenamiento en progreso. ¿Quieres continuar donde lo dejaste?',
+            confirmText: 'Continuar',
+            cancelText: 'Empezar de nuevo',
+            type: 'info',
+          });
+
+          if (shouldContinue) {
+            setWorkoutExercises(inProgressData.exercises);
+            setCurrentExerciseIndex(inProgressData.currentExerciseIndex || 0);
+            setStartTime(inProgressData.startTime);
+            setNotes(inProgressData.notes || '');
+            setRpe(inProgressData.rpe || 5);
+
+            // Restaurar el estado del descanso si había uno activo
+            if (inProgressData.isResting && inProgressData.restEndTime) {
+              const now = Date.now();
+              const remaining = Math.ceil((inProgressData.restEndTime - now) / 1000);
+
+              if (remaining > 0) {
+                // El descanso todavía está activo
+                setRestEndTime(inProgressData.restEndTime);
+                setRestTimer(remaining);
+                setIsResting(true);
+              }
+            }
+            return;
+          } else {
+            // Limpiar el workout en progreso si decide no continuar
+            localStorage.removeItem(inProgressKey);
+          }
+        }
 
       // Buscar el último entrenamiento de esta rutina para pre-cargar pesos
       const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
@@ -185,8 +194,11 @@ export default function WorkoutPage() {
         };
       });
       setWorkoutExercises(initialWorkout);
-    }
-  }, [routineId]);
+      }
+    };
+
+    initializeWorkout();
+  }, [routineId, showConfirmDialog]);
 
   // Timer del workout
   useEffect(() => {
@@ -530,11 +542,24 @@ export default function WorkoutPage() {
     }, 300);
   };
 
-  const handleCancelWorkout = () => {
-    if (confirm('¿Estás seguro de que quieres cancelar este entrenamiento? Se perderá todo el progreso.')) {
+  const handleCancelWorkout = async () => {
+    const shouldCancel = await showConfirmDialog({
+      title: '¿Cancelar entrenamiento?',
+      message: '¿Estás seguro de que quieres cancelar este entrenamiento? Se perderá todo el progreso.',
+      confirmText: 'Cancelar entrenamiento',
+      cancelText: 'Continuar',
+      type: 'danger',
+    });
+
+    if (shouldCancel) {
       // Limpiar el workout en progreso
       const inProgressKey = `workout-in-progress-${routineId}`;
       localStorage.removeItem(inProgressKey);
+
+      // Marcar como guardado para evitar el warning de navegación
+      setJustSaved(true);
+
+      toast.info('Entrenamiento cancelado');
       router.push('/');
     }
   };

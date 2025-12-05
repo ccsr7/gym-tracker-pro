@@ -17,11 +17,16 @@ import {
   ChevronUp,
   Link2
 } from 'lucide-react';
+import { useConfirm } from '@/hooks/useConfirm';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { useToast } from '@/hooks/useToast';
 
 export default function CreateRoutinePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedDay = searchParams?.get('day') as DayOfWeek | null;
+  const toast = useToast();
+  const { confirm, confirmState } = useConfirm();
 
   const [name, setName] = useState('');
   const [day, setDay] = useState<DayOfWeek>(preselectedDay || 'Lunes');
@@ -175,10 +180,10 @@ export default function CreateRoutinePage() {
     setSelectedExercises(newExercises);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Validar según si es día de descanso o no
     if (!isRestDay && selectedExercises.length === 0) {
-      alert('Por favor selecciona al menos un ejercicio o marca como día de descanso');
+      toast.warning('Por favor selecciona al menos un ejercicio o marca como día de descanso');
       return;
     }
 
@@ -190,7 +195,15 @@ export default function CreateRoutinePage() {
     // Check if there's already a routine for this day
     const existingIndex = routines.findIndex((r: Routine) => r.day === day);
     if (existingIndex !== -1) {
-      if (!confirm(`Ya existe una rutina para ${day}. ¿Deseas reemplazarla?`)) {
+      const shouldReplace = await confirm({
+        title: 'Rutina existente',
+        message: `Ya existe una rutina para ${day}. ¿Deseas reemplazarla?`,
+        confirmText: 'Reemplazar',
+        cancelText: 'Cancelar',
+        type: 'warning',
+      });
+
+      if (!shouldReplace) {
         return;
       }
       routines.splice(existingIndex, 1);
@@ -634,6 +647,9 @@ export default function CreateRoutinePage() {
           </div>
         </div>
       )}
+
+      {/* Dialog de Confirmación */}
+      <ConfirmDialog {...confirmState} />
     </div>
   );
 }

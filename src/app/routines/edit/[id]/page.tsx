@@ -17,11 +17,16 @@ import {
   ChevronUp,
   Link2
 } from 'lucide-react';
+import { useConfirm } from '@/hooks/useConfirm';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { useToast } from '@/hooks/useToast';
 
 export default function EditRoutinePage() {
   const router = useRouter();
   const params = useParams();
   const routineId = params?.id as string;
+  const toast = useToast();
+  const { confirm, confirmState } = useConfirm();
 
   const [name, setName] = useState('');
   const [day, setDay] = useState<DayOfWeek>('Lunes');
@@ -195,10 +200,10 @@ export default function EditRoutinePage() {
     setSupersets(newSupersets);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Validar según si es día de descanso o no
     if (!isRestDay && selectedExercises.length === 0) {
-      alert('Por favor selecciona al menos un ejercicio o marca como día de descanso');
+      toast.warning('Por favor selecciona al menos un ejercicio o marca como día de descanso');
       return;
     }
 
@@ -209,7 +214,7 @@ export default function EditRoutinePage() {
     const routineIndex = routines.findIndex((r: Routine) => r.id === routineId);
 
     if (routineIndex === -1) {
-      alert('Rutina no encontrada');
+      toast.error('Rutina no encontrada');
       return;
     }
 
@@ -220,7 +225,15 @@ export default function EditRoutinePage() {
         (r: Routine) => r.day === day && r.id !== routineId
       );
       if (conflictIndex !== -1) {
-        if (!confirm(`Ya existe una rutina para ${day}. ¿Deseas reemplazarla?`)) {
+        const shouldReplace = await confirm({
+          title: 'Rutina existente',
+          message: `Ya existe una rutina para ${day}. ¿Deseas reemplazarla?`,
+          confirmText: 'Reemplazar',
+          cancelText: 'Cancelar',
+          type: 'warning',
+        });
+
+        if (!shouldReplace) {
           return;
         }
         routines.splice(conflictIndex, 1);
@@ -250,17 +263,27 @@ export default function EditRoutinePage() {
 
     routines[routineIndex] = updatedRoutine;
     localStorage.setItem('gym-tracker-routines', JSON.stringify(routines));
+    toast.success('Rutina actualizada correctamente');
     router.push('/routines');
   };
 
-  const handleDelete = () => {
-    if (!confirm('¿Estás seguro de que deseas eliminar esta rutina?')) {
+  const handleDelete = async () => {
+    const shouldDelete = await confirm({
+      title: '¿Eliminar rutina?',
+      message: '¿Estás seguro de que deseas eliminar esta rutina? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      type: 'danger',
+    });
+
+    if (!shouldDelete) {
       return;
     }
 
     const routines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
     const updatedRoutines = routines.filter((r: Routine) => r.id !== routineId);
     localStorage.setItem('gym-tracker-routines', JSON.stringify(updatedRoutines));
+    toast.success('Rutina eliminada correctamente');
     router.push('/routines');
   };
 
@@ -663,6 +686,9 @@ export default function EditRoutinePage() {
           </div>
         </div>
       )}
+
+      {/* Dialog de Confirmación */}
+      <ConfirmDialog {...confirmState} />
     </div>
   );
 }
