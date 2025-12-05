@@ -68,6 +68,9 @@ export default function WorkoutPage() {
 
   useEffect(() => {
     const initializeWorkout = async () => {
+      // Verificar que estamos en el cliente
+      if (typeof window === 'undefined') return;
+
       // Cargar duración de descanso preferida
       const savedRestDuration = localStorage.getItem('gym-tracker-rest-duration');
       if (savedRestDuration) {

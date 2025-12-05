@@ -38,8 +38,10 @@ export default function HistoryPage() {
     setLoading(true);
     // Simular un pequeño delay para mostrar el skeleton
     setTimeout(() => {
-      const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
-      setWorkouts(storedWorkouts.reverse()); // Most recent first
+      if (typeof window !== 'undefined') {
+        const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+        setWorkouts(storedWorkouts.reverse()); // Most recent first
+      }
       setLoading(false);
     }, 300);
   };
