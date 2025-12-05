@@ -64,9 +64,9 @@ export default function WorkoutPage() {
     return shouldLeave;
   }, [showConfirmDialog]);
 
-  // Protección contra pérdida de datos
-  useBeforeUnload(hasProgress && !justSaved, 'Tienes un entrenamiento en progreso. ¿Estás seguro de que quieres salir?');
-  useNavigationGuard(hasProgress && !justSaved, handleNavigateAway);
+  // Protección contra pérdida de datos - TEMPORALMENTE DESHABILITADO PARA DEBUG
+  // useBeforeUnload(hasProgress && !justSaved, 'Tienes un entrenamiento en progreso. ¿Estás seguro de que quieres salir?');
+  // useNavigationGuard(hasProgress && !justSaved, handleNavigateAway);
 
   useEffect(() => {
     const initializeWorkout = async () => {
