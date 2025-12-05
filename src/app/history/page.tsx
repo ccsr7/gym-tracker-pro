@@ -8,9 +8,11 @@ import { getExerciseById } from '@/data/exercises';
 import { formatWorkoutDuration } from '@/lib/utils';
 import { useConfirm } from '@/hooks/useConfirm';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { useToast } from '@/hooks/useToast';
 
 export default function HistoryPage() {
   const { confirm, confirmState } = useConfirm();
+  const toast = useToast();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [filteredWorkouts, setFilteredWorkouts] = useState<Workout[]>([]);
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
@@ -99,6 +101,7 @@ export default function HistoryPage() {
 
     // Recargar la lista
     loadWorkouts();
+    toast.success('Entrenamiento eliminado correctamente');
   };
 
   const handleEditWorkout = (workout: Workout) => {

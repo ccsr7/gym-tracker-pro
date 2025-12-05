@@ -12,11 +12,13 @@ import { useRouter } from 'next/navigation';
 import { getDailyRestContent } from '@/data/rest-day-content';
 import { useConfirm } from '@/hooks/useConfirm';
 import ConfirmDialog from './ui/ConfirmDialog';
+import { useToast } from '@/hooks/useToast';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const router = useRouter();
   const { confirm, confirmState } = useConfirm();
+  const toast = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [todayRoutine, setTodayRoutine] = useState<Routine | null>(null);
   const [weekWorkouts, setWeekWorkouts] = useState(0);
@@ -145,6 +147,7 @@ export default function Dashboard() {
       const inProgressKey = `workout-in-progress-${inProgressWorkout.routineId}`;
       localStorage.removeItem(inProgressKey);
       setInProgressWorkout(null);
+      toast.success('Entrenamiento descartado');
     }
   };
 
