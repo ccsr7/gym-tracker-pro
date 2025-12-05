@@ -9,6 +9,7 @@ import { formatWorkoutDuration } from '@/lib/utils';
 import { useConfirm } from '@/hooks/useConfirm';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/hooks/useToast';
+import { SkeletonWorkoutCard } from '@/components/ui/Skeleton';
 
 export default function HistoryPage() {
   const { confirm, confirmState } = useConfirm();
@@ -17,6 +18,7 @@ export default function HistoryPage() {
   const [filteredWorkouts, setFilteredWorkouts] = useState<Workout[]>([]);
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
   const [editedWorkout, setEditedWorkout] = useState<Workout | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Filtros y búsqueda
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,8 +35,13 @@ export default function HistoryPage() {
   }, [workouts, searchTerm, selectedRoutine, dateFilter]);
 
   const loadWorkouts = () => {
-    const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
-    setWorkouts(storedWorkouts.reverse()); // Most recent first
+    setLoading(true);
+    // Simular un pequeño delay para mostrar el skeleton
+    setTimeout(() => {
+      const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+      setWorkouts(storedWorkouts.reverse()); // Most recent first
+      setLoading(false);
+    }, 300);
   };
 
   const applyFilters = () => {
@@ -314,7 +321,13 @@ export default function HistoryPage() {
 
         {/* Workouts List */}
         <div className="space-y-4">
-          {filteredWorkouts.length === 0 ? (
+          {loading ? (
+            <>
+              <SkeletonWorkoutCard />
+              <SkeletonWorkoutCard />
+              <SkeletonWorkoutCard />
+            </>
+          ) : filteredWorkouts.length === 0 ? (
             <div className="text-center py-12 bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl">
               <Search className="w-16 h-16 text-slate-600 dark:text-slate-400 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-white dark:text-slate-900 mb-2">No se encontraron entrenamientos</h3>
