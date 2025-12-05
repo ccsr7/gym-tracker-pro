@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import { Routine, WorkoutExercise, WorkoutSet, Workout } from '@/types';
@@ -11,7 +11,6 @@ import { getProgressionSuggestion } from '@/lib/progression-suggestions';
 import ExercisePickerModal from '@/components/ExercisePickerModal';
 import { generateSetsForExercise } from '@/lib/exercise-utils';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
-import { useNavigationGuard } from '@/hooks/useNavigationGuard';
 import { useConfirm } from '@/hooks/useConfirm';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/hooks/useToast';
@@ -52,21 +51,9 @@ export default function WorkoutPage() {
     ex.sets.some(set => set.completed || set.weight > 0 || set.reps > 0)
   );
 
-  // Callback memoizado para navigation guard
-  const handleNavigateAway = useCallback(async () => {
-    const shouldLeave = await showConfirmDialog({
-      title: '¿Salir del entrenamiento?',
-      message: 'Tienes un entrenamiento en progreso. Los datos se guardarán automáticamente, pero perderás el contexto actual.',
-      confirmText: 'Salir',
-      cancelText: 'Continuar entrenando',
-      type: 'warning',
-    });
-    return shouldLeave;
-  }, [showConfirmDialog]);
-
-  // Protección contra pérdida de datos - TEMPORALMENTE DESHABILITADO PARA DEBUG
-  // useBeforeUnload(hasProgress && !justSaved, 'Tienes un entrenamiento en progreso. ¿Estás seguro de que quieres salir?');
-  // useNavigationGuard(hasProgress && !justSaved, handleNavigateAway);
+  // Protección contra pérdida de datos
+  // Solo usamos useBeforeUnload porque useNavigationGuard causa problemas en iOS
+  useBeforeUnload(hasProgress && !justSaved, 'Tienes un entrenamiento en progreso. ¿Estás seguro de que quieres salir?');
 
   useEffect(() => {
     const initializeWorkout = async () => {
