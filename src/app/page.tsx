@@ -1,11 +1,27 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import Dashboard from '@/components/Dashboard';
 import Login from '@/components/Login';
+import OnboardingModal from '@/components/OnboardingModal';
+import { TrainingGoal } from '@/types';
 
 export default function Home() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user, updateUser } = useAuth();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    // Check if user is authenticated and doesn't have a training goal set
+    if (isAuthenticated && user && !user.trainingGoal) {
+      setShowOnboarding(true);
+    }
+  }, [isAuthenticated, user]);
+
+  const handleOnboardingComplete = (goal: TrainingGoal) => {
+    updateUser({ trainingGoal: goal });
+    setShowOnboarding(false);
+  };
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -23,5 +39,15 @@ export default function Home() {
     return <Login />;
   }
 
-  return <Dashboard />;
+  return (
+    <>
+      <Dashboard />
+      {showOnboarding && user && (
+        <OnboardingModal
+          userName={user.name}
+          onComplete={handleOnboardingComplete}
+        />
+      )}
+    </>
+  );
 }
