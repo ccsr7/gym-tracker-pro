@@ -86,16 +86,8 @@ export default function WorkoutPage() {
 
         if (savedInProgress) {
           const inProgressData = JSON.parse(savedInProgress);
-          // Preguntar si quiere continuar
-          const shouldContinue = await showConfirmDialog({
-            title: 'Entrenamiento en progreso',
-            message: 'Tienes un entrenamiento en progreso. ¿Quieres continuar donde lo dejaste?',
-            confirmText: 'Continuar',
-            cancelText: 'Empezar de nuevo',
-            type: 'info',
-          });
-
-          if (shouldContinue) {
+          // Preguntar si quiere continuar (usando window.confirm para no bloquear inicialización)
+          if (window.confirm('Tienes un entrenamiento en progreso. ¿Quieres continuar donde lo dejaste?')) {
             setWorkoutExercises(inProgressData.exercises);
             setCurrentExerciseIndex(inProgressData.currentExerciseIndex || 0);
             setStartTime(inProgressData.startTime);
@@ -198,7 +190,7 @@ export default function WorkoutPage() {
     };
 
     initializeWorkout();
-  }, [routineId, showConfirmDialog]);
+  }, [routineId]);
 
   // Timer del workout
   useEffect(() => {
