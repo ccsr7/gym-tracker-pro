@@ -15,6 +15,8 @@ export function useNavigationGuard(
   onNavigateAway?: () => Promise<boolean>
 ) {
   useEffect(() => {
+    // Verificar que estamos en el cliente
+    if (typeof window === 'undefined') return;
     if (!enabled || !onNavigateAway) return;
 
     // Interceptar navegación del navegador (botón atrás)

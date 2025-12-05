@@ -11,6 +11,8 @@ import { useEffect } from 'react';
  */
 export function useBeforeUnload(enabled: boolean, message?: string) {
   useEffect(() => {
+    // Verificar que estamos en el cliente
+    if (typeof window === 'undefined') return;
     if (!enabled) return;
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
