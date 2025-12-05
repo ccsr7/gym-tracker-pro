@@ -6,8 +6,11 @@ import { Workout, WorkoutExercise, WorkoutSet } from '@/types';
 import { Calendar, Clock, Dumbbell, TrendingUp, Trash2, Edit2, Save, X, Search, Filter, SlidersHorizontal } from 'lucide-react';
 import { getExerciseById } from '@/data/exercises';
 import { formatWorkoutDuration } from '@/lib/utils';
+import { useConfirm } from '@/hooks/useConfirm';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 export default function HistoryPage() {
+  const { confirm, confirmState } = useConfirm();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [filteredWorkouts, setFilteredWorkouts] = useState<Workout[]>([]);
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
@@ -77,8 +80,16 @@ export default function HistoryPage() {
     return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
   };
 
-  const handleDeleteWorkout = (workoutId: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar esta sesión de entrenamiento? Esta acción no se puede deshacer.')) {
+  const handleDeleteWorkout = async (workoutId: string) => {
+    const shouldDelete = await confirm({
+      title: '¿Eliminar entrenamiento?',
+      message: '¿Estás seguro de que deseas eliminar esta sesión de entrenamiento? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      type: 'danger',
+    });
+
+    if (!shouldDelete) {
       return;
     }
 
@@ -548,6 +559,9 @@ export default function HistoryPage() {
           </div>
         )}
       </div>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog {...confirmState} />
     </div>
   );
 }
