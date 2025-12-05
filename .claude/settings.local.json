@@ -23,7 +23,10 @@
       "Bash(git stash:*)",
       "Bash(timeout 5 bash:*)",
       "Bash(taskkill:*)",
-      "Bash(del nul)"
+      "Bash(del nul)",
+      "Bash(head:*)",
+      "Bash(grep:*)",
+      "Bash(git diff:*)"
     ],
     "deny": [],
     "ask": []

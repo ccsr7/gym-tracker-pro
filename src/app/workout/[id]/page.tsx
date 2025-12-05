@@ -10,12 +10,19 @@ import { useAuth } from '@/lib/auth-context';
 import { getProgressionSuggestion } from '@/lib/progression-suggestions';
 import ExercisePickerModal from '@/components/ExercisePickerModal';
 import { generateSetsForExercise } from '@/lib/exercise-utils';
+import { useBeforeUnload } from '@/hooks/useBeforeUnload';
+import { useNavigationGuard } from '@/hooks/useNavigationGuard';
+import { useConfirm } from '@/hooks/useConfirm';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { useToast } from '@/hooks/useToast';
 
 export default function WorkoutPage() {
   const router = useRouter();
   const params = useParams();
   const routineId = params.id as string;
   const { user } = useAuth();
+  const toast = useToast();
+  const { confirm: showConfirmDialog, confirmState } = useConfirm();
 
   const [routine, setRoutine] = useState<Routine | null>(null);
   const [workoutExercises, setWorkoutExercises] = useState<WorkoutExercise[]>([]);
@@ -35,9 +42,29 @@ export default function WorkoutPage() {
   const [progressionSuggestion, setProgressionSuggestion] = useState<any>(null);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [exerciseIndexToReplace, setExerciseIndexToReplace] = useState<number | null>(null);
+  const [justSaved, setJustSaved] = useState(false);
 
   // Refs para scroll automático a las series
   const setRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  // Detectar si hay progreso en el entrenamiento
+  const hasProgress = workoutExercises.some(ex =>
+    ex.sets.some(set => set.completed || set.weight > 0 || set.reps > 0)
+  );
+
+  // Protección contra pérdida de datos
+  useBeforeUnload(hasProgress && !justSaved, 'Tienes un entrenamiento en progreso. ¿Estás seguro de que quieres salir?');
+
+  useNavigationGuard(hasProgress && !justSaved, async () => {
+    const shouldLeave = await showConfirmDialog({
+      title: '¿Salir del entrenamiento?',
+      message: 'Tienes un entrenamiento en progreso. Los datos se guardarán automáticamente, pero perderás el contexto actual.',
+      confirmText: 'Salir',
+      cancelText: 'Continuar entrenando',
+      type: 'warning',
+    });
+    return shouldLeave;
+  });
 
   useEffect(() => {
     // Cargar duración de descanso preferida
@@ -491,7 +518,16 @@ export default function WorkoutPage() {
     const inProgressKey = `workout-in-progress-${routineId}`;
     localStorage.removeItem(inProgressKey);
 
-    router.push('/history');
+    // Marcar como guardado recientemente para evitar warnings de navegación
+    setJustSaved(true);
+
+    // Mostrar confirmación
+    toast.success('Entrenamiento guardado correctamente');
+
+    // Navegar después de un pequeño delay para que se vea el toast
+    setTimeout(() => {
+      router.push('/history');
+    }, 300);
   };
 
   const handleCancelWorkout = () => {
@@ -1038,6 +1074,9 @@ export default function WorkoutPage() {
             isSupersetExercise={!!currentExercise.isSupersetWith}
           />
         )}
+
+        {/* Dialog de Confirmación */}
+        <ConfirmDialog {...confirmState} />
       </div>
     </div>
   );
