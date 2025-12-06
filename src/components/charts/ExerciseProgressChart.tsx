@@ -2,7 +2,7 @@
 
 import { Workout } from '@/types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 import { getExerciseById } from '@/data/exercises';
 
 interface ExerciseProgressChartProps {
@@ -17,7 +17,7 @@ interface ChartDataPoint {
   totalReps: number;
 }
 
-export default function ExerciseProgressChart({ workouts, exerciseId }: ExerciseProgressChartProps) {
+function ExerciseProgressChart({ workouts, exerciseId }: ExerciseProgressChartProps) {
   const exercise = getExerciseById(exerciseId);
 
   const chartData = useMemo(() => {
@@ -142,3 +142,5 @@ export default function ExerciseProgressChart({ workouts, exerciseId }: Exercise
     </div>
   );
 }
+
+export default memo(ExerciseProgressChart);

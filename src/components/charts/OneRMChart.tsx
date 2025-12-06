@@ -2,7 +2,7 @@
 
 import { Workout } from '@/types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 import { getExerciseById } from '@/data/exercises';
 
 interface OneRMChartProps {
@@ -22,7 +22,7 @@ const calculate1RM = (weight: number, reps: number): number => {
   return weight * (36 / (37 - reps));
 };
 
-export default function OneRMChart({ workouts, exerciseId }: OneRMChartProps) {
+function OneRMChart({ workouts, exerciseId }: OneRMChartProps) {
   const exercise = getExerciseById(exerciseId);
 
   const chartData = useMemo(() => {
@@ -136,3 +136,6 @@ export default function OneRMChart({ workouts, exerciseId }: OneRMChartProps) {
     </div>
   );
 }
+
+// Memoize - Recharts rendering is expensive
+export default memo(OneRMChart);

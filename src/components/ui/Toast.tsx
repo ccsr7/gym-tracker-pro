@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, memo } from 'react';
 import { motion } from 'framer-motion';
 import { X, CheckCircle, XCircle, AlertCircle, Info } from 'lucide-react';
 
@@ -18,7 +18,7 @@ export interface ToastProps {
   };
 }
 
-export default function Toast({
+function Toast({
   id,
   message,
   type,
@@ -110,3 +110,6 @@ export default function Toast({
     </motion.div>
   );
 }
+
+// Memoize to prevent re-renders when other toasts change
+export default memo(Toast);

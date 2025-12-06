@@ -1,7 +1,5 @@
 import { Workout } from '@/types';
 import { getExerciseById } from '@/data/exercises';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 /**
  * Calcula estadísticas generales de los entrenamientos
@@ -107,8 +105,14 @@ export function exportToCSV(workouts: Workout[]): string {
 
 /**
  * Exporta los entrenamientos a formato PDF profesional
+ * Usa dynamic import para cargar jsPDF solo cuando se necesita
  */
-export function exportToPDF(workouts: Workout[]): jsPDF {
+export async function exportToPDF(workouts: Workout[]): Promise<any> {
+  // Lazy load jsPDF and autoTable
+  const [jsPDF, autoTable] = await Promise.all([
+    import('jspdf').then(mod => mod.default),
+    import('jspdf-autotable').then(mod => mod.default)
+  ]);
   const doc = new jsPDF();
   const stats = calculateStats(workouts);
   const exportDate = new Date().toLocaleDateString('es-ES', {

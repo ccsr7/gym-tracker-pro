@@ -2,13 +2,13 @@
 
 import { Workout } from '@/types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 
 interface VolumeProgressChartProps {
   workouts: Workout[];
 }
 
-export default function VolumeProgressChart({ workouts }: VolumeProgressChartProps) {
+function VolumeProgressChart({ workouts }: VolumeProgressChartProps) {
   const chartData = useMemo(() => {
     // Agrupar workouts por semana
     const weeklyData: { [key: string]: { week: string; volume: number; workouts: number } } = {};
@@ -106,3 +106,6 @@ export default function VolumeProgressChart({ workouts }: VolumeProgressChartPro
     </div>
   );
 }
+
+// Memoize - Recharts rendering is expensive
+export default memo(VolumeProgressChart);

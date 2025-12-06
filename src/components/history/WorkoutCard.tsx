@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Workout } from '@/types';
 import {
   Calendar,
@@ -25,7 +25,7 @@ interface WorkoutCardProps {
   onCompare?: (workoutId: string) => void;
 }
 
-export default function WorkoutCard({ workout, onEdit, onDelete, onCompare }: WorkoutCardProps) {
+function WorkoutCard({ workout, onEdit, onDelete, onCompare }: WorkoutCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const formatDate = (dateString: string) => {
@@ -245,3 +245,6 @@ export default function WorkoutCard({ workout, onEdit, onDelete, onCompare }: Wo
     </div>
   );
 }
+
+// Memoize to prevent unnecessary re-renders when parent updates
+export default memo(WorkoutCard);

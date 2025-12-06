@@ -209,13 +209,13 @@ export default function StatsPage() {
     downloadFile(csvContent, filename, 'text/csv;charset=utf-8;');
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     if (workouts.length === 0) {
       alert('No hay datos para exportar');
       return;
     }
 
-    const pdf = exportToPDF(workouts);
+    const pdf = await exportToPDF(workouts);
     const filename = generateFilename('pdf');
     pdf.save(filename);
   };

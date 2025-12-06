@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Routine } from '@/types';
 import { getExerciseById } from '@/data/exercises';
 import { X, Download, Upload, FileText, Copy, Check } from 'lucide-react';
-import jsPDF from 'jspdf';
 import { useConfirm } from '@/hooks/useConfirm';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/hooks/useToast';
@@ -143,13 +142,15 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
     }
   };
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     const selectedRoutineData = routines.filter(r => selectedRoutines.includes(r.id));
     if (selectedRoutineData.length === 0) {
       toast.warning('Selecciona al menos una rutina para exportar');
       return;
     }
 
+    // Lazy load jsPDF only when needed
+    const jsPDF = await import('jspdf').then(mod => mod.default);
     const doc = new jsPDF();
 
     // Color palette matching the app
