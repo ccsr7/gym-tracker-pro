@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
+import { storageService, STORAGE_KEYS } from './storage-service';
 
 type Theme = 'light' | 'dark';
 
@@ -17,32 +18,41 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    const storedTheme = localStorage.getItem('gym-tracker-theme') as Theme;
+    const storedTheme = storageService.get<Theme>(STORAGE_KEYS.SETTINGS + '-theme', 'dark');
+    setTheme(storedTheme);
+
     if (storedTheme === 'light') {
-      setTheme('light');
       document.documentElement.classList.remove('dark');
     } else {
-      setTheme('dark');
       document.documentElement.classList.add('dark');
     }
   }, []);
 
-  const toggleTheme = () => {
-    if (theme === 'dark') {
-      setTheme('light');
-      localStorage.setItem('gym-tracker-theme', 'light');
-      document.documentElement.classList.remove('dark');
-    } else {
-      setTheme('dark');
-      localStorage.setItem('gym-tracker-theme', 'dark');
-      document.documentElement.classList.add('dark');
-    }
-  };
+  const toggleTheme = useCallback(() => {
+    setTheme(prevTheme => {
+      const newTheme = prevTheme === 'dark' ? 'light' : 'dark';
+      storageService.set(STORAGE_KEYS.SETTINGS + '-theme', newTheme);
+
+      if (newTheme === 'light') {
+        document.documentElement.classList.remove('dark');
+      } else {
+        document.documentElement.classList.add('dark');
+      }
+
+      return newTheme;
+    });
+  }, []);
+
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(
+    () => ({ theme, toggleTheme }),
+    [theme, toggleTheme]
+  );
 
   if (!mounted) return null;
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={contextValue}>
       {children}
     </ThemeContext.Provider>
   );

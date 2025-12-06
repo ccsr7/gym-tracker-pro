@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { Dumbbell, Info } from 'lucide-react';
+import { storageService, STORAGE_KEYS } from '@/lib/storage-service';
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
@@ -10,52 +11,56 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { login, register } = useAuth();
 
   // Create demo account on first load if no users exist
   useEffect(() => {
-    const users = JSON.parse(localStorage.getItem('gym-tracker-users') || '[]');
+    const users = storageService.get<any[]>(STORAGE_KEYS.USERS, []);
     if (users.length === 0) {
+      // Create demo user with plaintext password - will be migrated to hash on first login
       const demoUser = {
         name: 'Usuario Demo',
         email: 'demo@gym.com',
         password: 'demo123'
       };
-      localStorage.setItem('gym-tracker-users', JSON.stringify([demoUser]));
+      storageService.set(STORAGE_KEYS.USERS, [demoUser]);
     }
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
-    if (isLogin) {
-      if (!email || !password) {
-        setError('Por favor completa todos los campos');
-        return;
+    try {
+      if (isLogin) {
+        const result = await login(email, password);
+        if (!result.success) {
+          setError(result.error || 'Error al iniciar sesión');
+        }
+      } else {
+        const result = await register(name, email, password);
+        if (!result.success) {
+          setError(result.error || 'Error al registrar');
+        }
       }
-      const success = login(email, password);
-      if (!success) {
-        setError('Email o contraseña incorrectos');
-      }
-    } else {
-      if (!name || !email || !password) {
-        setError('Todos los campos son obligatorios');
-        return;
-      }
-      if (password.length < 6) {
-        setError('La contraseña debe tener al menos 6 caracteres');
-        return;
-      }
-      const success = register(name, email, password);
-      if (!success) {
-        setError('Este email ya está registrado');
-      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleDemoLogin = () => {
-    login('demo@gym.com', 'demo123');
+  const handleDemoLogin = async () => {
+    setError('');
+    setIsLoading(true);
+    try {
+      const result = await login('demo@gym.com', 'demo123');
+      if (!result.success) {
+        setError(result.error || 'Error al iniciar sesión');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -127,9 +132,10 @@ export default function Login() {
 
             <button
               type="submit"
-              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+              disabled={isLoading}
+              className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors"
             >
-              {isLogin ? 'Iniciar Sesión' : 'Registrarse'}
+              {isLoading ? 'Cargando...' : (isLogin ? 'Iniciar Sesión' : 'Registrarse')}
             </button>
           </form>
 
@@ -167,9 +173,10 @@ export default function Login() {
               <button
                 type="button"
                 onClick={handleDemoLogin}
-                className="w-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 text-emerald-300 font-medium py-2 px-4 rounded-lg transition-colors text-sm"
+                disabled={isLoading}
+                className="w-full bg-emerald-500/20 hover:bg-emerald-500/30 disabled:bg-slate-700 disabled:cursor-not-allowed border border-emerald-500/50 text-emerald-300 disabled:text-slate-500 font-medium py-2 px-4 rounded-lg transition-colors text-sm"
               >
-                Usar Cuenta Demo
+                {isLoading ? 'Cargando...' : 'Usar Cuenta Demo'}
               </button>
             </div>
           )}
