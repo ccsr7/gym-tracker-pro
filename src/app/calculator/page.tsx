@@ -197,6 +197,8 @@ export default function CalculatorPage() {
               </label>
               <input
                 type="number"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
                 onKeyPress={handleKeyPress}
@@ -213,12 +215,15 @@ export default function CalculatorPage() {
               </label>
               <input
                 type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={reps}
                 onChange={(e) => setReps(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="5"
                 min="1"
                 max="12"
+                step="1"
                 className="w-full px-4 py-4 bg-slate-700/50 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 text-lg placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
               />
             </div>

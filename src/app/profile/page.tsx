@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import PageTransition from '@/components/PageTransition';
 import { useAuth } from '@/lib/auth-context';
+import { useToast } from '@/lib/toast-context';
 import { calculateBMI, getBMICategory } from '@/lib/utils';
 import { User as UserIcon, Scale, Ruler, Activity, LogOut, Edit, Calendar, Clock, Dumbbell, TrendingUp, History } from 'lucide-react';
 import { Workout } from '@/types';
@@ -12,6 +13,7 @@ import { getExerciseById } from '@/data/exercises';
 
 export default function ProfilePage() {
   const { user, updateUser, logout } = useAuth();
+  const toast = useToast();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState('');
@@ -69,10 +71,12 @@ export default function ProfilePage() {
       trainingGoal,
     });
     setIsEditing(false);
+    toast.success('Perfil actualizado correctamente');
   };
 
   const handleLogout = () => {
     logout();
+    toast.info('Sesión cerrada');
     router.push('/');
   };
 
@@ -160,6 +164,9 @@ export default function ProfilePage() {
                 </label>
                 <input
                   type="number"
+                  inputMode="decimal"
+                  pattern="[0-9]*"
+                  step="0.1"
                   value={weight}
                   onChange={(e) => setWeight(e.target.value)}
                   className="w-full px-4 py-3 bg-slate-700/50 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -172,6 +179,9 @@ export default function ProfilePage() {
                 </label>
                 <input
                   type="number"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  step="1"
                   value={height}
                   onChange={(e) => setHeight(e.target.value)}
                   className="w-full px-4 py-3 bg-slate-700/50 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"

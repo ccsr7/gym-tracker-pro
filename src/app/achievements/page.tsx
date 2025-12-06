@@ -53,11 +53,12 @@ export default function AchievementsPage() {
   const categoryStats = Object.keys(categoryNames).map(cat => {
     const catAchievements = achievements.filter(a => a.category === cat);
     const unlocked = catAchievements.filter(a => a.unlocked).length;
+    const total = catAchievements.length;
     return {
       category: cat,
-      total: catAchievements.length,
+      total,
       unlocked,
-      percentage: Math.round((unlocked / catAchievements.length) * 100)
+      percentage: total > 0 ? Math.round((unlocked / total) * 100) : 0
     };
   });
 

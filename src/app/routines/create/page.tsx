@@ -224,7 +224,8 @@ export default function CreateRoutinePage() {
 
     routines.push(newRoutine);
     localStorage.setItem('gym-tracker-routines', JSON.stringify(routines));
-    router.push('/routines');
+    toast.success(`Rutina "${finalName}" creada correctamente`);
+    setTimeout(() => router.push('/routines'), 300);
   };
 
   const isInSuperset = (index: number) => {

@@ -773,6 +773,9 @@ export default function WorkoutPage() {
                         <label className="text-sm text-slate-400 dark:text-slate-600 block mb-2 font-medium">Peso (kg)</label>
                         <input
                           type="number"
+                          inputMode="decimal"
+                          pattern="[0-9]*"
+                          step="0.5"
                           value={set.weight === 0 ? '' : set.weight}
                           onChange={(e) => {
                             const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
@@ -791,6 +794,9 @@ export default function WorkoutPage() {
                         <label className="text-sm text-slate-400 dark:text-slate-600 block mb-2 font-medium">Reps</label>
                         <input
                           type="number"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          step="1"
                           value={set.reps === 0 ? '' : set.reps}
                           onChange={(e) => {
                             const value = e.target.value === '' ? 0 : parseInt(e.target.value);
