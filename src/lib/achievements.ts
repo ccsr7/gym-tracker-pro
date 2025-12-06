@@ -1,4 +1,5 @@
 import { Workout } from '@/types';
+import { storageService, STORAGE_KEYS } from './storage-service';
 
 export interface Achievement {
   id: string;
@@ -157,8 +158,8 @@ export const ACHIEVEMENTS: Omit<Achievement, 'unlocked' | 'unlockedDate'>[] = [
  * Calcula el progreso de cada logro basado en los entrenamientos
  */
 export function calculateAchievements(workouts: Workout[]): Achievement[] {
-  // Cargar logros desbloqueados del localStorage
-  const unlockedAchievements = JSON.parse(localStorage.getItem('gym-tracker-achievements') || '{}');
+  // Cargar logros desbloqueados usando StorageService
+  const unlockedAchievements = storageService.get<Record<string, string>>(STORAGE_KEYS.ACHIEVEMENTS, {});
 
   return ACHIEVEMENTS.map(achievement => {
     const unlocked = unlockedAchievements[achievement.id];
@@ -192,7 +193,7 @@ export function calculateAchievements(workouts: Workout[]): Achievement[] {
     // Si el logro se acaba de desbloquear, guardarlo
     if (isUnlocked && !unlocked) {
       unlockedAchievements[achievement.id] = new Date().toISOString();
-      localStorage.setItem('gym-tracker-achievements', JSON.stringify(unlockedAchievements));
+      storageService.set(STORAGE_KEYS.ACHIEVEMENTS, unlockedAchievements);
     }
 
     return {
