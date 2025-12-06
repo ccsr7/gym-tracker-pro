@@ -206,9 +206,16 @@ export function calculateAchievements(workouts: Workout[]): Achievement[] {
 
 /**
  * Calcula la racha actual de entrenamientos consecutivos
+ * Incluye días de descanso planificados como días válidos
  */
 function calculateCurrentStreak(workouts: Workout[]): number {
   if (workouts.length === 0) return 0;
+
+  // Cargar días de descanso planificados
+  const restDays = storageService.get<any[]>(STORAGE_KEYS.REST_DAYS, []);
+  const restDatesSet = new Set(
+    restDays.map(rd => new Date(rd.date).toISOString().split('T')[0])
+  );
 
   const sortedWorkouts = [...workouts].sort((a, b) =>
     new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -225,7 +232,25 @@ function calculateCurrentStreak(workouts: Workout[]): number {
       streak++;
       currentDate = workoutDate;
     } else if (daysDiff > 1) {
-      break;
+      // Check if the gap days are rest days
+      let allRestDays = true;
+      for (let d = 1; d < daysDiff; d++) {
+        const checkDate = new Date(currentDate);
+        checkDate.setDate(checkDate.getDate() - d);
+        const dateStr = checkDate.toISOString().split('T')[0];
+
+        if (!restDatesSet.has(dateStr)) {
+          allRestDays = false;
+          break;
+        }
+      }
+
+      if (allRestDays) {
+        streak++;
+        currentDate = workoutDate;
+      } else {
+        break;
+      }
     }
   }
 

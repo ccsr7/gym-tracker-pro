@@ -68,10 +68,21 @@ export function getDayInitial(day: string): string {
 
 /**
  * Calcula la racha actual de entrenamientos consecutivos
- * La racha se rompe si se pierde un día de entrenamiento programado (no cuenta días de descanso)
+ * La racha se rompe si se pierde un día de entrenamiento programado
+ * Los días de descanso (rutina) y días de descanso planificados NO rompen la racha
  */
 export function calculateWorkoutStreak(workouts: any[], routines: any[]): number {
   if (workouts.length === 0 || routines.length === 0) return 0;
+
+  // Cargar días de descanso planificados desde localStorage
+  let restDays: any[] = [];
+  try {
+    if (typeof window !== 'undefined') {
+      restDays = JSON.parse(localStorage.getItem('gym-tracker-rest-days') || '[]');
+    }
+  } catch (e) {
+    restDays = [];
+  }
 
   // Ordenar workouts por fecha descendente (más reciente primero)
   const sortedWorkouts = [...workouts].sort((a, b) =>
@@ -103,6 +114,15 @@ export function calculateWorkoutStreak(workouts: any[], routines: any[]): number
     })
   );
 
+  // Crear un Set de fechas con días de descanso planificados (formato YYYY-MM-DD)
+  const plannedRestDates = new Set(
+    restDays.map((rd: any) => {
+      const date = new Date(rd.date);
+      date.setHours(0, 0, 0, 0);
+      return date.toISOString().split('T')[0];
+    })
+  );
+
   // Iterar hacia atrás desde hoy hasta encontrar un día de entrenamiento perdido
   for (let i = 0; i < 365; i++) { // Límite de 365 días para evitar loops infinitos
     const checkDate = new Date(currentDate);
@@ -115,16 +135,21 @@ export function calculateWorkoutStreak(workouts: any[], routines: any[]): number
       // Si hay un entrenamiento completado en esta fecha
       if (completedDates.has(dateStr)) {
         streak++;
-      } else {
+      }
+      // Si es un día de descanso planificado, NO romper la racha
+      else if (plannedRestDates.has(dateStr)) {
+        streak++; // Los días de descanso planificados cuentan como días válidos
+      }
+      else {
         // Si es hoy o en el futuro, no romper la racha aún
         if (checkDate.getTime() >= new Date().setHours(0, 0, 0, 0)) {
           continue;
         }
-        // Si es en el pasado y no se completó, se rompe la racha
+        // Si es en el pasado y no se completó ni se marcó como descanso, se rompe la racha
         break;
       }
     }
-    // Si no es un día programado (día de descanso), continuar sin afectar la racha
+    // Si no es un día programado (día de descanso en rutina), continuar sin afectar la racha
   }
 
   return streak;

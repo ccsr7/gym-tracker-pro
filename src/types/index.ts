@@ -62,3 +62,19 @@ export interface Workout {
 }
 
 export type DayOfWeek = 'Lunes' | 'Martes' | 'Miércoles' | 'Jueves' | 'Viernes' | 'Sábado' | 'Domingo';
+
+export type RestDayReason =
+  | 'gym-closed'      // Gimnasio cerrado (feriado, mantenimiento)
+  | 'active-rest'     // Descanso activo planificado
+  | 'injury'          // Lesión o molestia
+  | 'personal'        // Motivos personales
+  | 'deload'          // Semana de descarga
+  | 'other';          // Otro motivo
+
+export interface RestDay {
+  id: string;
+  date: string;           // ISO string de la fecha
+  reason: RestDayReason;
+  notes?: string;         // Notas adicionales
+  createdAt: string;      // Timestamp de creación
+}

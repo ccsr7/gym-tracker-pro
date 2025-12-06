@@ -16,6 +16,7 @@ const STORAGE_KEYS = {
   ROUTINES: 'gym-tracker-routines',
   ACHIEVEMENTS: 'gym-tracker-achievements',
   SETTINGS: 'gym-tracker-settings',
+  REST_DAYS: 'gym-tracker-rest-days',
 } as const;
 
 const BACKUP_PREFIX = 'gym-tracker-backup-';

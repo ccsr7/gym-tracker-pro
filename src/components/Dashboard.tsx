@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { getSpanishDay, calculateWorkoutStreak } from '@/lib/utils';
-import { Flame, Target, Calendar, Play, Dumbbell, BarChart3, Trophy, TrendingUp, Clock, X, Sparkles, ChevronRight, Zap } from 'lucide-react';
+import { Flame, Target, Calendar, Play, Dumbbell, BarChart3, Trophy, TrendingUp, Clock, X, Sparkles, ChevronRight, Zap, Coffee } from 'lucide-react';
 import Navigation from './Navigation';
 import PageTransition, { StaggerContainer, StaggerItem, ScaleCard } from './PageTransition';
 import { Routine, Workout, RoutineExercise } from '@/types';
@@ -13,6 +13,7 @@ import { getDailyRestContent } from '@/data/rest-day-content';
 import { useConfirm } from '@/hooks/useConfirm';
 import ConfirmDialog from './ui/ConfirmDialog';
 import { useToast } from '@/hooks/useToast';
+import RestDayModal from './RestDayModal';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -28,6 +29,7 @@ export default function Dashboard() {
   const [inProgressWorkout, setInProgressWorkout] = useState<{ routineId: string; routineName: string } | null>(null);
   const [lastCompletedWorkout, setLastCompletedWorkout] = useState<Workout | null>(null);
   const [showWorkoutSummary, setShowWorkoutSummary] = useState(false);
+  const [showRestDayModal, setShowRestDayModal] = useState(false);
 
   useEffect(() => {
     setCurrentDate(new Date());
@@ -365,14 +367,24 @@ export default function Dashboard() {
                 )}
               </div>
 
-              {/* Start Button */}
-              <button
-                onClick={startWorkout}
-                className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-6 py-3 md:py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-emerald-500/50"
-              >
-                <Play className="w-5 h-5" />
-                Iniciar Entrenamiento
-              </button>
+              {/* Action Buttons */}
+              <div className="space-y-3">
+                <button
+                  onClick={startWorkout}
+                  className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-6 py-3 md:py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-emerald-500/50"
+                >
+                  <Play className="w-5 h-5" />
+                  Iniciar Entrenamiento
+                </button>
+
+                <button
+                  onClick={() => setShowRestDayModal(true)}
+                  className="w-full bg-slate-700/50 dark:bg-slate-200 hover:bg-slate-700 dark:hover:bg-slate-300 border border-slate-600/50 dark:border-slate-300 text-slate-300 dark:text-slate-700 px-4 py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-all"
+                >
+                  <Coffee className="w-4 h-4" />
+                  <span className="text-sm">Marcar Día de Descanso</span>
+                </button>
+              </div>
             </div>
           ) : (
             <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 dark:from-blue-100 dark:to-purple-100 backdrop-blur-sm border border-blue-500/30 dark:border-blue-300 rounded-xl p-6 md:p-8 mb-6">
@@ -660,6 +672,17 @@ export default function Dashboard() {
 
       {/* Confirm Dialog */}
       <ConfirmDialog {...confirmState} />
+
+      {/* Rest Day Modal */}
+      {showRestDayModal && (
+        <RestDayModal
+          onClose={() => setShowRestDayModal(false)}
+          onSuccess={() => {
+            loadStats();
+            toast.success('Día de descanso marcado correctamente');
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
-import { Workout } from '@/types';
+import { Workout, RestDay } from '@/types';
 import { Calendar, Clock, Dumbbell, TrendingUp, Trash2, Edit2, Save, X, Search, SlidersHorizontal } from 'lucide-react';
 import { getExerciseById } from '@/data/exercises';
 import { formatWorkoutDuration } from '@/lib/utils';
@@ -12,15 +12,21 @@ import { useToast } from '@/hooks/useToast';
 import { SkeletonWorkoutCard } from '@/components/ui/Skeleton';
 import WorkoutCard from '@/components/history/WorkoutCard';
 import CompareWorkouts from '@/components/history/CompareWorkouts';
+import RestDayCard from '@/components/history/RestDayCard';
+import RestDayModal from '@/components/RestDayModal';
+import { storageService, STORAGE_KEYS } from '@/lib/storage-service';
 
 export default function HistoryPage() {
   const { confirm, confirmState } = useConfirm();
   const toast = useToast();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [restDays, setRestDays] = useState<RestDay[]>([]);
   const [filteredWorkouts, setFilteredWorkouts] = useState<Workout[]>([]);
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
   const [editedWorkout, setEditedWorkout] = useState<Workout | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editingRestDay, setEditingRestDay] = useState<RestDay | null>(null);
+  const [showRestDayModal, setShowRestDayModal] = useState(false);
 
   // Comparación
   const [comparingWorkout1, setComparingWorkout1] = useState<Workout | null>(null);
@@ -45,7 +51,9 @@ export default function HistoryPage() {
     setTimeout(() => {
       if (typeof window !== 'undefined') {
         const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+        const storedRestDays = storageService.get<RestDay[]>(STORAGE_KEYS.REST_DAYS, []);
         setWorkouts(storedWorkouts.reverse());
+        setRestDays(storedRestDays);
       }
       setLoading(false);
     }, 300);
@@ -100,6 +108,28 @@ export default function HistoryPage() {
 
     loadWorkouts();
     toast.success('Entrenamiento eliminado correctamente');
+  };
+
+  const handleDeleteRestDay = async (restDayId: string) => {
+    const shouldDelete = await confirm({
+      title: '¿Eliminar día de descanso?',
+      message: '¿Estás seguro de que deseas eliminar este día de descanso?',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      type: 'danger',
+    });
+
+    if (!shouldDelete) return;
+
+    const updatedRestDays = restDays.filter((rd) => rd.id !== restDayId);
+    storageService.set(STORAGE_KEYS.REST_DAYS, updatedRestDays);
+    loadWorkouts();
+    toast.success('Día de descanso eliminado');
+  };
+
+  const handleEditRestDay = (restDay: RestDay) => {
+    setEditingRestDay(restDay);
+    setShowRestDayModal(true);
   };
 
   const handleEditWorkout = (workout: Workout) => {
@@ -345,15 +375,35 @@ export default function HistoryPage() {
               </p>
             </div>
           ) : (
-            filteredWorkouts.map((workout) => (
-              <WorkoutCard
-                key={workout.id}
-                workout={workout}
-                onEdit={handleEditWorkout}
-                onDelete={handleDeleteWorkout}
-                onCompare={handleCompareWorkout}
-              />
-            ))
+            (() => {
+              // Combinar workouts y rest days en una sola lista ordenada por fecha
+              const combined: Array<{ type: 'workout' | 'restDay'; data: Workout | RestDay; date: string }> = [
+                ...filteredWorkouts.map(w => ({ type: 'workout' as const, data: w, date: w.date })),
+                ...restDays.map(rd => ({ type: 'restDay' as const, data: rd, date: rd.date }))
+              ];
+
+              // Ordenar por fecha descendente (más reciente primero)
+              combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+              return combined.map((item, index) =>
+                item.type === 'workout' ? (
+                  <WorkoutCard
+                    key={`workout-${(item.data as Workout).id}`}
+                    workout={item.data as Workout}
+                    onEdit={handleEditWorkout}
+                    onDelete={handleDeleteWorkout}
+                    onCompare={handleCompareWorkout}
+                  />
+                ) : (
+                  <RestDayCard
+                    key={`restday-${(item.data as RestDay).id}`}
+                    restDay={item.data as RestDay}
+                    onEdit={handleEditRestDay}
+                    onDelete={handleDeleteRestDay}
+                  />
+                )
+              );
+            })()
           )}
         </div>
 
@@ -490,6 +540,24 @@ export default function HistoryPage() {
           onSelectWorkout2={handleSelectWorkout2}
         />
       )}
+
+      {/* Rest Day Modal */}
+      {showRestDayModal && (
+        <RestDayModal
+          onClose={() => {
+            setShowRestDayModal(false);
+            setEditingRestDay(null);
+          }}
+          onSuccess={() => {
+            loadWorkouts();
+            toast.success(editingRestDay ? 'Día de descanso actualizado' : 'Día de descanso marcado correctamente');
+          }}
+          editingRestDay={editingRestDay || undefined}
+        />
+      )}
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog {...confirmState} />
     </div>
   );
 }
