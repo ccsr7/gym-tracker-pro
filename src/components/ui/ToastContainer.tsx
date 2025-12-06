@@ -14,7 +14,7 @@ export default function ToastContainer({ toasts, onClose }: ToastContainerProps)
 
   return createPortal(
     <div
-      className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"
+      className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"
       aria-live="polite"
       aria-atomic="false"
     >
