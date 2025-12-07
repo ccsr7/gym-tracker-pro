@@ -7,12 +7,14 @@ import { storageService, STORAGE_KEYS } from '@/lib/storage-service';
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login, register } = useAuth();
+  const { login, register, resetPassword } = useAuth();
 
   // Create demo account on first load if no users exist
   useEffect(() => {
@@ -63,6 +65,25 @@ export default function Login() {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMessage('');
+    setIsLoading(true);
+
+    try {
+      const result = await resetPassword(email);
+      if (result.success) {
+        setSuccessMessage('Se ha enviado un correo de recuperación a tu email');
+        setEmail('');
+      } else {
+        setError(result.error || 'Error al enviar el correo');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       <div className="w-full max-w-md p-8">
@@ -77,10 +98,63 @@ export default function Login() {
             Gym Tracker Pro
           </h1>
           <p className="text-center text-slate-400 mb-8">
-            {isLogin ? 'Inicia sesión para continuar' : 'Crea tu cuenta'}
+            {showForgotPassword ? 'Recupera tu contraseña' : (isLogin ? 'Inicia sesión para continuar' : 'Crea tu cuenta')}
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {showForgotPassword ? (
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder-slate-400"
+                  placeholder="tu@email.com"
+                  autoComplete="email"
+                  required
+                />
+              </div>
+
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+
+              {successMessage && (
+                <div className="bg-emerald-500/10 border border-emerald-500/50 text-emerald-400 px-4 py-3 rounded-lg text-sm">
+                  {successMessage}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors"
+              >
+                {isLoading ? 'Enviando...' : 'Enviar Correo de Recuperación'}
+              </button>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setError('');
+                    setSuccessMessage('');
+                    setEmail('');
+                  }}
+                  className="text-emerald-400 hover:text-emerald-300 text-sm"
+                >
+                  Volver al inicio de sesión
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -138,24 +212,45 @@ export default function Login() {
               {isLoading ? 'Cargando...' : (isLogin ? 'Iniciar Sesión' : 'Registrarse')}
             </button>
           </form>
+          )}
 
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setError('');
-                setName('');
-                setEmail('');
-                setPassword('');
-              }}
-              className="text-emerald-400 hover:text-emerald-300 text-sm"
-            >
-              {isLogin ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
-            </button>
-          </div>
+          {!showForgotPassword && (
+            <>
+              <div className="mt-6 text-center space-y-2">
+                <button
+                  onClick={() => {
+                    setIsLogin(!isLogin);
+                    setError('');
+                    setSuccessMessage('');
+                    setName('');
+                    setEmail('');
+                    setPassword('');
+                  }}
+                  className="text-emerald-400 hover:text-emerald-300 text-sm block w-full"
+                >
+                  {isLogin ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
+                </button>
+
+                {isLogin && (
+                  <button
+                    onClick={() => {
+                      setShowForgotPassword(true);
+                      setError('');
+                      setSuccessMessage('');
+                      setEmail('');
+                      setPassword('');
+                    }}
+                    className="text-slate-400 hover:text-slate-300 text-sm block w-full"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </button>
+                )}
+              </div>
+            </>
+          )}
 
           {/* Demo Account Info */}
-          {isLogin && (
+          {isLogin && !showForgotPassword && (
             <div className="mt-6 bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
               <div className="flex gap-3 items-start mb-3">
                 <Info className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />

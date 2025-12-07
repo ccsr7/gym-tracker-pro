@@ -12,6 +12,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   updateUser: (updates: Partial<User>) => Promise<void>;
+  resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
@@ -241,11 +242,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const resetPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      // Validate email
+      const emailValidation = validateEmail(email);
+      if (!emailValidation.isValid) {
+        return { success: false, error: emailValidation.error };
+      }
+
+      // Send password reset email via Supabase
+      const { error } = await supabase.auth.resetPasswordForEmail(emailValidation.value, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        console.error('[Auth] Reset password error:', error);
+        return { success: false, error: 'Error al enviar el correo de recuperación' };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('[Auth] Reset password error:', error);
+      return { success: false, error: 'Error al enviar el correo de recuperación' };
+    }
+  };
+
   const isAuthenticated = user !== null;
 
   // Memoize context value to prevent unnecessary re-renders
   const contextValue = useMemo(
-    () => ({ user, login, register, logout, updateUser, isAuthenticated, isLoading }),
+    () => ({ user, login, register, logout, updateUser, resetPassword, isAuthenticated, isLoading }),
     [user, isAuthenticated, isLoading]
   );
 
