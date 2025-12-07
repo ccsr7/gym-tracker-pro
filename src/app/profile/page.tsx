@@ -7,11 +7,12 @@ import PageTransition from '@/components/PageTransition';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
 import { calculateBMI, getBMICategory } from '@/lib/utils';
-import { User as UserIcon, Scale, Ruler, Activity, LogOut, Edit, Calendar, Clock, Dumbbell, TrendingUp, History } from 'lucide-react';
+import { User as UserIcon, Scale, Ruler, Activity, LogOut, Edit, Calendar, Clock, Dumbbell, TrendingUp, History, Database } from 'lucide-react';
 import { Workout } from '@/types';
 import { getExerciseById } from '@/data/exercises';
 import { getWorkouts, getWorkoutsByDateRange } from '@/lib/supabase/services';
 import { supabase } from '@/lib/supabase/client';
+import MigrationModal from '@/components/MigrationModal';
 
 export default function ProfilePage() {
   const { user, updateUser, logout } = useAuth();
@@ -27,6 +28,7 @@ export default function ProfilePage() {
   const [totalWorkouts, setTotalWorkouts] = useState(0);
   const [totalVolume, setTotalVolume] = useState(0);
   const [thisWeekWorkouts, setThisWeekWorkouts] = useState(0);
+  const [showMigrationModal, setShowMigrationModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -480,16 +482,36 @@ export default function ProfilePage() {
             </button>
           </div>
         ) : (
-          <button
-            onClick={handleLogout}
-            className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-          >
-            <LogOut className="w-4 h-4" />
-            Cerrar Sesión
-          </button>
+          <>
+            <button
+              onClick={() => setShowMigrationModal(true)}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 mb-3"
+            >
+              <Database className="w-4 h-4" />
+              Migrar Datos a Supabase
+            </button>
+            <button
+              onClick={handleLogout}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              Cerrar Sesión
+            </button>
+          </>
         )}
         </div>
       </PageTransition>
+
+      {/* Migration Modal */}
+      {showMigrationModal && (
+        <MigrationModal
+          onClose={() => setShowMigrationModal(false)}
+          onSuccess={() => {
+            loadWorkoutHistory();
+            setShowMigrationModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }
