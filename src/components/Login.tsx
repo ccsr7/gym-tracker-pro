@@ -16,9 +16,6 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const { login, register, resetPassword } = useAuth();
 
-  // Debug log
-  console.log('Login component - isLogin:', isLogin, 'showForgotPassword:', showForgotPassword);
-
   // Create demo account on first load if no users exist
   useEffect(() => {
     const users = storageService.get<any[]>(STORAGE_KEYS.USERS, []);
@@ -98,7 +95,7 @@ export default function Login() {
           </div>
 
           <h1 className="text-3xl font-bold text-center mb-2 text-white">
-            Gym Tracker Pro v2.0
+            Gym Tracker Pro
           </h1>
           <p className="text-center text-slate-400 mb-8">
             {showForgotPassword ? 'Recupera tu contraseña' : (isLogin ? 'Inicia sesión para continuar' : 'Crea una cuenta nueva')}
