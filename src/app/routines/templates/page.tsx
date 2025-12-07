@@ -156,7 +156,7 @@ export default function TemplatesPage() {
 
                       {/* Exercise Preview */}
                       <div className="flex items-center gap-1 flex-wrap">
-                        {routine.exercises.slice(0, 3).map((_, exIdx) => (
+                        {routine.exercises.slice(0, 3).map((_: any, exIdx: number) => (
                           <div
                             key={exIdx}
                             className="w-2 h-2 rounded-full bg-emerald-500"
