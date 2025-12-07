@@ -16,6 +16,9 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const { login, register, resetPassword } = useAuth();
 
+  // Debug log
+  console.log('Login component - isLogin:', isLogin, 'showForgotPassword:', showForgotPassword);
+
   // Create demo account on first load if no users exist
   useEffect(() => {
     const users = storageService.get<any[]>(STORAGE_KEYS.USERS, []);
