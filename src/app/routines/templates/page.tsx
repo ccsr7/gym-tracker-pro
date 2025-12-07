@@ -43,13 +43,13 @@ export default function TemplatesPage() {
     router.push('/routines');
   };
 
-  const categoryLabels = {
+  const categoryLabels: Record<string, string> = {
     beginner: 'Principiante',
     intermediate: 'Intermedio',
     advanced: 'Avanzado'
   };
 
-  const categoryColors = {
+  const categoryColors: Record<string, string> = {
     beginner: 'text-green-500',
     intermediate: 'text-blue-500',
     advanced: 'text-purple-500'
