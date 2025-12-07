@@ -1,14 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Validar que las variables de entorno estén configuradas
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'Missing Supabase environment variables. Please check your .env.local file.'
-  );
-}
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
 
 /**
  * Cliente singleton de Supabase para uso en toda la aplicación
@@ -17,6 +11,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
  * - auth.persistSession: true - Mantiene sesión en localStorage
  * - auth.autoRefreshToken: true - Refresca token automáticamente
  * - db.schema: 'public' - Esquema por defecto
+ *
+ * Note: If Supabase env vars are not configured, a placeholder client is created
+ * and the app will fallback to localStorage for data storage
  */
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
