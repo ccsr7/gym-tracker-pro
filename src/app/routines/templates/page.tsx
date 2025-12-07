@@ -27,7 +27,7 @@ export default function TemplatesPage() {
     const existingRoutines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
 
     // Crear nuevas rutinas basadas en la plantilla
-    const newRoutines: Routine[] = template.routines.map(routineData => ({
+    const newRoutines: Routine[] = template.routines.map((routineData: any) => ({
       id: `${template.id}-${routineData.day}-${Date.now()}`,
       name: routineData.name,
       day: routineData.day,
