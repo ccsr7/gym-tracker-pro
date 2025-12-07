@@ -98,7 +98,7 @@ export default function Login() {
             Gym Tracker Pro
           </h1>
           <p className="text-center text-slate-400 mb-8">
-            {showForgotPassword ? 'Recupera tu contraseña' : (isLogin ? 'Inicia sesión para continuar' : 'Crea tu cuenta')}
+            {showForgotPassword ? 'Recupera tu contraseña' : (isLogin ? 'Inicia sesión para continuar' : 'Crea una cuenta nueva')}
           </p>
 
           {showForgotPassword ? (
