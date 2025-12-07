@@ -98,7 +98,7 @@ export default function Login() {
           </div>
 
           <h1 className="text-3xl font-bold text-center mb-2 text-white">
-            Gym Tracker Pro
+            Gym Tracker Pro v2.0
           </h1>
           <p className="text-center text-slate-400 mb-8">
             {showForgotPassword ? 'Recupera tu contraseña' : (isLogin ? 'Inicia sesión para continuar' : 'Crea una cuenta nueva')}
