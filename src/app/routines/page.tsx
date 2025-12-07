@@ -12,6 +12,7 @@ import { getExerciseById } from '@/data/exercises';
 import { getRoutines } from '@/lib/supabase/services';
 import { supabase } from '@/lib/supabase/client';
 import { useToast } from '@/lib/toast-context';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
 export default function RoutinesPage() {
   const router = useRouter();
@@ -19,12 +20,26 @@ export default function RoutinesPage() {
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [stats, setStats] = useState({ total: 0, exercises: 0, active: 0, time: 0 });
   const [showImportExport, setShowImportExport] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const days: DayOfWeek[] = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
   useEffect(() => {
     loadRoutines();
   }, []);
+
+  // Setup Realtime subscription for routines
+  useRealtimeSubscription({
+    table: 'routines',
+    event: '*',
+    filter: userId ? `user_id=eq.${userId}` : undefined,
+    enabled: !!userId,
+    onChange: (payload) => {
+      console.log('[Routines] Realtime change detected:', payload.eventType);
+      // Reload routines when any change occurs
+      loadRoutines();
+    },
+  });
 
   const loadRoutines = async () => {
     try {
@@ -33,9 +48,13 @@ export default function RoutinesPage() {
 
       if (!user) {
         // Fallback to localStorage if not logged in
+        setUserId(null);
         loadRoutinesFromLocalStorage();
         return;
       }
+
+      // Set userId for Realtime subscription
+      setUserId(user.id);
 
       // Load routines from Supabase
       const supabaseRoutines = await getRoutines(user.id);

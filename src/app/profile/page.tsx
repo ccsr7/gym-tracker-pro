@@ -13,6 +13,7 @@ import { getExerciseById } from '@/data/exercises';
 import { getWorkouts, getWorkoutsByDateRange } from '@/lib/supabase/services';
 import { supabase } from '@/lib/supabase/client';
 import MigrationModal from '@/components/MigrationModal';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
 export default function ProfilePage() {
   const { user, updateUser, logout } = useAuth();
@@ -29,6 +30,7 @@ export default function ProfilePage() {
   const [totalVolume, setTotalVolume] = useState(0);
   const [thisWeekWorkouts, setThisWeekWorkouts] = useState(0);
   const [showMigrationModal, setShowMigrationModal] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -41,15 +43,31 @@ export default function ProfilePage() {
     loadWorkoutHistory();
   }, [user]);
 
+  // Setup Realtime subscription for workouts
+  useRealtimeSubscription({
+    table: 'workouts',
+    event: '*',
+    filter: userId ? `user_id=eq.${userId}` : undefined,
+    enabled: !!userId,
+    onChange: (payload) => {
+      console.log('[Profile] Workouts changed:', payload.eventType);
+      loadWorkoutHistory();
+    },
+  });
+
   const loadWorkoutHistory = async () => {
     try {
       // Get current user ID from Supabase
       const { data: { user: supabaseUser } } = await supabase.auth.getUser();
       if (!supabaseUser) {
         // If not logged in with Supabase, fallback to localStorage (for migration period)
+        setUserId(null);
         loadWorkoutHistoryFromLocalStorage();
         return;
       }
+
+      // Set userId for Realtime subscription
+      setUserId(supabaseUser.id);
 
       // Load workouts from Supabase
       const allWorkouts = await getWorkouts(supabaseUser.id);
