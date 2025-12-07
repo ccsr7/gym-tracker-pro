@@ -10,6 +10,8 @@ import { calculateBMI, getBMICategory } from '@/lib/utils';
 import { User as UserIcon, Scale, Ruler, Activity, LogOut, Edit, Calendar, Clock, Dumbbell, TrendingUp, History } from 'lucide-react';
 import { Workout } from '@/types';
 import { getExerciseById } from '@/data/exercises';
+import { getWorkouts, getWorkoutsByDateRange } from '@/lib/supabase/services';
+import { supabase } from '@/lib/supabase/client';
 
 export default function ProfilePage() {
   const { user, updateUser, logout } = useAuth();
@@ -37,20 +39,56 @@ export default function ProfilePage() {
     loadWorkoutHistory();
   }, [user]);
 
-  const loadWorkoutHistory = () => {
+  const loadWorkoutHistory = async () => {
+    try {
+      // Get current user ID from Supabase
+      const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+      if (!supabaseUser) {
+        // If not logged in with Supabase, fallback to localStorage (for migration period)
+        loadWorkoutHistoryFromLocalStorage();
+        return;
+      }
+
+      // Load workouts from Supabase
+      const allWorkouts = await getWorkouts(supabaseUser.id);
+
+      setWorkouts(allWorkouts.slice(0, 5)); // Últimos 5 entrenamientos
+      setTotalWorkouts(allWorkouts.length);
+
+      // Calcular volumen total
+      const volume = allWorkouts.reduce((sum: number, w: Workout) => sum + (w.totalVolume || 0), 0);
+      setTotalVolume(volume);
+
+      // Calcular entrenamientos de esta semana
+      const today = new Date();
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - today.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      const endOfWeek = new Date(today);
+      endOfWeek.setHours(23, 59, 59, 999);
+
+      const thisWeekWorkouts = await getWorkoutsByDateRange(supabaseUser.id, startOfWeek, endOfWeek);
+      setThisWeekWorkouts(thisWeekWorkouts.length);
+    } catch (error) {
+      console.error('[Profile] Error loading workout history:', error);
+      toast.error('Error al cargar historial de entrenamientos');
+    }
+  };
+
+  // Fallback function for localStorage (migration period)
+  const loadWorkoutHistoryFromLocalStorage = () => {
     const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
     const sortedWorkouts = storedWorkouts.sort((a: Workout, b: Workout) =>
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
 
-    setWorkouts(sortedWorkouts.slice(0, 5)); // Últimos 5 entrenamientos
+    setWorkouts(sortedWorkouts.slice(0, 5));
     setTotalWorkouts(storedWorkouts.length);
 
-    // Calcular volumen total
     const volume = storedWorkouts.reduce((sum: number, w: Workout) => sum + (w.totalVolume || 0), 0);
     setTotalVolume(volume);
 
-    // Calcular entrenamientos de esta semana
     const today = new Date();
     const startOfWeek = new Date(today);
     startOfWeek.setDate(today.getDate() - today.getDay());

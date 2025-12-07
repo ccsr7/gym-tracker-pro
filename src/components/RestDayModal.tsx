@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import { X, Coffee, Home, Activity, Bed, TrendingDown, HelpCircle } from 'lucide-react';
 import { RestDay, RestDayReason } from '@/types';
-import { storageService, STORAGE_KEYS } from '@/lib/storage-service';
+import { createRestDay, updateRestDay } from '@/lib/supabase/services';
+import { supabase } from '@/lib/supabase/client';
+import { useToast } from '@/lib/toast-context';
 
 interface RestDayModalProps {
   onClose: () => void;
@@ -39,53 +41,51 @@ const reasonDescriptions: Record<RestDayReason, string> = {
 };
 
 export default function RestDayModal({ onClose, onSuccess, editingRestDay }: RestDayModalProps) {
+  const toast = useToast();
   const [date, setDate] = useState(
     editingRestDay?.date ? new Date(editingRestDay.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
   );
   const [reason, setReason] = useState<RestDayReason>(editingRestDay?.reason || 'gym-closed');
   const [notes, setNotes] = useState(editingRestDay?.notes || '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
-    const restDays = storageService.get<RestDay[]>(STORAGE_KEYS.REST_DAYS, []);
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
 
-    if (editingRestDay) {
-      // Update existing
-      const updatedRestDays = restDays.map(rd =>
-        rd.id === editingRestDay.id
-          ? { ...rd, date, reason, notes }
-          : rd
-      );
-      storageService.set(STORAGE_KEYS.REST_DAYS, updatedRestDays);
-    } else {
-      // Create new
-      const newRestDay: RestDay = {
-        id: Date.now().toString(),
-        date: new Date(date).toISOString(),
-        reason,
-        notes: notes.trim() || undefined,
-        createdAt: new Date().toISOString()
-      };
-
-      // Check if a rest day already exists for this date
-      const existingIndex = restDays.findIndex(
-        rd => new Date(rd.date).toDateString() === new Date(date).toDateString()
-      );
-
-      if (existingIndex !== -1) {
-        // Replace existing
-        restDays[existingIndex] = newRestDay;
-      } else {
-        // Add new
-        restDays.push(newRestDay);
+      if (!user) {
+        toast.error('Debes iniciar sesión');
+        return;
       }
 
-      storageService.set(STORAGE_KEYS.REST_DAYS, restDays);
-    }
+      if (editingRestDay) {
+        // Update existing rest day
+        await updateRestDay(editingRestDay.id, {
+          date: new Date(date).toISOString(),
+          reason,
+          notes: notes.trim() || undefined,
+        });
+      } else {
+        // Create new rest day
+        await createRestDay(user.id, {
+          date: new Date(date).toISOString(),
+          reason,
+          notes: notes.trim() || undefined,
+        });
+      }
 
-    onSuccess();
-    onClose();
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error('[RestDayModal] Error saving rest day:', error);
+      toast.error('Error al guardar día de descanso');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const SelectedIcon = reasonIcons[reason];
@@ -222,15 +222,17 @@ export default function RestDayModal({ onClose, onSuccess, editingRestDay }: Res
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 bg-slate-700/50 dark:bg-slate-200 hover:bg-slate-700 dark:hover:bg-slate-300 text-white dark:text-slate-900 rounded-lg font-medium transition-colors"
+              disabled={isSubmitting}
+              className="flex-1 px-6 py-3 bg-slate-700/50 dark:bg-slate-200 hover:bg-slate-700 dark:hover:bg-slate-300 text-white dark:text-slate-900 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
+              disabled={isSubmitting}
+              className="flex-1 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {editingRestDay ? 'Guardar Cambios' : 'Marcar Descanso'}
+              {isSubmitting ? 'Guardando...' : (editingRestDay ? 'Guardar Cambios' : 'Marcar Descanso')}
             </button>
           </div>
         </form>
