@@ -233,6 +233,7 @@ export default function Login() {
 
                 {isLogin && (
                   <button
+                    type="button"
                     onClick={() => {
                       setShowForgotPassword(true);
                       setError('');
@@ -240,7 +241,7 @@ export default function Login() {
                       setEmail('');
                       setPassword('');
                     }}
-                    className="text-slate-400 hover:text-slate-300 text-sm block w-full"
+                    className="text-emerald-400 hover:text-emerald-300 text-sm block w-full underline decoration-dotted underline-offset-4"
                   >
                     ¿Olvidaste tu contraseña?
                   </button>
