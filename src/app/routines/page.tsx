@@ -11,7 +11,7 @@ import { Plus, Clock, Dumbbell, Calendar, Edit, Download, Sparkles } from 'lucid
 import { getExerciseById } from '@/data/exercises';
 import { getRoutines } from '@/lib/supabase/services';
 import { supabase } from '@/lib/supabase/client';
-import { useToast } from '@/lib/toast-context';
+import { useToast } from '@/hooks/useToast';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
 export default function RoutinesPage() {
