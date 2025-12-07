@@ -216,7 +216,7 @@ export default function Login() {
 
           {!showForgotPassword && (
             <>
-              <div className="mt-6 text-center space-y-2">
+              <div className="mt-6 text-center space-y-3">
                 <button
                   onClick={() => {
                     setIsLogin(!isLogin);
@@ -241,7 +241,7 @@ export default function Login() {
                       setEmail('');
                       setPassword('');
                     }}
-                    className="text-emerald-400 hover:text-emerald-300 text-sm block w-full underline decoration-dotted underline-offset-4"
+                    className="text-emerald-400 hover:text-emerald-300 text-sm font-medium block w-full underline decoration-dotted underline-offset-4 py-1"
                   >
                     ¿Olvidaste tu contraseña?
                   </button>
