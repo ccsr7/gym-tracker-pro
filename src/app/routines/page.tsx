@@ -9,9 +9,13 @@ import { Routine, DayOfWeek } from '@/types';
 import { getDayColor, getDayInitial } from '@/lib/utils';
 import { Plus, Clock, Dumbbell, Calendar, Edit, Download, Sparkles } from 'lucide-react';
 import { getExerciseById } from '@/data/exercises';
+import { getRoutines } from '@/lib/supabase/services';
+import { supabase } from '@/lib/supabase/client';
+import { useToast } from '@/lib/toast-context';
 
 export default function RoutinesPage() {
   const router = useRouter();
+  const toast = useToast();
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [stats, setStats] = useState({ total: 0, exercises: 0, active: 0, time: 0 });
   const [showImportExport, setShowImportExport] = useState(false);
@@ -22,7 +26,41 @@ export default function RoutinesPage() {
     loadRoutines();
   }, []);
 
-  const loadRoutines = () => {
+  const loadRoutines = async () => {
+    try {
+      // Get current user from Supabase
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        // Fallback to localStorage if not logged in
+        loadRoutinesFromLocalStorage();
+        return;
+      }
+
+      // Load routines from Supabase
+      const supabaseRoutines = await getRoutines(user.id);
+      setRoutines(supabaseRoutines);
+
+      const totalExercises = supabaseRoutines.reduce((acc: number, r: Routine) =>
+        acc + (r.exercises?.length || 0), 0
+      );
+      const totalTime = supabaseRoutines.reduce((acc: number, r: Routine) =>
+        acc + (r.duration || 0), 0
+      );
+
+      setStats({
+        total: supabaseRoutines.length,
+        exercises: totalExercises,
+        active: supabaseRoutines.length,
+        time: totalTime,
+      });
+    } catch (error) {
+      console.error('[Routines] Error loading routines:', error);
+      toast.error('Error al cargar rutinas');
+    }
+  };
+
+  const loadRoutinesFromLocalStorage = () => {
     const storedRoutines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
     setRoutines(storedRoutines);
 
