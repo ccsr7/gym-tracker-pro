@@ -14,6 +14,8 @@ import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { useConfirm } from '@/hooks/useConfirm';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/hooks/useToast';
+import { supabase } from '@/lib/supabase/client';
+import { getRoutineById, getWorkouts, createWorkout } from '@/lib/supabase/services';
 
 export default function WorkoutPage() {
   const router = useRouter();
@@ -66,8 +68,19 @@ export default function WorkoutPage() {
         setRestDuration(parseInt(savedRestDuration));
       }
 
-      const storedRoutines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
-      const foundRoutine = storedRoutines.find((r: Routine) => r.id === routineId);
+      // Try loading routine from Supabase first
+      const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+      let foundRoutine: Routine | null = null;
+
+      if (supabaseUser) {
+        foundRoutine = await getRoutineById(routineId);
+      }
+
+      // Fallback to localStorage if not found in Supabase
+      if (!foundRoutine) {
+        const storedRoutines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
+        foundRoutine = storedRoutines.find((r: Routine) => r.id === routineId);
+      }
 
       if (foundRoutine) {
         setRoutine(foundRoutine);
@@ -106,8 +119,15 @@ export default function WorkoutPage() {
         }
 
       // Buscar el último entrenamiento de esta rutina para pre-cargar pesos
-      const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
-      const lastWorkout = storedWorkouts
+      let allWorkouts: Workout[] = [];
+
+      if (supabaseUser) {
+        allWorkouts = await getWorkouts(supabaseUser.id);
+      } else {
+        allWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+      }
+
+      const lastWorkout = allWorkouts
         .filter((w: Workout) => w.routineId === routineId)
         .sort((a: Workout, b: Workout) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
 
@@ -484,7 +504,7 @@ export default function WorkoutPage() {
     setExerciseIndexToReplace(null);
   };
 
-  const handleSaveWorkout = () => {
+  const handleSaveWorkout = async () => {
     if (!routine) return;
 
     const totalVolume = workoutExercises.reduce((total, ex) => {
@@ -493,8 +513,7 @@ export default function WorkoutPage() {
       }, 0);
     }, 0);
 
-    const workout: Workout = {
-      id: `workout-${Date.now()}`,
+    const workoutData: Omit<Workout, 'id'> = {
       date: new Date().toISOString(),
       routineId: routine.id,
       routineName: routine.name,
@@ -505,24 +524,41 @@ export default function WorkoutPage() {
       totalVolume
     };
 
-    const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
-    storedWorkouts.push(workout);
-    localStorage.setItem('gym-tracker-workouts', JSON.stringify(storedWorkouts));
+    try {
+      const { data: { user: supabaseUser } } = await supabase.auth.getUser();
 
-    // Limpiar el workout en progreso
-    const inProgressKey = `workout-in-progress-${routineId}`;
-    localStorage.removeItem(inProgressKey);
+      if (supabaseUser) {
+        // Save to Supabase
+        await createWorkout(supabaseUser.id, workoutData);
+      } else {
+        // Fallback to localStorage
+        const workout: Workout = {
+          id: `workout-${Date.now()}`,
+          ...workoutData
+        };
+        const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+        storedWorkouts.push(workout);
+        localStorage.setItem('gym-tracker-workouts', JSON.stringify(storedWorkouts));
+      }
 
-    // Marcar como guardado recientemente para evitar warnings de navegación
-    setJustSaved(true);
+      // Limpiar el workout en progreso
+      const inProgressKey = `workout-in-progress-${routineId}`;
+      localStorage.removeItem(inProgressKey);
 
-    // Mostrar confirmación
-    toast.success('Entrenamiento guardado correctamente');
+      // Marcar como guardado recientemente para evitar warnings de navegación
+      setJustSaved(true);
 
-    // Navegar después de un pequeño delay para que se vea el toast
-    setTimeout(() => {
-      router.push('/history');
-    }, 300);
+      // Mostrar confirmación
+      toast.success('Entrenamiento guardado correctamente');
+
+      // Navegar después de un pequeño delay para que se vea el toast
+      setTimeout(() => {
+        router.push('/history');
+      }, 300);
+    } catch (error) {
+      console.error('[Workout] Error saving workout:', error);
+      toast.error('Error al guardar el entrenamiento');
+    }
   };
 
   const handleCancelWorkout = async () => {
