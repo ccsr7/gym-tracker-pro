@@ -130,7 +130,7 @@ export default function TemplatesPage() {
 
                 {/* Routine Days */}
                 <div className="space-y-2 mb-4">
-                  {template.routines.map((routine, idx) => (
+                  {template.routines.map((routine: any, idx: number) => (
                     <div
                       key={idx}
                       className="bg-slate-700/30 dark:bg-white border border-slate-600/30 dark:border-slate-300 rounded-lg p-3"
