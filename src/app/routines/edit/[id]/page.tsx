@@ -20,6 +20,8 @@ import {
 import { useConfirm } from '@/hooks/useConfirm';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/hooks/useToast';
+import { supabase } from '@/lib/supabase/client';
+import { getRoutineById, updateRoutine, deleteRoutine, getRoutineByDay } from '@/lib/supabase/services';
 
 export default function EditRoutinePage() {
   const router = useRouter();
@@ -85,30 +87,57 @@ export default function EditRoutinePage() {
   };
 
   useEffect(() => {
-    if (routineId) {
-      const routines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
-      const routine = routines.find((r: Routine) => r.id === routineId);
-
-      if (routine) {
-        setName(routine.name);
-        setDay(routine.day);
-        setIsRestDay(routine.isRestDay || false);
-        setSelectedExercises(routine.exercises.map((e: any) => e.exerciseId));
-
-        // Cargar supersets existentes
-        const existingSupersets: Record<string, string> = {};
-        routine.exercises.forEach((ex: any) => {
-          if (ex.isSupersetWith) {
-            existingSupersets[ex.exerciseId] = ex.isSupersetWith;
-          }
-        });
-        setSupersets(existingSupersets);
-      } else {
-        router.push('/routines');
+    const loadRoutine = async () => {
+      if (!routineId) {
+        setLoading(false);
+        return;
       }
-      setLoading(false);
-    }
-  }, [routineId, router]);
+
+      try {
+        // Try loading from Supabase first
+        const { data: { user } } = await supabase.auth.getUser();
+
+        let routine: Routine | null = null;
+
+        if (user) {
+          routine = await getRoutineById(routineId);
+        }
+
+        // Fallback to localStorage if not found in Supabase
+        if (!routine) {
+          const routines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
+          routine = routines.find((r: Routine) => r.id === routineId);
+        }
+
+        if (routine) {
+          setName(routine.name);
+          setDay(routine.day);
+          setIsRestDay(routine.isRestDay || false);
+          setSelectedExercises(routine.exercises.map((e: any) => e.exerciseId));
+
+          // Cargar supersets existentes
+          const existingSupersets: Record<string, string> = {};
+          routine.exercises.forEach((ex: any) => {
+            if (ex.isSupersetWith) {
+              existingSupersets[ex.exerciseId] = ex.isSupersetWith;
+            }
+          });
+          setSupersets(existingSupersets);
+        } else {
+          toast.error('Rutina no encontrada');
+          router.push('/routines');
+        }
+      } catch (error) {
+        console.error('[EditRoutine] Error loading routine:', error);
+        toast.error('Error al cargar la rutina');
+        router.push('/routines');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRoutine();
+  }, [routineId, router, toast]);
 
   const filteredExercises = exercisesDatabase.filter(ex => {
     const matchesSearch = ex.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -210,61 +239,100 @@ export default function EditRoutinePage() {
     // Si no hay nombre, usar uno por defecto
     const finalName = name.trim() || (isRestDay ? 'Día de Descanso' : 'Nueva Rutina');
 
-    const routines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
-    const routineIndex = routines.findIndex((r: Routine) => r.id === routineId);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
 
-    if (routineIndex === -1) {
-      toast.error('Rutina no encontrada');
-      return;
-    }
+      if (!user) {
+        // Fallback to localStorage
+        const routines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
+        const routineIndex = routines.findIndex((r: Routine) => r.id === routineId);
 
-    // Check if day changed and conflicts with another routine
-    const oldDay = routines[routineIndex].day;
-    if (day !== oldDay) {
-      const conflictIndex = routines.findIndex(
-        (r: Routine) => r.day === day && r.id !== routineId
-      );
-      if (conflictIndex !== -1) {
-        const shouldReplace = await confirm({
-          title: 'Rutina existente',
-          message: `Ya existe una rutina para ${day}. ¿Deseas reemplazarla?`,
-          confirmText: 'Reemplazar',
-          cancelText: 'Cancelar',
-          type: 'warning',
-        });
-
-        if (!shouldReplace) {
+        if (routineIndex === -1) {
+          toast.error('Rutina no encontrada');
           return;
         }
-        routines.splice(conflictIndex, 1);
+
+        const exercisesWithData = isRestDay ? [] : selectedExercises.map(id => ({
+          exerciseId: id,
+          sets: routines[routineIndex].exercises.find((e: any) => e.exerciseId === id)?.sets || 4,
+          reps: routines[routineIndex].exercises.find((e: any) => e.exerciseId === id)?.reps || 12,
+          isSupersetWith: supersets[id] || undefined,
+        }));
+
+        const totalSets = exercisesWithData.reduce((sum, ex) => sum + ex.sets, 0);
+        const estimatedDuration = isRestDay ? 0 : estimateRoutineDuration(selectedExercises.length, totalSets, routineId);
+
+        const updatedRoutine: Routine = {
+          id: routineId,
+          name: finalName,
+          day,
+          exercises: exercisesWithData,
+          duration: estimatedDuration,
+          isRestDay,
+        };
+
+        routines[routineIndex] = updatedRoutine;
+        localStorage.setItem('gym-tracker-routines', JSON.stringify(routines));
+        toast.success('Rutina actualizada correctamente');
+        router.push('/routines');
+        return;
       }
+
+      // Get current routine
+      const currentRoutine = await getRoutineById(routineId);
+      if (!currentRoutine) {
+        toast.error('Rutina no encontrada');
+        return;
+      }
+
+      // Check if day changed and conflicts with another routine
+      if (day !== currentRoutine.day) {
+        const conflictingRoutine = await getRoutineByDay(user.id, day);
+        if (conflictingRoutine && conflictingRoutine.id !== routineId) {
+          const shouldReplace = await confirm({
+            title: 'Rutina existente',
+            message: `Ya existe una rutina para ${day}. ¿Deseas reemplazarla?`,
+            confirmText: 'Reemplazar',
+            cancelText: 'Cancelar',
+            type: 'warning',
+          });
+
+          if (!shouldReplace) {
+            return;
+          }
+
+          // Delete the conflicting routine
+          await deleteRoutine(conflictingRoutine.id);
+        }
+      }
+
+      // Construir ejercicios con sus datos
+      const exercisesWithData = isRestDay ? [] : selectedExercises.map(id => ({
+        exerciseId: id,
+        sets: currentRoutine.exercises.find((e: any) => e.exerciseId === id)?.sets || 4,
+        reps: currentRoutine.exercises.find((e: any) => e.exerciseId === id)?.reps || 12,
+        isSupersetWith: supersets[id] || undefined,
+      }));
+
+      // Calcular duración basada en datos históricos o estimación inteligente
+      const totalSets = exercisesWithData.reduce((sum, ex) => sum + ex.sets, 0);
+      const estimatedDuration = isRestDay ? 0 : estimateRoutineDuration(selectedExercises.length, totalSets, routineId);
+
+      // Update routine in Supabase
+      await updateRoutine(routineId, {
+        name: finalName,
+        day,
+        exercises: exercisesWithData,
+        duration: estimatedDuration,
+        isRestDay,
+      });
+
+      toast.success('Rutina actualizada correctamente');
+      router.push('/routines');
+    } catch (error) {
+      console.error('[EditRoutine] Error saving routine:', error);
+      toast.error('Error al guardar la rutina');
     }
-
-    // Construir ejercicios con sus datos
-    const exercisesWithData = isRestDay ? [] : selectedExercises.map(id => ({
-      exerciseId: id,
-      sets: routines[routineIndex].exercises.find((e: any) => e.exerciseId === id)?.sets || 4,
-      reps: routines[routineIndex].exercises.find((e: any) => e.exerciseId === id)?.reps || 12,
-      isSupersetWith: supersets[id] || undefined,
-    }));
-
-    // Calcular duración basada en datos históricos o estimación inteligente
-    const totalSets = exercisesWithData.reduce((sum, ex) => sum + ex.sets, 0);
-    const estimatedDuration = isRestDay ? 0 : estimateRoutineDuration(selectedExercises.length, totalSets, routineId);
-
-    const updatedRoutine: Routine = {
-      id: routineId,
-      name: finalName,
-      day,
-      exercises: exercisesWithData,
-      duration: estimatedDuration,
-      isRestDay,
-    };
-
-    routines[routineIndex] = updatedRoutine;
-    localStorage.setItem('gym-tracker-routines', JSON.stringify(routines));
-    toast.success('Rutina actualizada correctamente');
-    router.push('/routines');
   };
 
   const handleDelete = async () => {
@@ -280,11 +348,31 @@ export default function EditRoutinePage() {
       return;
     }
 
-    const routines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
-    const updatedRoutines = routines.filter((r: Routine) => r.id !== routineId);
-    localStorage.setItem('gym-tracker-routines', JSON.stringify(updatedRoutines));
-    toast.success('Rutina eliminada correctamente');
-    router.push('/routines');
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        // Fallback to localStorage
+        const routines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
+        const updatedRoutines = routines.filter((r: Routine) => r.id !== routineId);
+        localStorage.setItem('gym-tracker-routines', JSON.stringify(updatedRoutines));
+        toast.success('Rutina eliminada correctamente');
+        router.push('/routines');
+        return;
+      }
+
+      // Delete from Supabase
+      const success = await deleteRoutine(routineId);
+      if (success) {
+        toast.success('Rutina eliminada correctamente');
+        router.push('/routines');
+      } else {
+        toast.error('Error al eliminar la rutina');
+      }
+    } catch (error) {
+      console.error('[EditRoutine] Error deleting routine:', error);
+      toast.error('Error al eliminar la rutina');
+    }
   };
 
   if (loading) {
