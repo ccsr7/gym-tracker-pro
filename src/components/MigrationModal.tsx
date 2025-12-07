@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { X, Database, Upload, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { createRoutine, createWorkout, createRestDay } from '@/lib/supabase/services';
-import { useToast } from '@/lib/toast-context';
+import { useToast } from '@/hooks/useToast';
 import { Routine, Workout, RestDay } from '@/types';
 
 interface MigrationModalProps {

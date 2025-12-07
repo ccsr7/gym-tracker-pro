@@ -5,7 +5,7 @@ import { X, Coffee, Home, Activity, Bed, TrendingDown, HelpCircle } from 'lucide
 import { RestDay, RestDayReason } from '@/types';
 import { createRestDay, updateRestDay } from '@/lib/supabase/services';
 import { supabase } from '@/lib/supabase/client';
-import { useToast } from '@/lib/toast-context';
+import { useToast } from '@/hooks/useToast';
 
 interface RestDayModalProps {
   onClose: () => void;

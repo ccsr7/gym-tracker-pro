@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import PageTransition from '@/components/PageTransition';
 import { useAuth } from '@/lib/auth-context';
-import { useToast } from '@/lib/toast-context';
+import { useToast } from '@/hooks/useToast';
 import { calculateBMI, getBMICategory } from '@/lib/utils';
 import { User as UserIcon, Scale, Ruler, Activity, LogOut, Edit, Calendar, Clock, Dumbbell, TrendingUp, History, Database } from 'lucide-react';
 import { Workout } from '@/types';
