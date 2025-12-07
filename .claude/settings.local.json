@@ -28,7 +28,8 @@
       "Bash(grep:*)",
       "Bash(git diff:*)",
       "Bash(copy page.tsx page.tsx.backup)",
-      "Bash(del \"c:\\Users\\cesar\\Desktop\\gym-tracker-pro-new\\src\\components\\stats\\StatsCharts.tsx\")"
+      "Bash(del \"c:\\Users\\cesar\\Desktop\\gym-tracker-pro-new\\src\\components\\stats\\StatsCharts.tsx\")",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

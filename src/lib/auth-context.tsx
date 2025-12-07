@@ -1,101 +1,100 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
-import bcrypt from 'bcryptjs';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 import { User } from '@/types';
-import { storageService, STORAGE_KEYS } from './storage-service';
+import { supabase } from './supabase/client';
 import { validateEmail, validatePassword, validateName } from './validation';
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
-  updateUser: (user: Partial<User>) => void;
+  logout: () => Promise<void>;
+  updateUser: (updates: Partial<User>) => Promise<void>;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Rate limiting for login attempts
-const loginAttempts = new Map<string, { count: number; lastAttempt: number }>();
-const MAX_ATTEMPTS = 5;
-const LOCKOUT_DURATION = 60 * 60 * 1000; // 1 hour
-
-interface StoredUser {
-  name: string;
-  email: string;
-  passwordHash: string;
-  // Old format compatibility
-  password?: string;
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Load user profile from Supabase profiles table
+  const loadUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', supabaseUser.id)
+        .single();
+
+      if (error) {
+        console.error('[Auth] Error loading profile:', error);
+        return null;
+      }
+
+      // Map Supabase profile to User type
+      return {
+        name: profile.name,
+        email: profile.email,
+        weight: profile.weight,
+        height: profile.height,
+        trainingGoal: profile.training_goal,
+      };
+    } catch (error) {
+      console.error('[Auth] Error loading profile:', error);
+      return null;
+    }
+  };
+
   useEffect(() => {
     // Check for existing session on mount
-    const checkAuth = () => {
-      const storedUser = storageService.get<User | null>(STORAGE_KEYS.USER, null);
-      if (storedUser) {
-        setUser(storedUser);
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error('[Auth] Error getting session:', error);
+          setIsLoading(false);
+          return;
+        }
+
+        if (session?.user) {
+          const profile = await loadUserProfile(session.user);
+          setUser(profile);
+        }
+
+        setIsLoading(false);
+      } catch (error) {
+        console.error('[Auth] Error initializing auth:', error);
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
-    checkAuth();
+    initializeAuth();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[Auth] Auth state changed:', event);
+
+      if (event === 'SIGNED_IN' && session?.user) {
+        const profile = await loadUserProfile(session.user);
+        setUser(profile);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+      } else if (event === 'USER_UPDATED' && session?.user) {
+        const profile = await loadUserProfile(session.user);
+        setUser(profile);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
-
-  // Check if user is rate-limited
-  const checkRateLimit = (email: string): { allowed: boolean; error?: string } => {
-    const attempt = loginAttempts.get(email);
-
-    if (!attempt) {
-      return { allowed: true };
-    }
-
-    const now = Date.now();
-    const timeSinceLastAttempt = now - attempt.lastAttempt;
-
-    // Reset if lockout duration has passed
-    if (timeSinceLastAttempt > LOCKOUT_DURATION) {
-      loginAttempts.delete(email);
-      return { allowed: true };
-    }
-
-    // Check if locked out
-    if (attempt.count >= MAX_ATTEMPTS) {
-      const remainingTime = Math.ceil((LOCKOUT_DURATION - timeSinceLastAttempt) / 60000);
-      return {
-        allowed: false,
-        error: `Demasiados intentos. Intenta de nuevo en ${remainingTime} minuto(s)`
-      };
-    }
-
-    return { allowed: true };
-  };
-
-  // Record login attempt
-  const recordLoginAttempt = (email: string, success: boolean) => {
-    if (success) {
-      loginAttempts.delete(email);
-      return;
-    }
-
-    const attempt = loginAttempts.get(email);
-    const now = Date.now();
-
-    if (!attempt) {
-      loginAttempts.set(email, { count: 1, lastAttempt: now });
-    } else {
-      loginAttempts.set(email, {
-        count: attempt.count + 1,
-        lastAttempt: now
-      });
-    }
-  };
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
@@ -110,61 +109,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: passwordValidation.error };
       }
 
-      // Check rate limit
-      const rateLimit = checkRateLimit(emailValidation.value);
-      if (!rateLimit.allowed) {
-        return { success: false, error: rateLimit.error };
-      }
+      // Sign in with Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: emailValidation.value,
+        password: password,
+      });
 
-      // Get stored users
-      const storedUsers = storageService.get<StoredUser[]>(STORAGE_KEYS.USERS, []);
+      if (error) {
+        console.error('[Auth] Login error:', error);
 
-      const foundUser = storedUsers.find((u: StoredUser) =>
-        u.email.toLowerCase() === emailValidation.value.toLowerCase()
-      );
-
-      if (!foundUser) {
-        recordLoginAttempt(emailValidation.value, false);
-        return { success: false, error: 'Email o contraseña incorrectos' };
-      }
-
-      // Check password - support both old (plaintext) and new (hashed) formats
-      let passwordMatch = false;
-
-      if (foundUser.passwordHash) {
-        // New format - hashed password
-        passwordMatch = await bcrypt.compare(password, foundUser.passwordHash);
-      } else if (foundUser.password) {
-        // Old format - plaintext password (migrate to hashed)
-        passwordMatch = foundUser.password === password;
-
-        // Migrate to hashed password
-        if (passwordMatch) {
-          const hashedPassword = await bcrypt.hash(password, 10);
-          const updatedUsers = storedUsers.map(u =>
-            u.email === foundUser.email
-              ? { ...u, passwordHash: hashedPassword, password: undefined }
-              : u
-          );
-          storageService.set(STORAGE_KEYS.USERS, updatedUsers);
+        // Map Supabase errors to user-friendly messages
+        if (error.message.includes('Invalid login credentials')) {
+          return { success: false, error: 'Email o contraseña incorrectos' };
         }
+        if (error.message.includes('Email not confirmed')) {
+          return { success: false, error: 'Por favor confirma tu email' };
+        }
+
+        return { success: false, error: 'Error al iniciar sesión' };
       }
 
-      if (!passwordMatch) {
-        recordLoginAttempt(emailValidation.value, false);
-        return { success: false, error: 'Email o contraseña incorrectos' };
+      if (data.user) {
+        const profile = await loadUserProfile(data.user);
+        setUser(profile);
       }
-
-      // Login successful
-      recordLoginAttempt(emailValidation.value, true);
-
-      const { passwordHash: _, password: __, ...userWithoutPassword } = foundUser;
-      setUser(userWithoutPassword as User);
-      storageService.set(STORAGE_KEYS.USER, userWithoutPassword);
 
       return { success: true };
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('[Auth] Login error:', error);
       return { success: false, error: 'Error al iniciar sesión' };
     }
   };
@@ -187,57 +159,85 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: passwordValidation.error };
       }
 
-      // Get stored users
-      const storedUsers = storageService.get<StoredUser[]>(STORAGE_KEYS.USERS, []);
+      // Sign up with Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email: emailValidation.value,
+        password: password,
+        options: {
+          data: {
+            name: nameValidation.value,
+          },
+        },
+      });
 
-      // Check if email already exists
-      if (storedUsers.some((u: StoredUser) => u.email.toLowerCase() === emailValidation.value.toLowerCase())) {
-        return { success: false, error: 'Este email ya está registrado' };
+      if (error) {
+        console.error('[Auth] Register error:', error);
+
+        // Map Supabase errors to user-friendly messages
+        if (error.message.includes('User already registered')) {
+          return { success: false, error: 'Este email ya está registrado' };
+        }
+
+        return { success: false, error: 'Error al registrar usuario' };
       }
 
-      // Hash password
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      // Create new user
-      const newStoredUser: StoredUser = {
-        name: nameValidation.value,
-        email: emailValidation.value,
-        passwordHash: hashedPassword
-      };
-
-      storedUsers.push(newStoredUser);
-      storageService.set(STORAGE_KEYS.USERS, storedUsers);
-
-      // Set current user (without password)
-      const { passwordHash: _, ...userWithoutPassword } = newStoredUser;
-      setUser(userWithoutPassword as User);
-      storageService.set(STORAGE_KEYS.USER, userWithoutPassword);
+      if (data.user) {
+        // Profile is created automatically by the trigger in Supabase
+        // Load the newly created profile
+        const profile = await loadUserProfile(data.user);
+        setUser(profile);
+      }
 
       return { success: true };
     } catch (error) {
-      console.error('Register error:', error);
+      console.error('[Auth] Register error:', error);
       return { success: false, error: 'Error al registrar usuario' };
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    storageService.remove(STORAGE_KEYS.USER);
+  const logout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('[Auth] Logout error:', error);
+      }
+      setUser(null);
+    } catch (error) {
+      console.error('[Auth] Logout error:', error);
+    }
   };
 
-  const updateUser = (updates: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...updates };
-      setUser(updatedUser);
-      storageService.set(STORAGE_KEYS.USER, updatedUser);
+  const updateUser = async (updates: Partial<User>) => {
+    if (!user) return;
 
-      // También actualizar en el array de usuarios
-      const storedUsers = storageService.get<StoredUser[]>(STORAGE_KEYS.USERS, []);
-      const userIndex = storedUsers.findIndex((u: StoredUser) => u.email === user.email);
-      if (userIndex !== -1) {
-        storedUsers[userIndex] = { ...storedUsers[userIndex], ...updates };
-        storageService.set(STORAGE_KEYS.USERS, storedUsers);
+    try {
+      const { data: { user: supabaseUser }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !supabaseUser) {
+        console.error('[Auth] Error getting current user:', userError);
+        return;
       }
+
+      // Update profile in Supabase
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: updates.name,
+          weight: updates.weight,
+          height: updates.height,
+          training_goal: updates.trainingGoal,
+        })
+        .eq('id', supabaseUser.id);
+
+      if (error) {
+        console.error('[Auth] Error updating profile:', error);
+        return;
+      }
+
+      // Update local state
+      setUser({ ...user, ...updates });
+    } catch (error) {
+      console.error('[Auth] Error updating user:', error);
     }
   };
 
