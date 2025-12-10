@@ -1,7 +1,7 @@
 'use client';
 
 import Modal from './Modal';
-import { AlertCircle, Info, AlertTriangle, XCircle } from 'lucide-react';
+import { AlertCircle, Info, AlertTriangle, XCircle, CheckCircle } from 'lucide-react';
 
 export interface ConfirmDialogProps {
   isOpen: boolean;
@@ -49,7 +49,7 @@ export default function ConfirmDialog({
       confirmButton: 'bg-red-500 hover:bg-red-600 focus:ring-red-500',
     },
     success: {
-      icon: AlertCircle,
+      icon: CheckCircle,
       iconColor: 'text-emerald-500',
       iconBg: 'bg-emerald-500/20',
       confirmButton: 'bg-emerald-500 hover:bg-emerald-600 focus:ring-emerald-500',

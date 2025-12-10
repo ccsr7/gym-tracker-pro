@@ -392,10 +392,14 @@ export default function WorkoutPage() {
     const isLastSet = setIdx === updated[exerciseIdx].sets.length - 1;
 
     if (isLastExercise && isLastSet) {
-      setTimeout(() => {
-        const shouldFinish = window.confirm(
-          '¡Has completado la última serie! ¿Deseas finalizar y guardar el entrenamiento?'
-        );
+      setTimeout(async () => {
+        const shouldFinish = await showConfirmDialog({
+          title: '¡Entrenamiento completado! 🎉',
+          message: '¡Has completado todas las series! ¿Deseas guardar el entrenamiento?',
+          confirmText: 'Guardar Entrenamiento',
+          cancelText: 'Continuar Editando',
+          type: 'success',
+        });
         if (shouldFinish) {
           handleSaveWorkout();
         }
