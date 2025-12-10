@@ -26,6 +26,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Load user profile from Supabase profiles table
   const loadUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
     try {
+      console.log('[Auth] Loading profile for user:', supabaseUser.id);
+
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
@@ -34,15 +36,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.error('[Auth] Error loading profile:', error);
+
+        // If profile doesn't exist, create a fallback profile
+        if (error.code === 'PGRST116') {
+          console.log('[Auth] Profile not found, creating fallback profile');
+          return {
+            name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'Usuario',
+            email: supabaseUser.email || '',
+            weight: 0,
+            height: 0,
+            trainingGoal: undefined,
+          };
+        }
+
         return null;
       }
 
+      console.log('[Auth] Profile loaded successfully:', profile);
+
       // Map Supabase profile to User type
       return {
-        name: profile.name,
-        email: profile.email,
-        weight: profile.weight,
-        height: profile.height,
+        name: profile.name || 'Usuario',
+        email: profile.email || supabaseUser.email || '',
+        weight: profile.weight || 0,
+        height: profile.height || 0,
         trainingGoal: profile.training_goal,
       };
     } catch (error) {
