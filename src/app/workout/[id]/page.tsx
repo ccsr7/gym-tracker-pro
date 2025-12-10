@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import { Routine, WorkoutExercise, WorkoutSet, Workout } from '@/types';
 import { getExerciseById } from '@/data/exercises';
-import { Play, Pause, Check, Plus, Trash2, Timer, Save, X, History, TrendingUp, Lightbulb, Link2, RefreshCw, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Play, Pause, Check, Plus, Trash2, Timer, Save, X, History, TrendingUp, Lightbulb, Link2, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { getProgressionSuggestion } from '@/lib/progression-suggestions';
 import ExercisePickerModal from '@/components/ExercisePickerModal';
@@ -16,6 +16,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/hooks/useToast';
 import { supabase } from '@/lib/supabase/client';
 import { getRoutineById, getWorkouts, createWorkout } from '@/lib/supabase/services';
+import LoadingLogo from '@/components/ui/LoadingLogo';
 
 export default function WorkoutPage() {
   const router = useRouter();
@@ -913,7 +914,7 @@ export default function WorkoutPage() {
                 className="flex-1 py-3 bg-slate-700/50 dark:bg-slate-200 hover:bg-slate-700 dark:hover:bg-slate-300 text-white dark:text-slate-900 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
               >
                 {isNavigating ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <LoadingLogo size="md" variant="lift" />
                 ) : (
                   <>
                     <ChevronLeft className="w-5 h-5" />
@@ -927,7 +928,7 @@ export default function WorkoutPage() {
                 className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
               >
                 {isNavigating ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <LoadingLogo size="md" variant="lift" />
                 ) : (
                   <>
                     <span>Siguiente</span>

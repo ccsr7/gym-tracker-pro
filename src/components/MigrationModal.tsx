@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Database, Upload, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Database, Upload, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { createRoutine, createWorkout, createRestDay } from '@/lib/supabase/services';
 import { useToast } from '@/hooks/useToast';
 import { Routine, Workout, RestDay } from '@/types';
+import LoadingLogo from '@/components/ui/LoadingLogo';
 
 interface MigrationModalProps {
   onClose: () => void;
@@ -261,7 +262,7 @@ export default function MigrationModal({ onClose, onSuccess }: MigrationModalPro
                 >
                   {isMigrating ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <LoadingLogo size="sm" variant="lift" />
                       Migrando...
                     </>
                   ) : (

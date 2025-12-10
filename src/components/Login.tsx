@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { Dumbbell, Info } from 'lucide-react';
 import { storageService, STORAGE_KEYS } from '@/lib/storage-service';
+import LoadingLogo from '@/components/ui/LoadingLogo';
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
@@ -133,9 +134,16 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors"
+                className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
               >
-                {isLoading ? 'Enviando...' : 'Enviar Correo de Recuperación'}
+                {isLoading ? (
+                  <>
+                    <LoadingLogo size="md" variant="lift" />
+                    <span>Enviando...</span>
+                  </>
+                ) : (
+                  <span>Enviar Correo de Recuperación</span>
+                )}
               </button>
 
               <div className="text-center">
@@ -207,9 +215,16 @@ export default function Login() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors"
+              className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
             >
-              {isLoading ? 'Cargando...' : (isLogin ? 'Iniciar Sesión' : 'Registrarse')}
+              {isLoading ? (
+                <>
+                  <LoadingLogo size="md" variant="lift" />
+                  <span>Cargando...</span>
+                </>
+              ) : (
+                <span>{isLogin ? 'Iniciar Sesión' : 'Registrarse'}</span>
+              )}
             </button>
           </form>
           )}
@@ -270,9 +285,16 @@ export default function Login() {
                 type="button"
                 onClick={handleDemoLogin}
                 disabled={isLoading}
-                className="w-full bg-emerald-500/20 hover:bg-emerald-500/30 disabled:bg-slate-700 disabled:cursor-not-allowed border border-emerald-500/50 text-emerald-300 disabled:text-slate-500 font-medium py-2 px-4 rounded-lg transition-colors text-sm"
+                className="w-full bg-emerald-500/20 hover:bg-emerald-500/30 disabled:bg-slate-700 disabled:cursor-not-allowed border border-emerald-500/50 text-emerald-300 disabled:text-slate-500 font-medium py-2 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
               >
-                {isLoading ? 'Cargando...' : 'Usar Cuenta Demo'}
+                {isLoading ? (
+                  <>
+                    <LoadingLogo size="sm" variant="lift" />
+                    <span>Cargando...</span>
+                  </>
+                ) : (
+                  <span>Usar Cuenta Demo</span>
+                )}
               </button>
             </div>
           )}
