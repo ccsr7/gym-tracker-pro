@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import { Routine, WorkoutExercise, WorkoutSet, Workout } from '@/types';
 import { getExerciseById } from '@/data/exercises';
-import { Play, Pause, Check, Plus, Trash2, Timer, Save, X, History, TrendingUp, Lightbulb, Link2, RefreshCw } from 'lucide-react';
+import { Play, Pause, Check, Plus, Trash2, Timer, Save, X, History, TrendingUp, Lightbulb, Link2, RefreshCw, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { getProgressionSuggestion } from '@/lib/progression-suggestions';
 import ExercisePickerModal from '@/components/ExercisePickerModal';
@@ -44,6 +44,7 @@ export default function WorkoutPage() {
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [exerciseIndexToReplace, setExerciseIndexToReplace] = useState<number | null>(null);
   const [justSaved, setJustSaved] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // Refs para scroll automático a las series
   const setRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -448,6 +449,30 @@ export default function WorkoutPage() {
     setWorkoutExercises(updated);
   };
 
+  const handleNextExercise = () => {
+    if (currentExerciseIndex >= workoutExercises.length - 1) return;
+
+    setIsNavigating(true);
+    setTimeout(() => {
+      setCurrentExerciseIndex(currentExerciseIndex + 1);
+      setIsNavigating(false);
+      // Scroll suave al inicio
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 200);
+  };
+
+  const handlePreviousExercise = () => {
+    if (currentExerciseIndex <= 0) return;
+
+    setIsNavigating(true);
+    setTimeout(() => {
+      setCurrentExerciseIndex(currentExerciseIndex - 1);
+      setIsNavigating(false);
+      // Scroll suave al inicio
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 200);
+  };
+
   const getExerciseHistory = (exerciseId: string) => {
     const workouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
 
@@ -684,7 +709,11 @@ export default function WorkoutPage() {
 
         {/* Ejercicio actual */}
         {exercise && currentExercise && (
-          <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-6 mb-6">
+          <div
+            className={`bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-6 mb-6 transition-opacity duration-200 ${
+              isNavigating ? 'opacity-50' : 'opacity-100'
+            }`}
+          >
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -879,18 +908,32 @@ export default function WorkoutPage() {
             {/* Navegación entre ejercicios */}
             <div className="flex gap-3 mt-6">
               <button
-                onClick={() => setCurrentExerciseIndex(Math.max(0, currentExerciseIndex - 1))}
-                disabled={currentExerciseIndex === 0}
-                className="flex-1 py-3 bg-slate-700/50 dark:bg-slate-200 hover:bg-slate-700 dark:hover:bg-slate-300 text-white dark:text-slate-900 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handlePreviousExercise}
+                disabled={currentExerciseIndex === 0 || isNavigating}
+                className="flex-1 py-3 bg-slate-700/50 dark:bg-slate-200 hover:bg-slate-700 dark:hover:bg-slate-300 text-white dark:text-slate-900 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
               >
-                Anterior
+                {isNavigating ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <ChevronLeft className="w-5 h-5" />
+                    <span>Anterior</span>
+                  </>
+                )}
               </button>
               <button
-                onClick={() => setCurrentExerciseIndex(Math.min(workoutExercises.length - 1, currentExerciseIndex + 1))}
-                disabled={currentExerciseIndex === workoutExercises.length - 1}
-                className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleNextExercise}
+                disabled={currentExerciseIndex === workoutExercises.length - 1 || isNavigating}
+                className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
               >
-                Siguiente
+                {isNavigating ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <span>Siguiente</span>
+                    <ChevronRight className="w-5 h-5" />
+                  </>
+                )}
               </button>
             </div>
 
