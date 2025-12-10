@@ -194,11 +194,11 @@ export default function ProfilePage() {
             <div className="space-y-4">
               <div>
                 <p className="text-slate-400 dark:text-slate-600 text-sm mb-1">Nombre</p>
-                <p className="text-white dark:text-slate-900 font-medium text-lg">{user?.name || 'Cesar'}</p>
+                <p className="text-white dark:text-slate-900 font-medium text-lg">{user?.name || 'Usuario'}</p>
               </div>
               <div>
                 <p className="text-slate-400 dark:text-slate-600 text-sm mb-1">Email</p>
-                <p className="text-white dark:text-slate-900 font-medium">{user?.email || 'cesar_robledo7@hotmail.com'}</p>
+                <p className="text-white dark:text-slate-900 font-medium">{user?.email || ''}</p>
               </div>
             </div>
           )}
@@ -321,27 +321,33 @@ export default function ProfilePage() {
                     <Scale className="w-4 h-4 text-slate-400 dark:text-slate-600" />
                     <p className="text-slate-400 dark:text-slate-600 text-sm">Peso (kg)</p>
                   </div>
-                  <p className="text-white dark:text-slate-900 font-bold text-3xl">{user?.weight || '65'} kg</p>
+                  <p className="text-white dark:text-slate-900 font-bold text-3xl">
+                    {user?.weight !== undefined && user?.weight !== null ? user.weight : 0}
+                  </p>
                 </div>
                 <div className="bg-slate-700/30 dark:bg-slate-200 rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Ruler className="w-4 h-4 text-slate-400 dark:text-slate-600" />
                     <p className="text-slate-400 dark:text-slate-600 text-sm">Estatura (cm)</p>
                   </div>
-                  <p className="text-white dark:text-slate-900 font-bold text-3xl">{user?.height || '175'} cm</p>
+                  <p className="text-white dark:text-slate-900 font-bold text-3xl">
+                    {user?.height !== undefined && user?.height !== null ? user.height : 0}
+                  </p>
                 </div>
               </div>
 
               {/* BMI Display */}
-              <div className="bg-slate-700/30 dark:bg-slate-200 rounded-xl p-4 mb-4">
-                <p className="text-slate-400 dark:text-slate-600 text-sm mb-2">Índice de Masa Corporal (IMC)</p>
-                <div className="flex items-baseline gap-3">
-                  <p className="text-white dark:text-slate-900 font-bold text-4xl">{bmi || '21.2'}</p>
-                  <span className="text-emerald-400 dark:text-emerald-600 text-sm font-medium px-3 py-1 bg-emerald-500/20 dark:bg-emerald-100 rounded-full">
-                    {bmiCategory || 'Normal'}
-                  </span>
+              {bmi !== null && (
+                <div className="bg-slate-700/30 dark:bg-slate-200 rounded-xl p-4 mb-4">
+                  <p className="text-slate-400 dark:text-slate-600 text-sm mb-2">Índice de Masa Corporal (IMC)</p>
+                  <div className="flex items-baseline gap-3">
+                    <p className="text-white dark:text-slate-900 font-bold text-4xl">{bmi.toFixed(1)}</p>
+                    <span className="text-emerald-400 dark:text-emerald-600 text-sm font-medium px-3 py-1 bg-emerald-500/20 dark:bg-emerald-100 rounded-full">
+                      {bmiCategory}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Training Goal Display */}
               <div className="bg-slate-700/30 dark:bg-slate-200 rounded-xl p-4">
