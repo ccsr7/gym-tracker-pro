@@ -2,7 +2,17 @@ import { supabase } from '../client';
 import { Workout } from '@/types';
 
 /**
+ * Sync workouts to localStorage
+ */
+function syncWorkoutsToLocalStorage(workouts: Workout[]) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('gym-tracker-workouts', JSON.stringify(workouts));
+  }
+}
+
+/**
  * Get all workouts for a user
+ * Returns data from Supabase and syncs to localStorage
  */
 export async function getWorkouts(userId: string): Promise<Workout[]> {
   try {
@@ -14,13 +24,18 @@ export async function getWorkouts(userId: string): Promise<Workout[]> {
 
     if (error) {
       console.error('[WorkoutService] Error getting workouts:', error);
+      // Fallback to localStorage if Supabase fails
+      if (typeof window !== 'undefined') {
+        const local = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+        return local;
+      }
       throw error;
     }
 
     if (!data) return [];
 
     // Map database fields to Workout type
-    return data.map(workout => ({
+    const workouts = data.map(workout => ({
       id: workout.id,
       date: workout.date,
       routineId: workout.routine_id || '',
@@ -31,8 +46,18 @@ export async function getWorkouts(userId: string): Promise<Workout[]> {
       rpe: workout.rpe,
       totalVolume: workout.total_volume ? parseFloat(workout.total_volume) : undefined,
     }));
+
+    // Sync to localStorage
+    syncWorkoutsToLocalStorage(workouts);
+
+    return workouts;
   } catch (error) {
     console.error('[WorkoutService] Error in getWorkouts:', error);
+    // Fallback to localStorage
+    if (typeof window !== 'undefined') {
+      const local = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+      return local;
+    }
     return [];
   }
 }
@@ -115,6 +140,7 @@ export async function getWorkoutById(id: string): Promise<Workout | null> {
 
 /**
  * Create a new workout
+ * Saves to both Supabase and localStorage
  */
 export async function createWorkout(
   userId: string,
@@ -144,7 +170,7 @@ export async function createWorkout(
 
     if (!data) return null;
 
-    return {
+    const newWorkout: Workout = {
       id: data.id,
       date: data.date,
       routineId: data.routine_id || '',
@@ -155,6 +181,15 @@ export async function createWorkout(
       rpe: data.rpe,
       totalVolume: data.total_volume ? parseFloat(data.total_volume) : undefined,
     };
+
+    // Also save to localStorage
+    if (typeof window !== 'undefined') {
+      const existingWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+      existingWorkouts.push(newWorkout);
+      localStorage.setItem('gym-tracker-workouts', JSON.stringify(existingWorkouts));
+    }
+
+    return newWorkout;
   } catch (error) {
     console.error('[WorkoutService] Error in createWorkout:', error);
     return null;
@@ -211,6 +246,7 @@ export async function updateWorkout(
 
 /**
  * Delete a workout
+ * Deletes from both Supabase and localStorage
  */
 export async function deleteWorkout(id: string): Promise<boolean> {
   try {
@@ -222,6 +258,13 @@ export async function deleteWorkout(id: string): Promise<boolean> {
     if (error) {
       console.error('[WorkoutService] Error deleting workout:', error);
       throw error;
+    }
+
+    // Also delete from localStorage
+    if (typeof window !== 'undefined') {
+      const existingWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+      const updated = existingWorkouts.filter((w: Workout) => w.id !== id);
+      localStorage.setItem('gym-tracker-workouts', JSON.stringify(updated));
     }
 
     return true;

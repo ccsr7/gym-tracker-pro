@@ -15,6 +15,8 @@ import CompareWorkouts from '@/components/history/CompareWorkouts';
 import RestDayCard from '@/components/history/RestDayCard';
 import RestDayModal from '@/components/RestDayModal';
 import { storageService, STORAGE_KEYS } from '@/lib/storage-service';
+import { supabase } from '@/lib/supabase/client';
+import { getWorkouts } from '@/lib/supabase/services';
 
 export default function HistoryPage() {
   const { confirm, confirmState } = useConfirm();
@@ -46,17 +48,37 @@ export default function HistoryPage() {
     applyFilters();
   }, [workouts, searchTerm, selectedRoutine, dateFilter]);
 
-  const loadWorkouts = () => {
+  const loadWorkouts = async () => {
     setLoading(true);
-    setTimeout(() => {
+    try {
+      // Try to get user from Supabase
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        // Load from Supabase (which also syncs to localStorage)
+        const supabaseWorkouts = await getWorkouts(user.id);
+        setWorkouts(supabaseWorkouts.reverse());
+      } else {
+        // Fallback to localStorage only
+        if (typeof window !== 'undefined') {
+          const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+          setWorkouts(storedWorkouts.reverse());
+        }
+      }
+
+      // Rest days (still from localStorage for now)
+      const storedRestDays = storageService.get<RestDay[]>(STORAGE_KEYS.REST_DAYS, []);
+      setRestDays(storedRestDays);
+    } catch (error) {
+      console.error('[History] Error loading workouts:', error);
+      // Fallback to localStorage on error
       if (typeof window !== 'undefined') {
         const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
-        const storedRestDays = storageService.get<RestDay[]>(STORAGE_KEYS.REST_DAYS, []);
         setWorkouts(storedWorkouts.reverse());
-        setRestDays(storedRestDays);
       }
+    } finally {
       setLoading(false);
-    }, 300);
+    }
   };
 
   const applyFilters = () => {
