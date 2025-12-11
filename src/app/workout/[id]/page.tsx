@@ -555,13 +555,21 @@ export default function WorkoutPage() {
     };
 
     try {
+      console.log('[Workout] Starting save process...');
       const { data: { user: supabaseUser } } = await supabase.auth.getUser();
 
       if (supabaseUser) {
         // Save to Supabase
-        await createWorkout(supabaseUser.id, workoutData);
+        console.log('[Workout] Saving to Supabase for user:', supabaseUser.id);
+        const savedWorkout = await createWorkout(supabaseUser.id, workoutData);
+        console.log('[Workout] Saved to Supabase:', savedWorkout);
+
+        if (!savedWorkout) {
+          throw new Error('Failed to save workout to Supabase');
+        }
       } else {
         // Fallback to localStorage
+        console.log('[Workout] No user found, saving to localStorage only');
         const workout: Workout = {
           id: `workout-${Date.now()}`,
           ...workoutData
@@ -569,6 +577,7 @@ export default function WorkoutPage() {
         const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
         storedWorkouts.push(workout);
         localStorage.setItem('gym-tracker-workouts', JSON.stringify(storedWorkouts));
+        console.log('[Workout] Saved to localStorage, total workouts:', storedWorkouts.length);
       }
 
       // Limpiar el workout en progreso
@@ -580,6 +589,7 @@ export default function WorkoutPage() {
 
       // Mostrar confirmación
       toast.success('Entrenamiento guardado correctamente');
+      console.log('[Workout] Save completed successfully');
 
       // Navegar después de un pequeño delay para que se vea el toast
       setTimeout(() => {
@@ -587,7 +597,7 @@ export default function WorkoutPage() {
       }, 300);
     } catch (error) {
       console.error('[Workout] Error saving workout:', error);
-      toast.error('Error al guardar el entrenamiento');
+      toast.error(`Error al guardar: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   };
 

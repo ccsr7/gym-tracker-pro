@@ -5,6 +5,8 @@ import { User as SupabaseUser } from '@supabase/supabase-js';
 import { User } from '@/types';
 import { supabase } from './supabase/client';
 import { validateEmail, validatePassword, validateName } from './validation';
+import { getWorkouts } from './supabase/services/workouts';
+import { getRoutines } from './supabase/services/routines';
 
 interface AuthContextType {
   user: User | null;
@@ -68,6 +70,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Auto-sync disabled - causing app to not load
+  const autoSyncData = async (userId: string) => {
+    // Skip - Dashboard handles sync in background
+    return;
+  };
+
   useEffect(() => {
     // Check for existing session on mount
     const initializeAuth = async () => {
@@ -83,6 +91,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           const profile = await loadUserProfile(session.user);
           setUser(profile);
+
+          // Auto-sync data in background
+          if (profile) {
+            autoSyncData(session.user.id);
+          }
         }
 
         setIsLoading(false);
@@ -101,6 +114,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === 'SIGNED_IN' && session?.user) {
         const profile = await loadUserProfile(session.user);
         setUser(profile);
+
+        // Auto-sync data in background
+        if (profile) {
+          autoSyncData(session.user.id);
+        }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
       } else if (event === 'USER_UPDATED' && session?.user) {

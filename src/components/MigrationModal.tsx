@@ -58,11 +58,27 @@ export default function MigrationModal({ onClose, onSuccess }: MigrationModalPro
       let migratedRoutines = 0;
       let migratedWorkouts = 0;
       let migratedRestDays = 0;
+      let skippedWorkouts = 0;
+
+      // Step 1: Check existing data in Supabase to avoid duplicates
+      console.log('[Migration] Checking existing data in Supabase...');
+
+      const { data: existingWorkouts } = await supabase
+        .from('workouts')
+        .select('date, routine_name')
+        .eq('user_id', user.id);
+
+      const existingWorkoutKeys = new Set(
+        (existingWorkouts || []).map((w: any) => `${w.date}_${w.routine_name}`)
+      );
 
       // Migrate Routines
+      console.log('[Migration] Starting routine migration...');
       const routines: Routine[] = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
-      for (const routine of routines) {
+      for (let i = 0; i < routines.length; i++) {
+        const routine = routines[i];
         try {
+          console.log(`[Migration] Migrating routine ${i + 1}/${routines.length}: ${routine.name}`);
           await createRoutine(user.id, {
             name: routine.name,
             day: routine.day,
@@ -71,16 +87,31 @@ export default function MigrationModal({ onClose, onSuccess }: MigrationModalPro
             isRestDay: routine.isRestDay || false,
           });
           migratedRoutines++;
-        } catch (error) {
+        } catch (error: any) {
           console.error('[Migration] Error migrating routine:', error);
-          migrationErrors.push(`Rutina "${routine.name}": ${error instanceof Error ? error.message : 'Error desconocido'}`);
+          const friendlyError = error?.code === '23505'
+            ? 'Ya existe (omitido)'
+            : error?.message || 'Error desconocido';
+          migrationErrors.push(`Rutina "${routine.name}": ${friendlyError}`);
         }
       }
 
-      // Migrate Workouts
+      // Migrate Workouts with duplicate detection
+      console.log('[Migration] Starting workout migration...');
       const workouts: Workout[] = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
-      for (const workout of workouts) {
+      for (let i = 0; i < workouts.length; i++) {
+        const workout = workouts[i];
+        const workoutKey = `${workout.date}_${workout.routineName}`;
+
+        // Skip if already exists in Supabase
+        if (existingWorkoutKeys.has(workoutKey)) {
+          console.log(`[Migration] Skipping workout ${i + 1}/${workouts.length}: Already exists`);
+          skippedWorkouts++;
+          continue;
+        }
+
         try {
+          console.log(`[Migration] Migrating workout ${i + 1}/${workouts.length}: ${workout.routineName} (${new Date(workout.date).toLocaleDateString()})`);
           await createWorkout(user.id, {
             date: workout.date,
             routineId: workout.routineId,
@@ -92,25 +123,36 @@ export default function MigrationModal({ onClose, onSuccess }: MigrationModalPro
             totalVolume: workout.totalVolume,
           });
           migratedWorkouts++;
-        } catch (error) {
+        } catch (error: any) {
           console.error('[Migration] Error migrating workout:', error);
-          migrationErrors.push(`Entrenamiento del ${new Date(workout.date).toLocaleDateString()}: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+          const friendlyError = error?.code === '23503'
+            ? 'La rutina no existe en Supabase'
+            : error?.code === '23505'
+            ? 'Ya existe (omitido)'
+            : error?.message || 'Error desconocido';
+          migrationErrors.push(`Entrenamiento "${workout.routineName}" del ${new Date(workout.date).toLocaleDateString()}: ${friendlyError}`);
         }
       }
 
       // Migrate Rest Days
+      console.log('[Migration] Starting rest days migration...');
       const restDays: RestDay[] = JSON.parse(localStorage.getItem('gym-tracker-rest-days') || '[]');
-      for (const restDay of restDays) {
+      for (let i = 0; i < restDays.length; i++) {
+        const restDay = restDays[i];
         try {
+          console.log(`[Migration] Migrating rest day ${i + 1}/${restDays.length}`);
           await createRestDay(user.id, {
             date: restDay.date,
             reason: restDay.reason,
             notes: restDay.notes,
           });
           migratedRestDays++;
-        } catch (error) {
+        } catch (error: any) {
           console.error('[Migration] Error migrating rest day:', error);
-          migrationErrors.push(`Día de descanso del ${new Date(restDay.date).toLocaleDateString()}: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+          const friendlyError = error?.code === '23505'
+            ? 'Ya existe (omitido)'
+            : error?.message || 'Error desconocido';
+          migrationErrors.push(`Día de descanso del ${new Date(restDay.date).toLocaleDateString()}: ${friendlyError}`);
         }
       }
 
@@ -123,10 +165,18 @@ export default function MigrationModal({ onClose, onSuccess }: MigrationModalPro
       setErrors(migrationErrors);
       setMigrationComplete(true);
 
+      // Build success message
+      const messages: string[] = [];
+      if (migratedWorkouts > 0) messages.push(`✅ ${migratedWorkouts} entrenamientos migrados`);
+      if (skippedWorkouts > 0) messages.push(`⏭️ ${skippedWorkouts} ya existían (omitidos)`);
+      if (migrationErrors.length > 0) messages.push(`❌ ${migrationErrors.length} errores`);
+
+      console.log('[Migration] Complete:', messages.join(' | '));
+
       if (migrationErrors.length === 0) {
-        toast.success('Migración completada exitosamente');
+        toast.success(`Migración completada: ${messages.join(', ')}`);
       } else {
-        toast.warning(`Migración completada con ${migrationErrors.length} errores`);
+        toast.warning(`Migración completada con errores: ${messages.join(', ')}`);
       }
     } catch (error) {
       console.error('[Migration] Fatal error:', error);

@@ -31,6 +31,7 @@ export default function ProfilePage() {
   const [thisWeekWorkouts, setThisWeekWorkouts] = useState(0);
   const [showMigrationModal, setShowMigrationModal] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [unsyncedCount, setUnsyncedCount] = useState(0);
 
   useEffect(() => {
     if (user) {
@@ -55,6 +56,26 @@ export default function ProfilePage() {
     },
   });
 
+  const checkUnsyncedData = async () => {
+    try {
+      const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+      if (!supabaseUser) return;
+
+      const localWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+      const { data } = await supabase
+        .from('workouts')
+        .select('id')
+        .eq('user_id', supabaseUser.id);
+
+      const supabaseCount = data?.length || 0;
+      const localCount = localWorkouts.length;
+
+      setUnsyncedCount(Math.max(0, localCount - supabaseCount));
+    } catch (error) {
+      console.error('[Profile] Error checking unsynced data:', error);
+    }
+  };
+
   const loadWorkoutHistory = async () => {
     try {
       // Get current user ID from Supabase
@@ -68,6 +89,9 @@ export default function ProfilePage() {
 
       // Set userId for Realtime subscription
       setUserId(supabaseUser.id);
+
+      // Check for unsynced data
+      checkUnsyncedData();
 
       // Load workouts from Supabase
       const allWorkouts = await getWorkouts(supabaseUser.id);
@@ -508,12 +532,21 @@ export default function ProfilePage() {
         ) : (
           <>
             <button
-              onClick={() => setShowMigrationModal(true)}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 mb-3"
+              onClick={() => router.push('/diagnostics')}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 mb-3"
             >
               <Database className="w-4 h-4" />
-              Migrar Datos a Supabase
+              Diagnóstico de Datos
             </button>
+            {unsyncedCount > 0 && (
+              <button
+                onClick={() => setShowMigrationModal(true)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 mb-3"
+              >
+                <Database className="w-4 h-4" />
+                Migrar {unsyncedCount} Entrenamientos a Supabase
+              </button>
+            )}
             <button
               onClick={handleLogout}
               className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"

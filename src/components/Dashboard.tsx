@@ -71,34 +71,34 @@ export default function Dashboard() {
   };
 
   const loadStats = () => {
-    const workouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
-    const routines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
-    setTotalWorkouts(workouts.length);
+    // ONLY read from localStorage - NO Supabase calls
+    const localWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+    const localRoutines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
+
+    setTotalWorkouts(localWorkouts.length);
 
     const today = new Date();
     const startOfWeek = new Date(today);
     startOfWeek.setDate(today.getDate() - today.getDay());
 
-    const thisWeek = workouts.filter((w: any) => {
+    const thisWeek = localWorkouts.filter((w: any) => {
       const workoutDate = new Date(w.date);
       return workoutDate >= startOfWeek;
     });
     setWeekWorkouts(thisWeek.length);
 
-    // Calculate total volume
-    const volume = workouts.reduce((sum: number, w: any) => sum + (w.totalVolume || 0), 0);
+    const volume = localWorkouts.reduce((sum: number, w: any) => sum + (w.totalVolume || 0), 0);
     setTotalVolume(volume);
 
-    // Calculate workout streak
-    const streak = calculateWorkoutStreak(workouts, routines);
+    const streak = calculateWorkoutStreak(localWorkouts, localRoutines);
     setWorkoutStreak(streak);
   };
 
   const loadTodayRoutine = () => {
+    // ONLY read from localStorage - NO Supabase calls
     const today = getSpanishDay(new Date());
-    const routines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
-    // Buscar la rutina del día (puede ser null, una rutina normal, o un día de descanso)
-    const routine = routines.find((r: Routine) => r.day === today);
+    const localRoutines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
+    const routine = localRoutines.find((r: Routine) => r.day === today);
     setTodayRoutine(routine || null);
   };
 
