@@ -70,17 +70,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Auto-sync disabled - causing app to not load
+  // Background sync - load routines and workouts to localStorage
   const autoSyncData = async (userId: string) => {
-    // Skip - Dashboard handles sync in background
-    return;
+    try {
+      // Load routines from Supabase and sync to localStorage
+      console.log('[Auth] Background syncing routines...');
+      await getRoutines(userId);
+
+      // Load workouts from Supabase and sync to localStorage
+      console.log('[Auth] Background syncing workouts...');
+      await getWorkouts(userId);
+
+      console.log('[Auth] Background sync completed');
+    } catch (error) {
+      console.error('[Auth] Background sync failed:', error);
+      // Continue anyway - app will use localStorage
+    }
   };
 
   useEffect(() => {
     // Check for existing session on mount
     const initializeAuth = async () => {
       try {
+        // Add timeout to prevent infinite loading
+        const timeoutId = setTimeout(() => {
+          console.warn('[Auth] Session check timed out after 5s, proceeding anyway');
+          setIsLoading(false);
+        }, 5000);
+
         const { data: { session }, error } = await supabase.auth.getSession();
+
+        clearTimeout(timeoutId);
 
         if (error) {
           console.error('[Auth] Error getting session:', error);
@@ -89,12 +109,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (session?.user) {
-          const profile = await loadUserProfile(session.user);
-          setUser(profile);
+          try {
+            const profile = await loadUserProfile(session.user);
+            setUser(profile);
 
-          // Auto-sync data in background
-          if (profile) {
-            autoSyncData(session.user.id);
+            // Auto-sync data in background
+            if (profile) {
+              autoSyncData(session.user.id);
+            }
+          } catch (profileError) {
+            console.error('[Auth] Error loading profile, continuing anyway:', profileError);
+            // Set a fallback user even if profile loading fails
+            setUser({
+              name: session.user.email?.split('@')[0] || 'Usuario',
+              email: session.user.email || '',
+              weight: 0,
+              height: 0,
+              trainingGoal: undefined,
+            });
           }
         }
 

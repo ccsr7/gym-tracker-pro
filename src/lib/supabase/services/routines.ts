@@ -3,6 +3,7 @@ import { Routine, DayOfWeek } from '@/types';
 
 /**
  * Get all routines for a user
+ * Also syncs to localStorage for offline access
  */
 export async function getRoutines(userId: string): Promise<Routine[]> {
   try {
@@ -14,13 +15,18 @@ export async function getRoutines(userId: string): Promise<Routine[]> {
 
     if (error) {
       console.error('[RoutineService] Error getting routines:', error);
+      // Fallback to localStorage if Supabase fails
+      if (typeof window !== 'undefined') {
+        const local = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
+        return local;
+      }
       throw error;
     }
 
     if (!data) return [];
 
     // Map database fields to Routine type
-    return data.map(routine => ({
+    const routines = data.map(routine => ({
       id: routine.id,
       name: routine.name,
       day: routine.day as DayOfWeek,
@@ -28,8 +34,21 @@ export async function getRoutines(userId: string): Promise<Routine[]> {
       duration: routine.duration,
       isRestDay: routine.is_rest_day || false,
     }));
+
+    // Sync to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('gym-tracker-routines', JSON.stringify(routines));
+      console.log('[RoutineService] Synced', routines.length, 'routines to localStorage');
+    }
+
+    return routines;
   } catch (error) {
     console.error('[RoutineService] Error in getRoutines:', error);
+    // Fallback to localStorage
+    if (typeof window !== 'undefined') {
+      const local = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
+      return local;
+    }
     return [];
   }
 }

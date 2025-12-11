@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase/client';
 import { getWorkouts } from '@/lib/supabase/services/workouts';
-import { Database, Download, Upload, CheckCircle, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { Database, Download, Upload, CheckCircle, XCircle, AlertCircle, RefreshCw, ArrowLeft } from 'lucide-react';
 import LoadingLogo from '@/components/ui/LoadingLogo';
 import { Workout } from '@/types';
+import { useRouter } from 'next/navigation';
 
 interface DiagnosticData {
   localStorage: {
@@ -32,6 +33,7 @@ interface DiagnosticData {
 
 export default function DiagnosticsPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [diagnosticData, setDiagnosticData] = useState<DiagnosticData | null>(null);
@@ -190,6 +192,15 @@ export default function DiagnosticsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
       <div className="max-w-4xl mx-auto">
+        {/* Back Button */}
+        <button
+          onClick={() => router.back()}
+          className="mb-6 flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Volver
+        </button>
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
