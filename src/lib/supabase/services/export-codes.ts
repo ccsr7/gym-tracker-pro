@@ -135,7 +135,7 @@ export async function getRoutineFromCode(code: string): Promise<ExportData | nul
       .update({ usage_count: data.usage_count + 1 })
       .eq('id', data.id)
       .then(() => console.log('[ExportCode] Usage count incremented for code:', code))
-      .catch(err => console.error('[ExportCode] Error incrementing usage count:', err));
+      .then(null, err => console.error('[ExportCode] Error incrementing usage count:', err));
 
     console.log('[ExportCode] Routine data fetched successfully, usage count:', data.usage_count + 1);
     return data.routine_data as ExportData;

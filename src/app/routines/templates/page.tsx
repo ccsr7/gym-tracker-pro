@@ -5,18 +5,13 @@ import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import PageTransition from '@/components/PageTransition';
 import { Sparkles, Users, TrendingUp, Zap, Check, Calendar, Dumbbell } from 'lucide-react';
-// FIXME: Temporarily disabled due to invalid exercise IDs causing build errors
-// import { ROUTINE_TEMPLATES, RoutineTemplate } from '@/data/routine-templates';
+import { ROUTINE_TEMPLATES, RoutineTemplate } from '@/data/routine-templates';
+import { mapExerciseIds } from '@/data/exercise-id-mapping';
 import { Routine } from '@/types';
-
-type RoutineTemplate = any; // Temporary type
 
 export default function TemplatesPage() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all');
-
-  // FIXME: Temporarily using empty array until exercise IDs are fixed
-  const ROUTINE_TEMPLATES: any[] = [];
 
   const filteredTemplates = selectedCategory === 'all'
     ? ROUTINE_TEMPLATES
@@ -31,7 +26,8 @@ export default function TemplatesPage() {
       id: `${template.id}-${routineData.day}-${Date.now()}`,
       name: routineData.name,
       day: routineData.day,
-      exercises: routineData.exercises,
+      // Mapear IDs de ejercicios de inglés a español
+      exercises: mapExerciseIds(routineData.exercises),
       duration: routineData.exercises.length * 8 // Estimación: 8 min por ejercicio
     }));
 
