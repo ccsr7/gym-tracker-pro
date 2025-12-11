@@ -183,11 +183,17 @@ export default function HistoryPage() {
     setEditedWorkout(null);
   };
 
-  const handleSetChange = (exerciseIdx: number, setIdx: number, field: 'reps' | 'weight', value: number) => {
+  const handleSetChange = (exerciseIdx: number, setIdx: number, field: 'reps' | 'weight' | 'completed', value: number | boolean) => {
     if (!editedWorkout) return;
 
     const updated = { ...editedWorkout };
-    updated.exercises[exerciseIdx].sets[setIdx][field] = value;
+    if (field === 'completed') {
+      updated.exercises[exerciseIdx].sets[setIdx].completed = value as boolean;
+    } else if (field === 'weight') {
+      updated.exercises[exerciseIdx].sets[setIdx].weight = value as number;
+    } else if (field === 'reps') {
+      updated.exercises[exerciseIdx].sets[setIdx].reps = value as number;
+    }
 
     const totalVolume = updated.exercises.reduce((total, ex) => {
       return total + ex.sets.reduce((exTotal, set) => {
@@ -199,18 +205,43 @@ export default function HistoryPage() {
     setEditedWorkout(updated);
   };
 
-  const handleSaveEdit = () => {
+  const handleNotesChange = (notes: string) => {
+    if (!editedWorkout) return;
+    setEditedWorkout({ ...editedWorkout, notes });
+  };
+
+  const handleRPEChange = (rpe: number | undefined) => {
+    if (!editedWorkout) return;
+    setEditedWorkout({ ...editedWorkout, rpe });
+  };
+
+  const handleSaveEdit = async () => {
     if (!editedWorkout) return;
 
-    const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
-    const updatedWorkouts = storedWorkouts.map((w: Workout) =>
-      w.id === editedWorkout.id ? editedWorkout : w
-    );
-    localStorage.setItem('gym-tracker-workouts', JSON.stringify(updatedWorkouts));
+    try {
+      // Check if user is logged in
+      const { data: { user } } = await supabase.auth.getUser();
 
-    loadWorkouts();
-    handleCancelEdit();
-    toast.success('Entrenamiento actualizado correctamente');
+      if (user) {
+        // Update in Supabase
+        const { updateWorkout } = await import('@/lib/supabase/services');
+        await updateWorkout(editedWorkout.id, editedWorkout);
+      }
+
+      // Always update localStorage
+      const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+      const updatedWorkouts = storedWorkouts.map((w: Workout) =>
+        w.id === editedWorkout.id ? editedWorkout : w
+      );
+      localStorage.setItem('gym-tracker-workouts', JSON.stringify(updatedWorkouts));
+
+      loadWorkouts();
+      handleCancelEdit();
+      toast.success('Entrenamiento actualizado correctamente');
+    } catch (error) {
+      console.error('[History] Error updating workout:', error);
+      toast.error('Error al actualizar el entrenamiento');
+    }
   };
 
   const handleCompareWorkout = (workoutId: string) => {
@@ -490,10 +521,18 @@ export default function HistoryPage() {
                                   : 'bg-slate-600/30 dark:bg-slate-50 opacity-60'
                               }`}
                             >
-                              <div className="flex-shrink-0 w-16">
-                                <p className="text-slate-400 dark:text-slate-600 text-sm font-medium">
-                                  Serie {setIdx + 1}
-                                </p>
+                              <div className="flex-shrink-0">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={set.completed}
+                                    onChange={(e) => handleSetChange(exerciseIdx, setIdx, 'completed', e.target.checked)}
+                                    className="w-5 h-5 rounded border-slate-600 dark:border-slate-300 text-emerald-500 focus:ring-emerald-500"
+                                  />
+                                  <p className="text-slate-400 dark:text-slate-600 text-sm font-medium">
+                                    Serie {setIdx + 1}
+                                  </p>
+                                </label>
                               </div>
 
                               <div className="flex-1 flex items-center gap-3">
@@ -504,7 +543,6 @@ export default function HistoryPage() {
                                     value={set.weight}
                                     onChange={(e) => handleSetChange(exerciseIdx, setIdx, 'weight', parseFloat(e.target.value) || 0)}
                                     className="w-full px-4 py-3 bg-slate-700 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 text-center font-bold text-base"
-                                    disabled={!set.completed}
                                     step="0.5"
                                   />
                                 </div>
@@ -516,7 +554,6 @@ export default function HistoryPage() {
                                     value={set.reps}
                                     onChange={(e) => handleSetChange(exerciseIdx, setIdx, 'reps', parseInt(e.target.value) || 0)}
                                     className="w-full px-4 py-3 bg-slate-700 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 text-center font-bold text-base"
-                                    disabled={!set.completed}
                                   />
                                 </div>
 
@@ -543,6 +580,54 @@ export default function HistoryPage() {
                       </div>
                     );
                   })}
+
+                  {/* Notes and RPE Section */}
+                  <div className="space-y-4 mt-6">
+                    {/* Notes */}
+                    <div className="bg-slate-700/30 dark:bg-slate-100 border border-slate-600 dark:border-slate-300 rounded-lg p-4">
+                      <label className="block text-sm font-medium text-slate-300 dark:text-slate-700 mb-2">
+                        Notas
+                      </label>
+                      <textarea
+                        value={editedWorkout.notes || ''}
+                        onChange={(e) => handleNotesChange(e.target.value)}
+                        placeholder="Agrega notas sobre tu entrenamiento..."
+                        className="w-full px-4 py-3 bg-slate-700 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                        rows={3}
+                      />
+                    </div>
+
+                    {/* RPE */}
+                    <div className="bg-slate-700/30 dark:bg-slate-100 border border-slate-600 dark:border-slate-300 rounded-lg p-4">
+                      <label className="block text-sm font-medium text-slate-300 dark:text-slate-700 mb-3">
+                        RPE (Esfuerzo Percibido)
+                      </label>
+                      <div className="flex items-center gap-2">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+                          <button
+                            key={value}
+                            onClick={() => handleRPEChange(value)}
+                            className={`flex-1 py-3 rounded-lg font-bold transition-all ${
+                              editedWorkout.rpe === value
+                                ? 'bg-orange-500 text-white scale-110'
+                                : 'bg-slate-700/50 dark:bg-white text-slate-400 dark:text-slate-600 hover:bg-slate-700 dark:hover:bg-slate-200'
+                            }`}
+                          >
+                            {value}
+                          </button>
+                        ))}
+                        {editedWorkout.rpe && (
+                          <button
+                            onClick={() => handleRPEChange(undefined)}
+                            className="px-3 py-3 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-400 rounded-lg text-sm"
+                            title="Quitar RPE"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
