@@ -124,12 +124,31 @@ export default function HistoryPage() {
 
     if (!shouldDelete) return;
 
-    const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
-    const updatedWorkouts = storedWorkouts.filter((w: Workout) => w.id !== workoutId);
-    localStorage.setItem('gym-tracker-workouts', JSON.stringify(updatedWorkouts));
+    try {
+      // Check if user is logged in
+      const { data: { user } } = await supabase.auth.getUser();
 
-    loadWorkouts();
-    toast.success('Entrenamiento eliminado correctamente');
+      if (user) {
+        // Delete from Supabase (which also deletes from localStorage in the service)
+        const { deleteWorkout } = await import('@/lib/supabase/services');
+        const success = await deleteWorkout(workoutId);
+
+        if (!success) {
+          throw new Error('Failed to delete workout from Supabase');
+        }
+      } else {
+        // Fallback: delete only from localStorage
+        const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+        const updatedWorkouts = storedWorkouts.filter((w: Workout) => w.id !== workoutId);
+        localStorage.setItem('gym-tracker-workouts', JSON.stringify(updatedWorkouts));
+      }
+
+      loadWorkouts();
+      toast.success('Entrenamiento eliminado correctamente');
+    } catch (error) {
+      console.error('[History] Error deleting workout:', error);
+      toast.error('Error al eliminar el entrenamiento');
+    }
   };
 
   const handleDeleteRestDay = async (restDayId: string) => {
@@ -484,7 +503,7 @@ export default function HistoryPage() {
                                     type="number"
                                     value={set.weight}
                                     onChange={(e) => handleSetChange(exerciseIdx, setIdx, 'weight', parseFloat(e.target.value) || 0)}
-                                    className="w-full px-3 py-2 bg-slate-700 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 text-center font-bold"
+                                    className="w-full px-4 py-3 bg-slate-700 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 text-center font-bold text-base"
                                     disabled={!set.completed}
                                     step="0.5"
                                   />
@@ -496,14 +515,14 @@ export default function HistoryPage() {
                                     type="number"
                                     value={set.reps}
                                     onChange={(e) => handleSetChange(exerciseIdx, setIdx, 'reps', parseInt(e.target.value) || 0)}
-                                    className="w-full px-3 py-2 bg-slate-700 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 text-center font-bold"
+                                    className="w-full px-4 py-3 bg-slate-700 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 text-center font-bold text-base"
                                     disabled={!set.completed}
                                   />
                                 </div>
 
-                                <div className="flex-shrink-0 w-20">
+                                <div className="flex-shrink-0 w-24">
                                   <p className="text-xs text-slate-400 dark:text-slate-600 mb-1">Volumen</p>
-                                  <p className="text-emerald-400 dark:text-emerald-600 font-bold text-sm">
+                                  <p className="text-emerald-400 dark:text-emerald-600 font-bold text-base">
                                     {set.completed ? set.weight * set.reps : 0}kg
                                   </p>
                                 </div>
