@@ -186,7 +186,9 @@ export default function HistoryPage() {
   const handleSetChange = (exerciseIdx: number, setIdx: number, field: 'reps' | 'weight' | 'completed', value: number | boolean) => {
     if (!editedWorkout) return;
 
-    const updated = { ...editedWorkout };
+    // Deep copy to ensure React detects changes
+    const updated = JSON.parse(JSON.stringify(editedWorkout)) as Workout;
+
     if (field === 'completed') {
       updated.exercises[exerciseIdx].sets[setIdx].completed = value as boolean;
     } else if (field === 'weight') {
