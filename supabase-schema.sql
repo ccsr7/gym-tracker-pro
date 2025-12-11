@@ -124,92 +124,92 @@ alter table workout_sessions enable row level security;
 -- Políticas para PROFILES
 create policy "Users can view own profile"
   on profiles for select
-  using (auth.uid() = id);
+  using ((select auth.uid()) = id);
 
 create policy "Users can update own profile"
   on profiles for update
-  using (auth.uid() = id);
+  using ((select auth.uid()) = id);
 
 create policy "Users can insert own profile"
   on profiles for insert
-  with check (auth.uid() = id);
+  with check ((select auth.uid()) = id);
 
 -- Políticas para ROUTINES
 create policy "Users can view own routines"
   on routines for select
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 create policy "Users can insert own routines"
   on routines for insert
-  with check (auth.uid() = user_id);
+  with check ((select auth.uid()) = user_id);
 
 create policy "Users can update own routines"
   on routines for update
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 create policy "Users can delete own routines"
   on routines for delete
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 -- Políticas para WORKOUTS
 create policy "Users can view own workouts"
   on workouts for select
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 create policy "Users can insert own workouts"
   on workouts for insert
-  with check (auth.uid() = user_id);
+  with check ((select auth.uid()) = user_id);
 
 create policy "Users can update own workouts"
   on workouts for update
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 create policy "Users can delete own workouts"
   on workouts for delete
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 -- Políticas para REST_DAYS
 create policy "Users can view own rest days"
   on rest_days for select
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 create policy "Users can insert own rest days"
   on rest_days for insert
-  with check (auth.uid() = user_id);
+  with check ((select auth.uid()) = user_id);
 
 create policy "Users can update own rest days"
   on rest_days for update
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 create policy "Users can delete own rest days"
   on rest_days for delete
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 -- Políticas para ACHIEVEMENTS
 create policy "Users can view own achievements"
   on achievements for select
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 create policy "Users can insert own achievements"
   on achievements for insert
-  with check (auth.uid() = user_id);
+  with check ((select auth.uid()) = user_id);
 
 -- Políticas para WORKOUT_SESSIONS
 create policy "Users can view own sessions"
   on workout_sessions for select
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 create policy "Users can insert own sessions"
   on workout_sessions for insert
-  with check (auth.uid() = user_id);
+  with check ((select auth.uid()) = user_id);
 
 create policy "Users can update own sessions"
   on workout_sessions for update
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 create policy "Users can delete own sessions"
   on workout_sessions for delete
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 -- =====================================================
 -- TRIGGERS
