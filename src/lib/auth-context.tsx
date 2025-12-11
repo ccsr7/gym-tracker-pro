@@ -200,6 +200,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.user) {
         const profile = await loadUserProfile(data.user);
         setUser(profile);
+
+        // Auto-cleanup demo account if 7+ days have passed
+        if (data.user.email === 'demo@gym.com') {
+          try {
+            console.log('[Auth] Checking if demo account needs cleanup...');
+            const { data: cleanupResult, error: cleanupError } = await supabase.rpc('cleanup_demo_account_smart');
+
+            if (cleanupError) {
+              console.error('[Auth] Demo cleanup error:', cleanupError);
+            } else if (cleanupResult && cleanupResult[0]?.cleaned) {
+              console.log('[Auth] Demo account cleaned:', {
+                workouts: cleanupResult[0].workouts_deleted,
+                routines: cleanupResult[0].routines_deleted
+              });
+              // Reload localStorage to reflect cleanup
+              window.location.reload();
+            } else {
+              console.log('[Auth] Demo account does not need cleanup yet');
+            }
+          } catch (cleanupErr) {
+            console.error('[Auth] Demo cleanup failed:', cleanupErr);
+            // Continue anyway - cleanup is not critical for login
+          }
+        }
       }
 
       return { success: true };

@@ -7,6 +7,9 @@ import { X, Download, Upload, FileText, Copy, Check } from 'lucide-react';
 import { useConfirm } from '@/hooks/useConfirm';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/hooks/useToast';
+import { createExportCode, getRoutineFromCode } from '@/lib/supabase/services/export-codes';
+import { supabase } from '@/lib/supabase/client';
+import { createRoutine } from '@/lib/supabase/services';
 
 interface RoutineImportExportProps {
   onClose: () => void;
@@ -23,6 +26,8 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
   const [importCode, setImportCode] = useState('');
   const [copied, setCopied] = useState(false);
   const [routines, setRoutines] = useState<Routine[]>([]);
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   useEffect(() => {
     const storedRoutines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
@@ -37,31 +42,53 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
     }
   };
 
-  const generateExportCode = () => {
-    const selectedRoutineData = routines.filter(r => selectedRoutines.includes(r.id));
-    const exportData = {
-      version: '1.0',
-      timestamp: new Date().toISOString(),
-      routines: selectedRoutineData,
-    };
+  const generateExportCode = async () => {
+    setIsGeneratingCode(true);
 
-    // Generate a simple hash code (8 characters)
-    const jsonString = JSON.stringify(exportData);
-    let hash = 0;
-    for (let i = 0; i < jsonString.length; i++) {
-      const char = jsonString.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
+    try {
+      const selectedRoutineData = routines.filter(r => selectedRoutines.includes(r.id));
+      const exportData = {
+        version: '1.0',
+        timestamp: new Date().toISOString(),
+        routines: selectedRoutineData,
+      };
+
+      // Intentar guardar en Supabase primero
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        const code = await createExportCode(user.id, exportData);
+
+        if (code) {
+          setExportCode(code);
+          toast.success('Código generado exitosamente. ¡Ahora puedes compartirlo con cualquier usuario!');
+          setIsGeneratingCode(false);
+          return;
+        }
+      }
+
+      // Fallback: usar localStorage (método antiguo)
+      console.log('[RoutineImportExport] Using localStorage fallback');
+      const jsonString = JSON.stringify(exportData);
+      let hash = 0;
+      for (let i = 0; i < jsonString.length; i++) {
+        const char = jsonString.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+      }
+
+      const hashCode = Math.abs(hash).toString(36).toUpperCase().substring(0, 8).padStart(8, '0');
+      const exportKey = `gym-export-${hashCode}`;
+      localStorage.setItem(exportKey, btoa(JSON.stringify(exportData)));
+
+      setExportCode(hashCode);
+      toast.info('Código generado localmente. Solo funcionará en este dispositivo.');
+    } catch (error) {
+      console.error('[RoutineImportExport] Error generating code:', error);
+      toast.error('Error al generar código. Intenta nuevamente.');
+    } finally {
+      setIsGeneratingCode(false);
     }
-
-    // Convert to alphanumeric code
-    const hashCode = Math.abs(hash).toString(36).toUpperCase().substring(0, 8).padStart(8, '0');
-
-    // Store full data with hash as key
-    const exportKey = `gym-export-${hashCode}`;
-    localStorage.setItem(exportKey, btoa(JSON.stringify(exportData)));
-
-    setExportCode(hashCode);
   };
 
   const copyToClipboard = () => {
@@ -71,36 +98,48 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
   };
 
   const importRoutines = async () => {
-    try {
-      // Try to get data from localStorage using the short code
-      const exportKey = `gym-export-${importCode.trim().toUpperCase()}`;
-      const storedData = localStorage.getItem(exportKey);
+    setIsImporting(true);
 
-      let decoded;
-      if (storedData) {
-        // Short code found in localStorage
-        decoded = JSON.parse(atob(storedData));
-      } else {
-        // Try to decode as old long format (backwards compatibility)
+    try {
+      const code = importCode.trim().toUpperCase();
+
+      // Intentar importar desde Supabase primero
+      let decoded = await getRoutineFromCode(code);
+
+      // Fallback 1: localStorage con código corto
+      if (!decoded) {
+        const exportKey = `gym-export-${code}`;
+        const storedData = localStorage.getItem(exportKey);
+        if (storedData) {
+          decoded = JSON.parse(atob(storedData));
+        }
+      }
+
+      // Fallback 2: código largo legacy (base64 completo)
+      if (!decoded) {
         try {
           decoded = JSON.parse(atob(importCode));
         } catch {
           toast.error('Código inválido. Verifica que el código sea correcto.');
+          setIsImporting(false);
           return;
         }
       }
 
-      if (!decoded.routines || !Array.isArray(decoded.routines)) {
+      // Validar estructura
+      if (!decoded || !decoded.routines || !Array.isArray(decoded.routines)) {
         toast.error('Código inválido. Por favor verifica el código e intenta nuevamente.');
+        setIsImporting(false);
         return;
       }
 
+      // Verificar conflictos con rutinas existentes
       const existingRoutines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
-
-      // Check for conflicts and ask user
       const conflicts = decoded.routines.filter((newRoutine: Routine) =>
         existingRoutines.some((existing: Routine) => existing.day === newRoutine.day)
       );
+
+      let filteredExisting = existingRoutines;
 
       if (conflicts.length > 0) {
         const conflictDays = conflicts.map((r: Routine) => r.day).join(', ');
@@ -113,32 +152,45 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
         });
 
         if (!shouldReplace) {
+          setIsImporting(false);
           return;
         }
-        // Remove conflicting routines
-        conflicts.forEach((newRoutine: Routine) => {
-          const index = existingRoutines.findIndex((r: Routine) => r.day === newRoutine.day);
-          if (index !== -1) {
-            existingRoutines.splice(index, 1);
-          }
-        });
+
+        // Eliminar rutinas conflictivas
+        filteredExisting = existingRoutines.filter((existing: Routine) =>
+          !conflicts.some((conflict: Routine) => conflict.day === existing.day)
+        );
       }
 
-      // Add new routines with new IDs
+      // Agregar nuevas rutinas con IDs únicos
       const importedRoutines = decoded.routines.map((r: Routine) => ({
         ...r,
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString() + Math.random().toString(36).substr(2, 9),
       }));
 
-      const updatedRoutines = [...existingRoutines, ...importedRoutines];
+      const updatedRoutines = [...filteredExisting, ...importedRoutines];
       localStorage.setItem('gym-tracker-routines', JSON.stringify(updatedRoutines));
+
+      // Si usuario está autenticado, guardar también en Supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        for (const routine of importedRoutines) {
+          try {
+            await createRoutine(user.id, routine);
+          } catch (error) {
+            console.error('[RoutineImportExport] Error saving routine to Supabase:', error);
+          }
+        }
+      }
 
       toast.success(`${importedRoutines.length} rutina(s) importada(s) exitosamente`);
       onImport();
       onClose();
     } catch (error) {
-      toast.error('Error al importar rutinas. Verifica que el código sea válido.');
-      console.error(error);
+      console.error('[RoutineImportExport] Error importing:', error);
+      toast.error('Error al importar rutinas. Intenta nuevamente.');
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -498,10 +550,11 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
                   <div className="flex gap-3">
                     <button
                       onClick={generateExportCode}
-                      className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                      disabled={isGeneratingCode}
+                      className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                     >
                       <FileText className="w-5 h-5" />
-                      Generar Código
+                      {isGeneratingCode ? 'Generando...' : 'Generar Código'}
                     </button>
                     <button
                       onClick={exportToPDF}
@@ -566,11 +619,11 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
 
               <button
                 onClick={importRoutines}
-                disabled={!importCode.trim()}
+                disabled={!importCode.trim() || isImporting}
                 className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
               >
                 <Upload className="w-5 h-5" />
-                Importar Rutinas
+                {isImporting ? 'Importando...' : 'Importar Rutinas'}
               </button>
             </div>
           )}
