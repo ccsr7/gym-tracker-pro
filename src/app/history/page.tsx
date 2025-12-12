@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import { Workout, RestDay } from '@/types';
 import { Calendar, Clock, Dumbbell, TrendingUp, Trash2, Edit2, Save, X, Search, SlidersHorizontal } from 'lucide-react';
@@ -19,6 +20,7 @@ import { supabase } from '@/lib/supabase/client';
 import { getWorkouts } from '@/lib/supabase/services';
 
 export default function HistoryPage() {
+  const pathname = usePathname();
   const { confirm, confirmState } = useConfirm();
   const toast = useToast();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -42,7 +44,7 @@ export default function HistoryPage() {
 
   useEffect(() => {
     loadWorkouts();
-  }, []);
+  }, [pathname]); // Reload when navigating to history page
 
   useEffect(() => {
     applyFilters();

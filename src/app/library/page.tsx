@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import PageTransition, { StaggerContainer, StaggerItem } from '@/components/PageTransition';
 import { exercisesDatabase } from '@/data/exercises';
@@ -8,6 +9,7 @@ import { Exercise } from '@/types';
 import { Heart, Search } from 'lucide-react';
 
 export default function LibraryPage() {
+  const pathname = usePathname();
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [searchQuery, setSearchQuery] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>(exercisesDatabase);
@@ -18,7 +20,7 @@ export default function LibraryPage() {
   useEffect(() => {
     const storedFavorites = JSON.parse(localStorage.getItem('gym-tracker-favorites') || '[]');
     setFavorites(storedFavorites);
-  }, []);
+  }, [pathname]); // Reload when navigating to library page
 
   useEffect(() => {
     filterExercises();

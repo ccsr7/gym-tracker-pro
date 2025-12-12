@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import PageTransition, { StaggerContainer, StaggerItem } from '@/components/PageTransition';
 import RoutineImportExport from '@/components/RoutineImportExport';
@@ -16,6 +16,7 @@ import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
 export default function RoutinesPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const toast = useToast();
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [stats, setStats] = useState({ total: 0, exercises: 0, active: 0, time: 0 });
@@ -26,7 +27,7 @@ export default function RoutinesPage() {
 
   useEffect(() => {
     loadRoutines();
-  }, []);
+  }, [pathname]); // Reload when navigating to routines page
 
   // Setup Realtime subscription for routines
   useRealtimeSubscription({

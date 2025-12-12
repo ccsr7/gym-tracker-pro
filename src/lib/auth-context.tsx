@@ -17,6 +17,7 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isSyncing: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Load user profile from Supabase profiles table
   const loadUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
@@ -72,19 +74,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Background sync - load routines and workouts to localStorage
   const autoSyncData = async (userId: string) => {
+    setIsSyncing(true);
     try {
       // Load routines from Supabase and sync to localStorage
-      console.log('[Auth] Background syncing routines...');
+      console.log('[Auth] Syncing routines...');
       await getRoutines(userId);
 
       // Load workouts from Supabase and sync to localStorage
-      console.log('[Auth] Background syncing workouts...');
+      console.log('[Auth] Syncing workouts...');
       await getWorkouts(userId);
 
-      console.log('[Auth] Background sync completed');
+      console.log('[Auth] Sync completed successfully');
     } catch (error) {
-      console.error('[Auth] Background sync failed:', error);
+      console.error('[Auth] Sync failed:', error);
       // Continue anyway - app will use localStorage
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -115,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             // Auto-sync data in background
             if (profile) {
-              autoSyncData(session.user.id);
+              await autoSyncData(session.user.id);
             }
           } catch (profileError) {
             console.error('[Auth] Error loading profile, continuing anyway:', profileError);
@@ -149,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Auto-sync data in background
         if (profile) {
-          autoSyncData(session.user.id);
+          await autoSyncData(session.user.id);
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
@@ -200,6 +205,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.user) {
         const profile = await loadUserProfile(data.user);
         setUser(profile);
+
+        // Sync data from Supabase BEFORE continuing
+        // This ensures fresh data is available when user navigates
+        await autoSyncData(data.user.id);
 
         // Auto-cleanup demo account if 7+ days have passed
         if (data.user.email === 'demo@gym.com') {
@@ -278,6 +287,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Load the newly created profile
         const profile = await loadUserProfile(data.user);
         setUser(profile);
+
+        // Sync data from Supabase BEFORE continuing
+        await autoSyncData(data.user.id);
       }
 
       return { success: true };
@@ -362,8 +374,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Memoize context value to prevent unnecessary re-renders
   const contextValue = useMemo(
-    () => ({ user, login, register, logout, updateUser, resetPassword, isAuthenticated, isLoading }),
-    [user, isAuthenticated, isLoading]
+    () => ({ user, login, register, logout, updateUser, resetPassword, isAuthenticated, isLoading, isSyncing }),
+    [user, isAuthenticated, isLoading, isSyncing]
   );
 
   return (

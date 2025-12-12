@@ -11,7 +11,8 @@ export async function getRoutines(userId: string): Promise<Routine[]> {
       .from('routines')
       .select('*')
       .eq('user_id', userId)
-      .order('day', { ascending: true });
+      .order('created_at', { ascending: false })
+      .limit(50); // Limit to 50 most recent routines for performance
 
     if (error) {
       console.error('[RoutineService] Error getting routines:', error);

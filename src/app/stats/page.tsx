@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { usePathname } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import PageTransition from '@/components/PageTransition';
 import { Workout } from '@/types';
@@ -27,6 +28,7 @@ import { getPersonalRecords, getTrainingFrequency, getTimeUnderTension } from '@
 import { exportToCSV, exportToPDF, downloadFile, generateFilename } from '@/lib/data-export';
 
 export default function StatsPage() {
+  const pathname = usePathname();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [selectedExercise, setSelectedExercise] = useState<string>('all');
   const [timeRange, setTimeRange] = useState<'7' | '30' | '90' | 'all'>('30');
@@ -34,7 +36,7 @@ export default function StatsPage() {
   useEffect(() => {
     const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
     setWorkouts(storedWorkouts);
-  }, []);
+  }, [pathname]); // Reload when navigating to stats page
 
   // Calculate stats
   const stats = useMemo(() => {

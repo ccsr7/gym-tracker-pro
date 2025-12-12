@@ -8,7 +8,7 @@ import Navigation from './Navigation';
 import PageTransition, { StaggerContainer, StaggerItem, ScaleCard } from './PageTransition';
 import { Routine, Workout, RoutineExercise } from '@/types';
 import { getExerciseById } from '@/data/exercises';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { getDailyRestContent } from '@/data/rest-day-content';
 import { useConfirm } from '@/hooks/useConfirm';
 import ConfirmDialog from './ui/ConfirmDialog';
@@ -18,6 +18,7 @@ import RestDayModal from './RestDayModal';
 export default function Dashboard() {
   const { user } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const { confirm, confirmState } = useConfirm();
   const toast = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -37,7 +38,7 @@ export default function Dashboard() {
     loadTodayRoutine();
     checkInProgressWorkout();
     checkRecentWorkout();
-  }, []);
+  }, [pathname]); // Reload data when navigating to dashboard
 
   const checkRecentWorkout = () => {
     // Solo verificar workouts COMPLETADOS y GUARDADOS en el historial

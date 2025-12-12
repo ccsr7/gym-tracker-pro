@@ -46,6 +46,7 @@ export function useRealtimeSubscription({
     if (!enabled) return;
 
     let channel: RealtimeChannel;
+    let debounceTimeout: NodeJS.Timeout;
 
     const setupSubscription = async () => {
       // Create a unique channel name
@@ -64,24 +65,30 @@ export function useRealtimeSubscription({
         config.filter = filter;
       }
 
-      // Subscribe to database changes
+      // Subscribe to database changes with debounce
       channel
         .on('postgres_changes', config, (payload) => {
           console.log(`[Realtime] ${payload.eventType} on ${table}:`, payload);
 
-          // Call the appropriate handler
-          if (payload.eventType === 'INSERT' && onInsert) {
-            onInsert(payload);
-          } else if (payload.eventType === 'UPDATE' && onUpdate) {
-            onUpdate(payload);
-          } else if (payload.eventType === 'DELETE' && onDelete) {
-            onDelete(payload);
-          }
+          // Clear previous timeout
+          clearTimeout(debounceTimeout);
 
-          // Call the generic onChange handler
-          if (onChange) {
-            onChange(payload);
-          }
+          // Debounce onChange calls to prevent rapid re-renders
+          debounceTimeout = setTimeout(() => {
+            // Call the appropriate handler
+            if (payload.eventType === 'INSERT' && onInsert) {
+              onInsert(payload);
+            } else if (payload.eventType === 'UPDATE' && onUpdate) {
+              onUpdate(payload);
+            } else if (payload.eventType === 'DELETE' && onDelete) {
+              onDelete(payload);
+            }
+
+            // Call the generic onChange handler
+            if (onChange) {
+              onChange(payload);
+            }
+          }, 300); // 300ms debounce
         })
         .subscribe((status) => {
           console.log(`[Realtime] Subscription status for ${table}:`, status);
@@ -92,6 +99,7 @@ export function useRealtimeSubscription({
 
     // Cleanup function
     return () => {
+      clearTimeout(debounceTimeout);
       if (channel) {
         console.log(`[Realtime] Unsubscribing from ${table}`);
         supabase.removeChannel(channel);

@@ -29,11 +29,12 @@ function syncWorkoutsToLocalStorage(workouts: Workout[]) {
  */
 export async function getWorkouts(userId: string): Promise<Workout[]> {
   try {
-    const { data, error } = await supabase
+    const { data, error} = await supabase
       .from('workouts')
       .select('*')
       .eq('user_id', userId)
-      .order('date', { ascending: false });
+      .order('date', { ascending: false })
+      .limit(100); // Limit to last 100 workouts for performance
 
     if (error) {
       console.error('[WorkoutService] Error getting workouts:', error);
