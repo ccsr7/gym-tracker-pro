@@ -71,6 +71,69 @@ export default function Dashboard() {
     setShowWorkoutSummary(false);
   };
 
+  // Congratulations messages for workout completion
+  const CONGRATULATIONS_MESSAGES = [
+    { emoji: '💪', text: '¡Increíble sesión!' },
+    { emoji: '🔥', text: '¡Lo lograste!' },
+    { emoji: '⚡', text: '¡Entrenamiento completado!' },
+    { emoji: '🏆', text: '¡Excelente trabajo!' },
+    { emoji: '💯', text: '¡Trabajo perfecto!' },
+    { emoji: '🎯', text: '¡Objetivo cumplido!' }
+  ];
+
+  // Recovery tips for post-workout
+  const RECOVERY_TIPS = [
+    { icon: '💧', title: 'Hidratación', text: 'Bebe al menos 500ml de agua en la próxima hora' },
+    { icon: '🥩', title: 'Proteína', text: 'Consume 20-30g de proteína en las próximas 2 horas' },
+    { icon: '🧘', title: 'Estiramiento', text: 'Dedica 5-10 minutos a estirar los músculos trabajados' },
+    { icon: '😴', title: 'Descanso', text: 'Duerme 7-9 horas para una recuperación óptima' },
+    { icon: '🍚', title: 'Nutrición', text: 'Come carbohidratos complejos para reponer energía' },
+    { icon: '🤸', title: 'Movilidad', text: 'Realiza ejercicios de movilidad articular' },
+    { icon: '❄️', title: 'Frío/Calor', text: 'Considera terapia de contraste para reducir inflamación' },
+    { icon: '🚶', title: 'Recuperación Activa', text: 'Camina 10-15 minutos para mejorar circulación' }
+  ];
+
+  // Get next scheduled workout
+  const getNextWorkout = () => {
+    const routines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
+    const today = getSpanishDay(new Date());
+    const daysOrder = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    const todayIndex = daysOrder.indexOf(today);
+
+    // Find next active routine (not rest day) in the next 7 days
+    for (let i = 1; i <= 7; i++) {
+      const nextDayIndex = (todayIndex + i) % 7;
+      const nextDay = daysOrder[nextDayIndex];
+      const nextRoutine = routines.find((r: Routine) =>
+        r.day === nextDay && !r.isRestDay
+      );
+
+      if (nextRoutine) {
+        const daysUntil = i;
+        const label = daysUntil === 1 ? 'Mañana' : nextDay;
+        return { routine: nextRoutine, daysUntil, label };
+      }
+    }
+
+    return null;
+  };
+
+  // Get random recovery tips
+  const getRandomRecoveryTips = (count: number = 3) => {
+    const shuffled = [...RECOVERY_TIPS].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, count);
+  };
+
+  // Handler to start same workout again (double session)
+  const handleTrainAgain = () => {
+    if (!lastCompletedWorkout) return;
+
+    // Navigate to workout page with the same routine
+    const routineId = lastCompletedWorkout.routineId;
+    router.push(`/workout/${routineId}`);
+    setShowWorkoutSummary(false);
+  };
+
   const loadStats = () => {
     // ONLY read from localStorage - NO Supabase calls
     const localWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
@@ -498,16 +561,21 @@ export default function Dashboard() {
           )}
 
           {/* Workout Summary - Show AFTER routine if recently completed */}
-          {showWorkoutSummary && lastCompletedWorkout && (
+          {showWorkoutSummary && lastCompletedWorkout && (() => {
+            const randomCongrats = CONGRATULATIONS_MESSAGES[Math.floor(Math.random() * CONGRATULATIONS_MESSAGES.length)];
+            const nextWorkout = getNextWorkout();
+            const recoveryTips = getRandomRecoveryTips(3);
+
+            return (
             <div className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 dark:from-emerald-100 dark:to-emerald-50 backdrop-blur-sm border-2 border-emerald-500/50 dark:border-emerald-300 rounded-xl p-6 mb-6 animate-in fade-in duration-500">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3 flex-1">
                   <div className="bg-emerald-500/20 dark:bg-emerald-200 p-3 rounded-xl">
-                    <Trophy className="w-6 h-6 text-emerald-400 dark:text-emerald-600" />
+                    <Trophy className="w-8 h-8 text-emerald-400 dark:text-emerald-600 animate-bounce" />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white dark:text-slate-900 mb-1">
-                      ¡Entrenamiento Completado! 🎉
+                      {randomCongrats.emoji} {randomCongrats.text}
                     </h3>
                     <p className="text-emerald-300 dark:text-emerald-700 text-sm font-medium">
                       {lastCompletedWorkout.routineName}
@@ -579,23 +647,78 @@ export default function Dashboard() {
                 </div>
               )}
 
+              {/* Next Workout Preview */}
+              {nextWorkout && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-bold text-white dark:text-slate-900 mb-2 flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-emerald-400 dark:text-emerald-600" />
+                    Próximo Entrenamiento
+                  </h4>
+                  <div className="bg-slate-800/40 dark:bg-white rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-white dark:text-slate-900 font-medium text-sm">
+                          {nextWorkout.label} - {nextWorkout.routine.day}
+                        </p>
+                        <p className="text-emerald-400 dark:text-emerald-600 font-bold">
+                          {nextWorkout.routine.name}
+                        </p>
+                        <p className="text-slate-400 dark:text-slate-600 text-xs">
+                          {nextWorkout.routine.exercises.length} ejercicios
+                        </p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-slate-400 dark:text-slate-600" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Recovery Tips */}
+              <div className="mb-4">
+                <h4 className="text-sm font-bold text-white dark:text-slate-900 mb-2 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-emerald-400 dark:text-emerald-600" />
+                  Tips de Recuperación
+                </h4>
+                <div className="space-y-2">
+                  {recoveryTips.map((tip, index) => (
+                    <div key={index} className="bg-slate-800/40 dark:bg-white rounded-lg p-3 flex items-start gap-2">
+                      <span className="text-xl flex-shrink-0">{tip.icon}</span>
+                      <div className="flex-1">
+                        <p className="text-white dark:text-slate-900 font-medium text-sm">{tip.title}</p>
+                        <p className="text-slate-400 dark:text-slate-600 text-xs">{tip.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Actions */}
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2">
                 <button
-                  onClick={() => router.push('/history')}
-                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                  onClick={handleTrainAgain}
+                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-lg font-medium transition-colors text-sm flex items-center justify-center gap-2"
                 >
-                  Ver Historial
+                  <Zap className="w-4 h-4" />
+                  Entrenar de Nuevo
                 </button>
-                <button
-                  onClick={dismissSummary}
-                  className="flex-1 bg-slate-700/50 dark:bg-slate-300 hover:bg-slate-700 dark:hover:bg-slate-400 text-white dark:text-slate-900 px-4 py-2 rounded-lg font-medium transition-colors text-sm"
-                >
-                  Cerrar
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => router.push('/history')}
+                    className="flex-1 bg-slate-700/50 dark:bg-slate-300 hover:bg-slate-700 dark:hover:bg-slate-400 text-white dark:text-slate-900 px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                  >
+                    Ver Historial
+                  </button>
+                  <button
+                    onClick={dismissSummary}
+                    className="flex-1 bg-slate-700/50 dark:bg-slate-300 hover:bg-slate-700 dark:hover:bg-slate-400 text-white dark:text-slate-900 px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                  >
+                    Cerrar
+                  </button>
+                </div>
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {/* Quick Actions */}
           <div className="mb-4">
