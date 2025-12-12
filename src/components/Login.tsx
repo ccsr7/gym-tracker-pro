@@ -15,7 +15,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login, register, resetPassword } = useAuth();
+  const { login, register, resetPassword, isSyncing } = useAuth();
 
   // Create demo account on first load if no users exist
   useEffect(() => {
@@ -214,13 +214,13 @@ export default function Login() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isSyncing}
               className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
             >
-              {isLoading ? (
+              {isLoading || isSyncing ? (
                 <>
                   <LoadingLogo size="md" variant="lift" />
-                  <span>Cargando...</span>
+                  <span>{isSyncing ? 'Sincronizando datos...' : 'Cargando...'}</span>
                 </>
               ) : (
                 <span>{isLogin ? 'Iniciar Sesión' : 'Registrarse'}</span>
