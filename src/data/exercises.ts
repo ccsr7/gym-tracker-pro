@@ -11,14 +11,6 @@ export const exercisesDatabase: Exercise[] = [
     image: '/exercises/press-banca-plano.jpg',
   },
   {
-    id: 'press-plano-libre',
-    name: 'Press Plano Libre',
-    category: 'Pecho',
-    muscleGroup: 'Pectoral',
-    equipment: 'Barra',
-    image: '/exercises/press-plano-libre.jpg',
-  },
-  {
     id: 'press-inclinado',
     name: 'Press Inclinado',
     category: 'Pecho',
@@ -369,14 +361,6 @@ export const exercisesDatabase: Exercise[] = [
     muscleGroup: 'Bíceps',
     equipment: 'Barra',
     image: '/exercises/curl-barra.jpg',
-  },
-  {
-    id: 'bicep-barra',
-    name: 'Bícep con Barra',
-    category: 'Brazos',
-    muscleGroup: 'Bíceps',
-    equipment: 'Barra',
-    image: '/exercises/bicep-barra.jpg',
   },
   {
     id: 'curl-mancuernas',
@@ -899,6 +883,650 @@ export const exercisesDatabase: Exercise[] = [
     muscleGroup: 'Piernas',
     equipment: 'Peso Corporal',
     image: '/exercises/sprints.jpg',
+  },
+
+  // NUEVOS EJERCICIOS - PECHO
+  {
+    id: 'flexiones-diamante',
+    name: 'Flexiones Diamante',
+    category: 'Pecho',
+    muscleGroup: 'Pectoral',
+    equipment: 'Peso Corporal',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Intermedio',
+    instructions: [
+      'Coloca las manos juntas formando un diamante bajo el pecho',
+      'Baja controladamente hasta que el pecho casi toque las manos',
+      'Empuja hacia arriba manteniendo el core activado'
+    ],
+    formTips: ['Mantén los codos pegados al cuerpo', 'No arquees la espalda'],
+    primaryMuscles: ['Pectoral', 'Tríceps'],
+    secondaryMuscles: ['Deltoides anterior', 'Core'],
+    variations: ['flexiones', 'flexiones-declinadas']
+  },
+  {
+    id: 'flexiones-declinadas',
+    name: 'Flexiones Declinadas',
+    category: 'Pecho',
+    muscleGroup: 'Pectoral Superior',
+    equipment: 'Peso Corporal',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Intermedio',
+    instructions: [
+      'Coloca los pies elevados en un banco o escalón',
+      'Baja hasta que el pecho casi toque el suelo',
+      'Empuja hacia arriba manteniendo la postura'
+    ],
+    formTips: ['Mantén el cuerpo recto como una tabla', 'Controla la bajada'],
+    primaryMuscles: ['Pectoral superior'],
+    secondaryMuscles: ['Deltoides', 'Tríceps'],
+    variations: ['flexiones', 'flexiones-diamante']
+  },
+  {
+    id: 'press-guillotina',
+    name: 'Press Guillotina',
+    category: 'Pecho',
+    muscleGroup: 'Pectoral Superior',
+    equipment: 'Barra',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Avanzado',
+    instructions: [
+      'Acuéstate en banco plano con barra sobre el cuello',
+      'Baja la barra hacia el cuello con codos abiertos',
+      'Empuja hacia arriba con control'
+    ],
+    formTips: ['Usa peso moderado', 'Codos siempre apuntando hacia afuera'],
+    primaryMuscles: ['Pectoral superior'],
+    secondaryMuscles: ['Deltoides anterior'],
+    variations: ['press-banca-plano', 'press-inclinado']
+  },
+  {
+    id: 'cruces-banco-inclinado',
+    name: 'Cruces en Banco Inclinado',
+    category: 'Pecho',
+    muscleGroup: 'Pectoral Superior',
+    equipment: 'Mancuernas',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Intermedio',
+    instructions: [
+      'Acuéstate en banco inclinado (30-45°) con mancuernas',
+      'Abre los brazos en arco amplio',
+      'Junta las mancuernas arriba contrayendo el pecho'
+    ],
+    formTips: ['Mantén ligera flexión en codos', 'Siente el estiramiento'],
+    primaryMuscles: ['Pectoral superior'],
+    secondaryMuscles: ['Deltoides anterior'],
+    variations: ['aperturas-inclinadas', 'cruces-poleas']
+  },
+  {
+    id: 'contractora-pectoral',
+    name: 'Contractora de Pectoral',
+    category: 'Pecho',
+    muscleGroup: 'Pectoral',
+    equipment: 'Máquina',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Principiante',
+    instructions: [
+      'Siéntate con espalda apoyada en la máquina',
+      'Junta los brazos al frente contrayendo el pecho',
+      'Vuelve a posición inicial controlando el peso'
+    ],
+    formTips: ['Exhala al contraer', 'Mantén tensión constante'],
+    primaryMuscles: ['Pectoral central'],
+    secondaryMuscles: ['Deltoides anterior'],
+    variations: ['peck-deck', 'cruces-poleas']
+  },
+
+  // NUEVOS EJERCICIOS - ESPALDA
+  {
+    id: 'dominadas-lastre',
+    name: 'Dominadas con Lastre',
+    category: 'Espalda',
+    muscleGroup: 'Dorsal',
+    equipment: 'Peso Corporal',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Avanzado',
+    instructions: [
+      'Cuelga un disco o chaleco de lastre',
+      'Agarra la barra con manos al ancho de hombros',
+      'Tira hasta que barbilla supere la barra'
+    ],
+    formTips: ['Comienza con poco peso', 'Mantén pecho hacia afuera'],
+    primaryMuscles: ['Dorsal'],
+    secondaryMuscles: ['Bíceps', 'Trapecio'],
+    variations: ['dominadas', 'jalones']
+  },
+  {
+    id: 'pull-ups-australianos',
+    name: 'Pull-ups Australianos',
+    category: 'Espalda',
+    muscleGroup: 'Dorsal',
+    equipment: 'Barra',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Principiante',
+    instructions: [
+      'Agarra barra baja con cuerpo inclinado',
+      'Tira del pecho hacia la barra',
+      'Baja controladamente'
+    ],
+    formTips: ['Mantén cuerpo recto', 'Aprieta escápulas'],
+    primaryMuscles: ['Dorsal'],
+    secondaryMuscles: ['Bíceps', 'Trapecio medio'],
+    variations: ['dominadas', 'remo-barra']
+  },
+  {
+    id: 'remo-t-bar',
+    name: 'Remo en T-Bar',
+    category: 'Espalda',
+    muscleGroup: 'Dorsal',
+    equipment: 'Barra',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Intermedio',
+    instructions: [
+      'Párate sobre la barra con peso en un extremo',
+      'Inclínate y agarra el mango',
+      'Tira hacia el pecho apretando escápulas'
+    ],
+    formTips: ['Espalda neutral', 'Codos cerca del cuerpo'],
+    primaryMuscles: ['Dorsal', 'Trapecio medio'],
+    secondaryMuscles: ['Bíceps', 'Lumbar'],
+    variations: ['remo-barra', 'remo-maquina']
+  },
+  {
+    id: 'remo-pendlay',
+    name: 'Remo Pendlay',
+    category: 'Espalda',
+    muscleGroup: 'Dorsal',
+    equipment: 'Barra',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Avanzado',
+    instructions: [
+      'Inclínate paralelo al suelo con barra en el piso',
+      'Tira explosivamente hacia el abdomen',
+      'Baja la barra completamente al suelo entre reps'
+    ],
+    formTips: ['Movimiento explosivo', 'Toca el piso entre reps'],
+    primaryMuscles: ['Dorsal', 'Trapecio'],
+    secondaryMuscles: ['Lumbar', 'Bíceps'],
+    variations: ['remo-barra', 'remo-inclinado-barra']
+  },
+  {
+    id: 'face-pulls-cuerda',
+    name: 'Face Pulls con Cuerda',
+    category: 'Espalda',
+    muscleGroup: 'Trapecio',
+    equipment: 'Polea',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Principiante',
+    instructions: [
+      'Coloca polea alta con cuerda',
+      'Tira hacia la cara separando las manos',
+      'Aprieta escápulas al final del movimiento'
+    ],
+    formTips: ['Codos altos', 'Enfócate en posterior de hombro'],
+    primaryMuscles: ['Deltoides posterior', 'Trapecio medio'],
+    secondaryMuscles: ['Romboides'],
+    variations: ['pajaros', 'remo-alto']
+  },
+  {
+    id: 'superman',
+    name: 'Superman',
+    category: 'Espalda',
+    muscleGroup: 'Lumbar',
+    equipment: 'Peso Corporal',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Principiante',
+    instructions: [
+      'Acuéstate boca abajo con brazos extendidos',
+      'Levanta simultáneamente brazos y piernas',
+      'Mantén la posición 2-3 segundos'
+    ],
+    formTips: ['Mira al suelo', 'No fuerces el cuello'],
+    primaryMuscles: ['Lumbar', 'Glúteos'],
+    secondaryMuscles: ['Trapecio inferior'],
+    variations: ['peso-muerto']
+  },
+
+  // NUEVOS EJERCICIOS - PIERNAS
+  {
+    id: 'sentadilla-frontal',
+    name: 'Sentadilla Frontal',
+    category: 'Piernas',
+    muscleGroup: 'Cuádriceps',
+    equipment: 'Barra',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Avanzado',
+    instructions: [
+      'Coloca barra sobre deltoides anteriores',
+      'Baja manteniendo torso vertical',
+      'Sube empujando con talones'
+    ],
+    formTips: ['Codos altos', 'Torso más vertical que sentadilla trasera'],
+    primaryMuscles: ['Cuádriceps'],
+    secondaryMuscles: ['Core', 'Glúteos'],
+    variations: ['sentadilla-libre', 'sentadilla-smith']
+  },
+  {
+    id: 'pistol-squats',
+    name: 'Pistol Squats',
+    category: 'Piernas',
+    muscleGroup: 'Cuádriceps',
+    equipment: 'Peso Corporal',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Avanzado',
+    instructions: [
+      'Párate en una pierna con la otra extendida',
+      'Baja en sentadilla profunda',
+      'Sube empujando con una sola pierna'
+    ],
+    formTips: ['Usa apoyo al inicio', 'Mantén equilibrio'],
+    primaryMuscles: ['Cuádriceps', 'Glúteos'],
+    secondaryMuscles: ['Core', 'Estabilizadores'],
+    variations: ['sentadilla-bulgara', 'zancadas']
+  },
+  {
+    id: 'good-mornings',
+    name: 'Good Mornings',
+    category: 'Piernas',
+    muscleGroup: 'Femoral',
+    equipment: 'Barra',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Intermedio',
+    instructions: [
+      'Coloca barra sobre trapecios',
+      'Inclínate hacia adelante con espalda recta',
+      'Vuelve a posición inicial apretando glúteos'
+    ],
+    formTips: ['Rodillas ligeramente flexionadas', 'Espalda siempre recta'],
+    primaryMuscles: ['Femoral', 'Glúteos'],
+    secondaryMuscles: ['Lumbar'],
+    variations: ['peso-muerto-rumano']
+  },
+  {
+    id: 'puente-gluteos',
+    name: 'Puente de Glúteos',
+    category: 'Piernas',
+    muscleGroup: 'Glúteos',
+    equipment: 'Peso Corporal',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Principiante',
+    instructions: [
+      'Acuéstate boca arriba con rodillas flexionadas',
+      'Levanta cadera apretando glúteos',
+      'Baja controladamente'
+    ],
+    formTips: ['Empuja con talones', 'Mantén tensión arriba'],
+    primaryMuscles: ['Glúteos'],
+    secondaryMuscles: ['Femoral', 'Core'],
+    variations: ['hip-thrust-barra', 'hip-thrust-maquina']
+  },
+  {
+    id: 'curl-nordico',
+    name: 'Curl Nórdico',
+    category: 'Piernas',
+    muscleGroup: 'Femoral',
+    equipment: 'Peso Corporal',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Avanzado',
+    instructions: [
+      'Arrodíllate con pies fijos',
+      'Baja el cuerpo hacia adelante controladamente',
+      'Usa manos para frenar al final'
+    ],
+    formTips: ['Muy demandante, progresa gradualmente', 'Mantén cuerpo recto'],
+    primaryMuscles: ['Femoral'],
+    secondaryMuscles: ['Glúteos', 'Gemelos'],
+    variations: ['curl-femoral', 'peso-muerto-rumano']
+  },
+
+  // NUEVOS EJERCICIOS - HOMBROS
+  {
+    id: 'remo-menton',
+    name: 'Remo al Mentón',
+    category: 'Hombros',
+    muscleGroup: 'Deltoides',
+    equipment: 'Barra',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Intermedio',
+    instructions: [
+      'Agarra barra con manos cerca del centro',
+      'Tira hacia el mentón con codos altos',
+      'Baja controladamente'
+    ],
+    formTips: ['Codos siempre más altos que manos', 'No uses demasiado peso'],
+    primaryMuscles: ['Deltoides', 'Trapecio superior'],
+    secondaryMuscles: ['Bíceps'],
+    variations: ['remo-alto', 'elevaciones-laterales']
+  },
+  {
+    id: 'vuelos-invertidos-peck',
+    name: 'Vuelos Invertidos en Peck Deck',
+    category: 'Hombros',
+    muscleGroup: 'Deltoides',
+    equipment: 'Máquina',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Principiante',
+    instructions: [
+      'Siéntate de frente a la máquina peck deck',
+      'Abre los brazos hacia atrás',
+      'Aprieta escápulas al final'
+    ],
+    formTips: ['Pecho contra respaldo', 'Movimiento controlado'],
+    primaryMuscles: ['Deltoides posterior'],
+    secondaryMuscles: ['Trapecio medio', 'Romboides'],
+    variations: ['pajaros', 'vuelos-posteriores-maquina']
+  },
+  {
+    id: 'press-landmine',
+    name: 'Press Landmine',
+    category: 'Hombros',
+    muscleGroup: 'Deltoides',
+    equipment: 'Barra',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Intermedio',
+    instructions: [
+      'Coloca un extremo de la barra en esquina',
+      'Empuja el otro extremo desde el hombro',
+      'Alterna entre brazos'
+    ],
+    formTips: ['Mantén core estable', 'Movimiento natural del hombro'],
+    primaryMuscles: ['Deltoides anterior', 'Deltoides lateral'],
+    secondaryMuscles: ['Core', 'Pectoral superior'],
+    variations: ['press-militar', 'press-mancuernas-sentado']
+  },
+  {
+    id: 'y-raises',
+    name: 'Y-Raises',
+    category: 'Hombros',
+    muscleGroup: 'Deltoides',
+    equipment: 'Mancuernas',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Principiante',
+    instructions: [
+      'Inclínate 45° con mancuernas ligeras',
+      'Levanta brazos formando una Y',
+      'Baja controladamente'
+    ],
+    formTips: ['Peso muy ligero', 'Enfócate en posterior y trapecio bajo'],
+    primaryMuscles: ['Deltoides posterior', 'Trapecio inferior'],
+    secondaryMuscles: ['Romboides'],
+    variations: ['pajaros', 'elevaciones-posteriores-maquina']
+  },
+
+  // NUEVOS EJERCICIOS - BRAZOS
+  {
+    id: 'extension-overhead-cuerda',
+    name: 'Extensión Overhead con Cuerda',
+    category: 'Brazos',
+    muscleGroup: 'Tríceps',
+    equipment: 'Polea',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Intermedio',
+    instructions: [
+      'Agarra cuerda de polea alta dándole la espalda',
+      'Extiende brazos sobre la cabeza',
+      'Flexiona y extiende manteniendo codos fijos'
+    ],
+    formTips: ['Codos estables', 'Estira bien el tríceps'],
+    primaryMuscles: ['Tríceps (cabeza larga)'],
+    secondaryMuscles: ['Tríceps lateral'],
+    variations: ['press-frances', 'extension-polea-cuerda']
+  },
+  {
+    id: 'curl-inverso',
+    name: 'Curl Inverso',
+    category: 'Brazos',
+    muscleGroup: 'Bíceps',
+    equipment: 'Barra',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Intermedio',
+    instructions: [
+      'Agarra barra con palmas hacia abajo',
+      'Curl hasta hombros manteniendo codos fijos',
+      'Baja controladamente'
+    ],
+    formTips: ['Trabaja más el braquial y antebrazos', 'No uses mucho peso'],
+    primaryMuscles: ['Braquial', 'Antebrazo'],
+    secondaryMuscles: ['Bíceps'],
+    variations: ['curl-barra', 'curl-martillo']
+  },
+  {
+    id: 'fondos-entre-bancos',
+    name: 'Fondos entre Bancos',
+    category: 'Brazos',
+    muscleGroup: 'Tríceps',
+    equipment: 'Peso Corporal',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Principiante',
+    instructions: [
+      'Apoya manos en banco detrás de ti',
+      'Baja flexionando codos',
+      'Empuja hacia arriba con tríceps'
+    ],
+    formTips: ['Codos hacia atrás', 'Puedes elevar pies para más dificultad'],
+    primaryMuscles: ['Tríceps'],
+    secondaryMuscles: ['Deltoides anterior', 'Pectoral'],
+    variations: ['fondos-banco', 'fondos-paralelas']
+  },
+
+  // NUEVOS EJERCICIOS - CORE
+  {
+    id: 'v-ups',
+    name: 'V-Ups',
+    category: 'Core',
+    muscleGroup: 'Abdominales',
+    equipment: 'Peso Corporal',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Intermedio',
+    instructions: [
+      'Acuéstate boca arriba con brazos extendidos',
+      'Levanta simultáneamente piernas y torso formando V',
+      'Toca los pies con las manos'
+    ],
+    formTips: ['Movimiento controlado', 'Exhala al subir'],
+    primaryMuscles: ['Abdominales', 'Flexores de cadera'],
+    secondaryMuscles: ['Oblicuos'],
+    variations: ['abdominales', 'elevacion-piernas']
+  },
+  {
+    id: 'bicycle-crunch',
+    name: 'Bicycle Crunch',
+    category: 'Core',
+    muscleGroup: 'Abdominales',
+    equipment: 'Peso Corporal',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Principiante',
+    instructions: [
+      'Acuéstate con manos detrás de la cabeza',
+      'Lleva codo a rodilla opuesta alternando',
+      'Mantén ritmo constante'
+    ],
+    formTips: ['No jales el cuello', 'Gira el torso realmente'],
+    primaryMuscles: ['Oblicuos', 'Abdominales'],
+    secondaryMuscles: ['Flexores de cadera'],
+    variations: ['russian-twist', 'oblicuos-cable']
+  },
+  {
+    id: 'hollow-hold',
+    name: 'Hollow Hold',
+    category: 'Core',
+    muscleGroup: 'Abdominales',
+    equipment: 'Peso Corporal',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Intermedio',
+    instructions: [
+      'Acuéstate boca arriba',
+      'Levanta hombros y piernas del suelo',
+      'Mantén posición de hueco con lumbar en el suelo'
+    ],
+    formTips: ['Presiona lumbar contra el suelo', 'Mantén tensión constante'],
+    primaryMuscles: ['Abdominales', 'Core'],
+    secondaryMuscles: ['Flexores de cadera'],
+    variations: ['plancha', 'dead-bug']
+  },
+  {
+    id: 'bird-dog',
+    name: 'Bird Dog',
+    category: 'Core',
+    muscleGroup: 'Core',
+    equipment: 'Peso Corporal',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Principiante',
+    instructions: [
+      'Posición de cuatro patas',
+      'Extiende brazo y pierna opuestos',
+      'Mantén balance y alterna'
+    ],
+    formTips: ['No arquees espalda', 'Movimiento lento y controlado'],
+    primaryMuscles: ['Core', 'Lumbar'],
+    secondaryMuscles: ['Glúteos', 'Estabilizadores'],
+    variations: ['superman', 'plancha']
+  },
+  {
+    id: 'pallof-press',
+    name: 'Pallof Press',
+    category: 'Core',
+    muscleGroup: 'Core',
+    equipment: 'Polea',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Intermedio',
+    instructions: [
+      'Párate lateral a la polea con banda a altura del pecho',
+      'Empuja hacia adelante resistiendo la rotación',
+      'Vuelve al pecho manteniendo estabilidad'
+    ],
+    formTips: ['Resiste la rotación', 'Core siempre tenso'],
+    primaryMuscles: ['Oblicuos', 'Core'],
+    secondaryMuscles: ['Hombros'],
+    variations: ['plancha-lateral', 'russian-twist']
+  },
+
+  // NUEVOS EJERCICIOS - CARDIO
+  {
+    id: 'assault-bike',
+    name: 'Assault Bike',
+    category: 'Cardio',
+    muscleGroup: 'Todo el cuerpo',
+    equipment: 'Máquina',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Intermedio',
+    instructions: [
+      'Siéntate en la bicicleta de asalto',
+      'Pedalea con intensidad usando brazos y piernas',
+      'Mantén ritmo constante o haz intervalos'
+    ],
+    formTips: ['Empuja y jala con brazos', 'Ideal para HIIT'],
+    primaryMuscles: ['Cardio', 'Piernas'],
+    secondaryMuscles: ['Brazos', 'Core'],
+    variations: ['bicicleta', 'remo-ergometro']
+  },
+  {
+    id: 'ski-erg',
+    name: 'Ski Erg',
+    category: 'Cardio',
+    muscleGroup: 'Todo el cuerpo',
+    equipment: 'Máquina',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Intermedio',
+    instructions: [
+      'Agarra las manijas del ski erg',
+      'Tira hacia abajo usando core y brazos',
+      'Suelta y repite con ritmo'
+    ],
+    formTips: ['Usa el core, no solo los brazos', 'Excelente para cardio de brazos'],
+    primaryMuscles: ['Cardio', 'Dorsales'],
+    secondaryMuscles: ['Brazos', 'Core'],
+    variations: ['remo-ergometro', 'battle-ropes']
+  },
+  {
+    id: 'saltos-cajon-laterales',
+    name: 'Saltos al Cajón Laterales',
+    category: 'Cardio',
+    muscleGroup: 'Piernas',
+    equipment: 'Peso Corporal',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Intermedio',
+    instructions: [
+      'Párate lateral al cajón',
+      'Salta lateralmente sobre el cajón',
+      'Baja del otro lado y repite'
+    ],
+    formTips: ['Aterrizaje suave', 'Trabaja agilidad y potencia'],
+    primaryMuscles: ['Piernas', 'Glúteos'],
+    secondaryMuscles: ['Core', 'Estabilizadores'],
+    variations: ['box-jumps', 'burpees']
+  },
+  {
+    id: 'burpees-dominada',
+    name: 'Burpees con Dominada',
+    category: 'Cardio',
+    muscleGroup: 'Todo el cuerpo',
+    equipment: 'Barra',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Avanzado',
+    instructions: [
+      'Haz un burpee normal bajo barra de dominadas',
+      'Al saltar, agarra la barra y haz dominada',
+      'Suelta y repite'
+    ],
+    formTips: ['Muy demandante', 'Combina fuerza y cardio'],
+    primaryMuscles: ['Todo el cuerpo'],
+    secondaryMuscles: ['Cardio', 'Resistencia'],
+    variations: ['burpees', 'dominadas']
+  },
+  {
+    id: 'farmers-walk',
+    name: 'Farmers Walk',
+    category: 'Cardio',
+    muscleGroup: 'Todo el cuerpo',
+    equipment: 'Mancuernas',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Intermedio',
+    instructions: [
+      'Agarra mancuernas pesadas en cada mano',
+      'Camina manteniendo postura erguida',
+      'Recorre distancia o tiempo determinado'
+    ],
+    formTips: ['Hombros atrás', 'Core tenso', 'Excelente para grip'],
+    primaryMuscles: ['Antebrazos', 'Trapecio'],
+    secondaryMuscles: ['Core', 'Piernas'],
+    variations: ['encogimientos-hombros']
+  },
+  {
+    id: 'sled-push-pull',
+    name: 'Sled Push/Pull',
+    category: 'Cardio',
+    muscleGroup: 'Piernas',
+    equipment: 'Máquina',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Avanzado',
+    instructions: [
+      'Empuja o jala el trineo con peso',
+      'Mantén inclinación y empuja con piernas',
+      'Avanza distancia determinada'
+    ],
+    formTips: ['Potencia de piernas', 'Ideal para explosividad'],
+    primaryMuscles: ['Cuádriceps', 'Glúteos'],
+    secondaryMuscles: ['Gemelos', 'Core'],
+    variations: ['sprints', 'farmers-walk']
+  },
+  {
+    id: 'natacion',
+    name: 'Natación',
+    category: 'Cardio',
+    muscleGroup: 'Todo el cuerpo',
+    equipment: 'Peso Corporal',
+    image: '/exercises/placeholder.jpg',
+    difficulty: 'Intermedio',
+    instructions: [
+      'Nada usando estilo libre, espalda o pecho',
+      'Mantén técnica adecuada',
+      'Alterna intensidades'
+    ],
+    formTips: ['Bajo impacto en articulaciones', 'Excelente cardio'],
+    primaryMuscles: ['Cardio', 'Todo el cuerpo'],
+    secondaryMuscles: ['Hombros', 'Core'],
+    variations: ['remo-ergometro', 'eliptica']
   },
 ];
 

@@ -16,6 +16,14 @@ export interface Exercise {
   equipment: string;
   image: string;
   isFavorite?: boolean;
+  // Nuevos campos para mejorar la biblioteca
+  difficulty?: 'Principiante' | 'Intermedio' | 'Avanzado';
+  instructions?: string[];  // Pasos para ejecutar el ejercicio
+  formTips?: string[];      // Tips de forma correcta
+  primaryMuscles?: string[];   // Músculos principales trabajados
+  secondaryMuscles?: string[]; // Músculos secundarios
+  variations?: string[];    // IDs de ejercicios que son variaciones
+  videoUrl?: string;        // URL de video demostrativo (futuro)
 }
 
 export interface WorkoutSet {
