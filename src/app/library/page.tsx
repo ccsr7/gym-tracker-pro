@@ -5,35 +5,79 @@ import { usePathname } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import PageTransition, { StaggerContainer, StaggerItem } from '@/components/PageTransition';
 import ExerciseDetailModal from '@/components/ExerciseDetailModal';
+import CustomExerciseModal from '@/components/CustomExerciseModal';
 import { exercisesDatabase } from '@/data/exercises';
 import { Exercise } from '@/types';
-import { Heart, Search } from 'lucide-react';
+import { Heart, Search, Plus, Trash2, Edit2 } from 'lucide-react';
+import { getUserCustomExercises, deleteCustomExercise, deleteCustomExerciseImage } from '@/lib/supabase/services/custom-exercises';
+import { supabase } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth-context';
 
 export default function LibraryPage() {
   const pathname = usePathname();
+  const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [searchQuery, setSearchQuery] = useState('');
+  const [allExercises, setAllExercises] = useState<Exercise[]>(exercisesDatabase);
   const [exercises, setExercises] = useState<Exercise[]>(exercisesDatabase);
+  const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
+  const [isLoadingCustom, setIsLoadingCustom] = useState(false);
 
-  const categories = ['Todos', 'Favoritos', 'Pecho', 'Espalda', 'Piernas', 'Hombros', 'Brazos', 'Core', 'Cardio'];
+  const categories = ['Todos', 'Favoritos', 'Mis Ejercicios', 'Pecho', 'Espalda', 'Piernas', 'Hombros', 'Brazos', 'Core', 'Cardio'];
+
+  // Load custom exercises from Supabase
+  const loadCustomExercises = async () => {
+    if (!user) {
+      setCustomExercises([]);
+      return;
+    }
+
+    setIsLoadingCustom(true);
+    try {
+      const { data: { user: supabaseUser }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !supabaseUser) {
+        console.error('[Library] Error getting user:', userError);
+        setCustomExercises([]);
+        return;
+      }
+
+      const customExs = await getUserCustomExercises(supabaseUser.id);
+      setCustomExercises(customExs);
+
+      // Combine with predefined exercises
+      setAllExercises([...exercisesDatabase, ...customExs]);
+    } catch (error) {
+      console.error('[Library] Error loading custom exercises:', error);
+      setCustomExercises([]);
+    } finally {
+      setIsLoadingCustom(false);
+    }
+  };
 
   useEffect(() => {
     const storedFavorites = JSON.parse(localStorage.getItem('gym-tracker-favorites') || '[]');
     setFavorites(storedFavorites);
-  }, [pathname]); // Reload when navigating to library page
+
+    // Load custom exercises
+    loadCustomExercises();
+  }, [pathname, user]); // Reload when navigating to library page or user changes
 
   useEffect(() => {
     filterExercises();
-  }, [selectedCategory, searchQuery, favorites]);
+  }, [selectedCategory, searchQuery, favorites, allExercises]);
 
   const filterExercises = () => {
-    let filtered = exercisesDatabase;
+    let filtered = allExercises;
 
     if (selectedCategory === 'Favoritos') {
       filtered = filtered.filter(ex => favorites.includes(ex.id));
+    } else if (selectedCategory === 'Mis Ejercicios') {
+      filtered = customExercises;
     } else if (selectedCategory !== 'Todos') {
       filtered = filtered.filter(ex => ex.category === selectedCategory);
     }
@@ -60,9 +104,10 @@ export default function LibraryPage() {
   };
 
   const getCategoryCount = (category: string) => {
-    if (category === 'Todos') return exercisesDatabase.length;
+    if (category === 'Todos') return allExercises.length;
     if (category === 'Favoritos') return favorites.length;
-    return exercisesDatabase.filter(ex => ex.category === category).length;
+    if (category === 'Mis Ejercicios') return customExercises.length;
+    return allExercises.filter(ex => ex.category === category).length;
   };
 
   const getCategoryColor = (category: string) => {
@@ -91,15 +136,68 @@ export default function LibraryPage() {
     setFavorites(storedFavorites);
   };
 
+  const handleDeleteCustomExercise = async (exerciseId: string, imageUrl?: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar este ejercicio personalizado?')) {
+      return;
+    }
+
+    try {
+      // Delete image if exists
+      if (imageUrl && imageUrl.includes('custom-exercises')) {
+        await deleteCustomExerciseImage(imageUrl);
+      }
+
+      // Delete exercise
+      const { success, error } = await deleteCustomExercise(exerciseId);
+
+      if (!success) {
+        alert(error || 'Error al eliminar el ejercicio');
+        return;
+      }
+
+      // Reload custom exercises
+      await loadCustomExercises();
+
+      // If this exercise was selected, close the modal
+      if (selectedExerciseId === exerciseId) {
+        closeExerciseDetail();
+      }
+    } catch (error) {
+      console.error('[Library] Error deleting custom exercise:', error);
+      alert('Error al eliminar el ejercicio');
+    }
+  };
+
+  const handleCustomExerciseSuccess = () => {
+    // Reload custom exercises after creating a new one
+    loadCustomExercises();
+    setIsCustomModalOpen(false);
+  };
+
+  const isCustomExercise = (exerciseId: string) => {
+    return exerciseId.startsWith('custom-');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dark:from-white dark:via-slate-50 dark:to-slate-100">
       <Navigation />
 
       <PageTransition>
         <div className="container mx-auto px-4 pt-20 py-8 pb-24 md:pt-8">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-white dark:text-slate-900 mb-2">Biblioteca</h1>
-            <p className="text-slate-400 dark:text-slate-600">Explora todos los ejercicios disponibles</p>
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-white dark:text-slate-900 mb-2">Biblioteca</h1>
+              <p className="text-slate-400 dark:text-slate-600">Explora todos los ejercicios disponibles</p>
+            </div>
+            {user && (
+              <button
+                onClick={() => setIsCustomModalOpen(true)}
+                className="px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+              >
+                <Plus className="w-5 h-5" />
+                <span className="hidden sm:inline">Crear Ejercicio</span>
+              </button>
+            )}
           </div>
 
           {/* Search Bar */}
@@ -177,11 +275,28 @@ export default function LibraryPage() {
                         }`}
                       />
                     </button>
-                    <div className="absolute top-2 left-2">
+                    <div className="absolute top-2 left-2 flex flex-col gap-1">
                       <span className={`text-xs font-bold px-2 py-1 rounded ${getCategoryColor(exercise.category)} text-white`}>
                         {exercise.category}
                       </span>
+                      {isCustomExercise(exercise.id) && (
+                        <span className="text-xs font-bold px-2 py-1 rounded bg-emerald-500 text-white">
+                          Custom
+                        </span>
+                      )}
                     </div>
+                    {isCustomExercise(exercise.id) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteCustomExercise(exercise.id, exercise.image);
+                        }}
+                        className="absolute bottom-2 right-2 p-2 bg-red-500/80 hover:bg-red-600 rounded-full transition-colors"
+                        title="Eliminar ejercicio"
+                      >
+                        <Trash2 className="w-4 h-4 text-white" />
+                      </button>
+                    )}
                   </div>
 
                   <div className="p-4">
@@ -214,6 +329,13 @@ export default function LibraryPage() {
           onClose={closeExerciseDetail}
         />
       )}
+
+      {/* Custom Exercise Modal */}
+      <CustomExerciseModal
+        isOpen={isCustomModalOpen}
+        onClose={() => setIsCustomModalOpen(false)}
+        onSuccess={handleCustomExerciseSuccess}
+      />
     </div>
   );
 }
