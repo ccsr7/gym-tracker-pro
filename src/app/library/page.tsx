@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import PageTransition, { StaggerContainer, StaggerItem } from '@/components/PageTransition';
+import ExerciseDetailModal from '@/components/ExerciseDetailModal';
 import { exercisesDatabase } from '@/data/exercises';
 import { Exercise } from '@/types';
 import { Heart, Search } from 'lucide-react';
@@ -14,6 +15,8 @@ export default function LibraryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>(exercisesDatabase);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const categories = ['Todos', 'Favoritos', 'Pecho', 'Espalda', 'Piernas', 'Hombros', 'Brazos', 'Core', 'Cardio'];
 
@@ -75,6 +78,19 @@ export default function LibraryPage() {
     return colors[category] || 'bg-gray-500';
   };
 
+  const openExerciseDetail = (exerciseId: string) => {
+    setSelectedExerciseId(exerciseId);
+    setIsModalOpen(true);
+  };
+
+  const closeExerciseDetail = () => {
+    setIsModalOpen(false);
+    setSelectedExerciseId(null);
+    // Reload favorites to sync with modal changes
+    const storedFavorites = JSON.parse(localStorage.getItem('gym-tracker-favorites') || '[]');
+    setFavorites(storedFavorites);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dark:from-white dark:via-slate-50 dark:to-slate-100">
       <Navigation />
@@ -124,7 +140,10 @@ export default function LibraryPage() {
           <StaggerContainer className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {exercises.map((exercise) => (
               <StaggerItem key={exercise.id}>
-                <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl overflow-hidden hover:border-emerald-500/50 transition-all">
+                <div
+                  onClick={() => openExerciseDetail(exercise.id)}
+                  className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl overflow-hidden hover:border-emerald-500/50 transition-all cursor-pointer"
+                >
                   <div className="relative aspect-[3/4] bg-slate-700/50 dark:bg-slate-200 flex items-center justify-center overflow-hidden">
                     <img
                       src={exercise.image}
@@ -144,7 +163,10 @@ export default function LibraryPage() {
                       }}
                     />
                     <button
-                      onClick={() => toggleFavorite(exercise.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(exercise.id);
+                      }}
                       className="absolute top-2 right-2 p-2 bg-slate-900/80 dark:bg-white/90 rounded-full hover:bg-slate-800 dark:hover:bg-white transition-colors border dark:border-slate-300"
                     >
                       <Heart
@@ -183,6 +205,15 @@ export default function LibraryPage() {
           )}
         </div>
       </PageTransition>
+
+      {/* Exercise Detail Modal */}
+      {selectedExerciseId && (
+        <ExerciseDetailModal
+          exerciseId={selectedExerciseId}
+          isOpen={isModalOpen}
+          onClose={closeExerciseDetail}
+        />
+      )}
     </div>
   );
 }
