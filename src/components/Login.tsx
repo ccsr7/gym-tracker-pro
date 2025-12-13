@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { Dumbbell, Info } from 'lucide-react';
 import { storageService, STORAGE_KEYS } from '@/lib/storage-service';
 import LoadingLogo from '@/components/ui/LoadingLogo';
 
 export default function Login() {
+  const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [name, setName] = useState('');
@@ -41,11 +43,17 @@ export default function Login() {
         const result = await login(email, password);
         if (!result.success) {
           setError(result.error || 'Error al iniciar sesión');
+        } else {
+          // Navigate to dashboard after successful login
+          router.push('/');
         }
       } else {
         const result = await register(name, email, password);
         if (!result.success) {
           setError(result.error || 'Error al registrar');
+        } else {
+          // Navigate to dashboard after successful registration
+          router.push('/');
         }
       }
     } finally {
@@ -60,6 +68,9 @@ export default function Login() {
       const result = await login('demo@gym.com', 'demo123');
       if (!result.success) {
         setError(result.error || 'Error al iniciar sesión');
+      } else {
+        // Navigate to dashboard after successful demo login
+        router.push('/');
       }
     } finally {
       setIsLoading(false);
