@@ -4,28 +4,40 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import PageTransition from '@/components/PageTransition';
-import { Sparkles, Users, TrendingUp, Zap, Check, Calendar, Dumbbell } from 'lucide-react';
+import { Sparkles, Users, TrendingUp, Zap, Check, Calendar, Dumbbell, X } from 'lucide-react';
 import { ROUTINE_TEMPLATES, RoutineTemplate } from '@/data/routine-templates';
 import { mapExerciseIds } from '@/data/exercise-id-mapping';
-import { Routine } from '@/types';
+import { Routine, DayOfWeek } from '@/types';
 
 export default function TemplatesPage() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all');
+  const [selectedTemplate, setSelectedTemplate] = useState<RoutineTemplate | null>(null);
+  const [showDaySelector, setShowDaySelector] = useState(false);
+  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>([]);
 
   const filteredTemplates = selectedCategory === 'all'
     ? ROUTINE_TEMPLATES
     : ROUTINE_TEMPLATES.filter(t => t.category === selectedCategory);
 
   const handleApplyTemplate = (template: RoutineTemplate) => {
+    setSelectedTemplate(template);
+    // Inicializar con días por defecto de la plantilla
+    setSelectedDays(template.routines.map(r => r.day));
+    setShowDaySelector(true);
+  };
+
+  const handleConfirmTemplate = () => {
+    if (!selectedTemplate) return;
+
     // Cargar rutinas existentes
     const existingRoutines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
 
-    // Crear nuevas rutinas basadas en la plantilla
-    const newRoutines: Routine[] = template.routines.map((routineData: any) => ({
-      id: `${template.id}-${routineData.day}-${Date.now()}`,
+    // Crear nuevas rutinas basadas en la plantilla con días seleccionados
+    const newRoutines: Routine[] = selectedTemplate.routines.map((routineData: any, index) => ({
+      id: `${selectedTemplate.id}-${selectedDays[index]}-${Date.now()}`,
       name: routineData.name,
-      day: routineData.day,
+      day: selectedDays[index],
       // Mapear IDs de ejercicios de inglés a español
       exercises: mapExerciseIds(routineData.exercises),
       duration: routineData.exercises.length * 8 // Estimación: 8 min por ejercicio
@@ -34,6 +46,11 @@ export default function TemplatesPage() {
     // Combinar con rutinas existentes
     const allRoutines = [...existingRoutines, ...newRoutines];
     localStorage.setItem('gym-tracker-routines', JSON.stringify(allRoutines));
+
+    // Cerrar modal y limpiar estado
+    setShowDaySelector(false);
+    setSelectedTemplate(null);
+    setSelectedDays([]);
 
     // Redirigir a rutinas
     router.push('/routines');
@@ -194,6 +211,111 @@ export default function TemplatesPage() {
           )}
         </div>
       </PageTransition>
+
+      {/* Modal de Configuración de Días */}
+      {showDaySelector && selectedTemplate && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setShowDaySelector(false);
+              setSelectedTemplate(null);
+              setSelectedDays([]);
+            }
+          }}
+          tabIndex={-1}
+        >
+          <div className="bg-slate-900 rounded-xl sm:rounded-2xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col border border-slate-700 shadow-2xl">
+
+            {/* Header */}
+            <div className="p-4 sm:p-6 border-b border-slate-700 bg-slate-900/95 backdrop-blur-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl sm:text-2xl font-bold text-white truncate">
+                    Configurar Días
+                  </h2>
+                  <p className="text-sm text-slate-400 mt-1">
+                    {selectedTemplate.name} - {selectedTemplate.routines.length} rutinas
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowDaySelector(false);
+                    setSelectedTemplate(null);
+                    setSelectedDays([]);
+                  }}
+                  className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors flex-shrink-0 ml-3"
+                  aria-label="Cerrar modal"
+                >
+                  <X className="w-5 h-5 text-slate-400" />
+                </button>
+              </div>
+            </div>
+
+            {/* Body - Scrollable */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+              {selectedTemplate.routines.map((routine: any, index: number) => (
+                <div
+                  key={index}
+                  className="bg-slate-800/50 border border-slate-700 rounded-xl p-4"
+                >
+                  {/* Nombre de rutina */}
+                  <div className="mb-3">
+                    <h3 className="text-base sm:text-lg font-bold text-white">
+                      {routine.name}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-400">
+                      {routine.exercises.length} ejercicios
+                    </p>
+                  </div>
+
+                  {/* Selector de día */}
+                  <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
+                    {(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'] as DayOfWeek[]).map((day) => (
+                      <button
+                        key={day}
+                        onClick={() => {
+                          const newDays = [...selectedDays];
+                          newDays[index] = day;
+                          setSelectedDays(newDays);
+                        }}
+                        className={`px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                          selectedDays[index] === day
+                            ? 'bg-emerald-500 text-white'
+                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        }`}
+                      >
+                        {day.substring(0, 3)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 sm:p-6 border-t border-slate-700 bg-slate-900/95 backdrop-blur-sm flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDaySelector(false);
+                  setSelectedTemplate(null);
+                  setSelectedDays([]);
+                }}
+                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-medium transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmTemplate}
+                className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                <Check className="w-4 h-4 sm:w-5 sm:h-5" />
+                Crear Rutinas
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
