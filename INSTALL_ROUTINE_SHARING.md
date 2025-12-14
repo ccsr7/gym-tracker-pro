@@ -86,7 +86,7 @@ La tabla tiene 4 políticas de seguridad:
 1. **"Anyone can read valid codes"**
    - Cualquier persona puede leer códigos que no hayan expirado
    - Esto permite importar rutinas sin estar autenticado
-   - Solo se pueden leer códigos válidos (< 90 días)
+   - Solo se pueden leer códigos válidos (< 15 días)
 
 2. **"Authenticated users can create codes"**
    - Solo usuarios autenticados pueden crear códigos
@@ -103,7 +103,7 @@ La tabla tiene 4 políticas de seguridad:
 
 ### Expiración Automática
 
-- Los códigos expiran después de **90 días**
+- Los códigos expiran después de **15 días**
 - Los códigos expirados no se pueden usar para importar
 - Existe una función `cleanup_expired_codes()` para limpiar la base de datos
 
@@ -150,7 +150,7 @@ La tabla tiene 4 políticas de seguridad:
 
 1. **La tabla no existe**: Ejecuta la migración
 2. **El código está mal escrito**: Verifica que sea exactamente 8 caracteres
-3. **El código expiró**: Los códigos expiran en 90 días
+3. **El código expiró**: Los códigos expiran en 15 días
 4. **RLS bloqueando la lectura**: Verifica que la política "Anyone can read valid codes" esté activa
 
 **Verificación**:
@@ -269,7 +269,7 @@ SELECT cleanup_expired_codes();
 
 ### Cambiar Tiempo de Expiración
 
-Por defecto, los códigos expiran en 90 días. Para cambiar esto:
+Por defecto, los códigos expiran en 15 días. Para cambiar esto:
 
 ```sql
 -- Cambiar a 30 días para nuevos códigos:
@@ -305,7 +305,7 @@ El sistema debería funcionar así:
 2. **Compartir**: Usuario A envía código a Usuario B
 3. **Importar**: Usuario B pega código → Rutinas importadas
 4. **Rastreo**: El sistema incrementa `usage_count` automáticamente
-5. **Expiración**: Después de 90 días, el código deja de funcionar
+5. **Expiración**: Después de 15 días, el código deja de funcionar
 
 ---
 

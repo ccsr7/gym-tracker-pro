@@ -18,7 +18,7 @@ CREATE TABLE public.shared_routine_codes (
   routine_data JSONB NOT NULL,  -- Estructura: { version, timestamp, routines: [...] }
   created_by_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  expires_at TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '90 days'),  -- Expira en 90 días
+  expires_at TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '15 days'),  -- Expira en 15 días
   usage_count INTEGER DEFAULT 0,  -- Contador de importaciones
   version TEXT DEFAULT '1.0'
 );
@@ -89,11 +89,11 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- =====================================================
 -- COMENTARIOS EN LA TABLA
 -- =====================================================
-COMMENT ON TABLE public.shared_routine_codes IS 'Códigos persistentes para compartir rutinas entre usuarios. Los códigos expiran en 90 días.';
+COMMENT ON TABLE public.shared_routine_codes IS 'Códigos persistentes para compartir rutinas entre usuarios. Los códigos expiran en 15 días.';
 COMMENT ON COLUMN public.shared_routine_codes.code IS 'Código único de 8 caracteres para compartir (ej: A3F7B2D1)';
 COMMENT ON COLUMN public.shared_routine_codes.routine_data IS 'JSONB con estructura: { version, timestamp, routines: [...] }';
 COMMENT ON COLUMN public.shared_routine_codes.usage_count IS 'Contador de cuántas veces se ha importado este código';
-COMMENT ON COLUMN public.shared_routine_codes.expires_at IS 'Fecha de expiración del código (90 días por defecto)';
+COMMENT ON COLUMN public.shared_routine_codes.expires_at IS 'Fecha de expiración del código (15 días por defecto)';
 
 -- =====================================================
 -- VERIFICACIÓN
@@ -118,6 +118,6 @@ END $$;
 -- Después de ejecutar este script:
 -- 1. Los usuarios podrán compartir rutinas con códigos globales
 -- 2. Los códigos funcionarán en cualquier dispositivo/usuario
--- 3. Los códigos expirarán automáticamente después de 90 días
+-- 3. Los códigos expirarán automáticamente después de 15 días
 -- 4. El sistema rastreará cuántas veces se usa cada código
 -- =====================================================
