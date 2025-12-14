@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import PageTransition from '@/components/PageTransition';
+import PersonalRecordsModal from '@/components/PersonalRecordsModal';
 import { Workout } from '@/types';
 import { getExerciseById } from '@/data/exercises';
 import {
@@ -32,6 +33,7 @@ export default function StatsPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [selectedExercise, setSelectedExercise] = useState<string>('all');
   const [timeRange, setTimeRange] = useState<'7' | '30' | '90' | 'all'>('30');
+  const [isRecordsModalOpen, setIsRecordsModalOpen] = useState(false);
 
   useEffect(() => {
     const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
@@ -130,9 +132,12 @@ export default function StatsPage() {
       });
     });
 
+    const total = Object.values(dist).reduce((sum, val) => sum + val, 0);
+
     return Object.entries(dist).map(([name, value]) => ({
       name,
-      value
+      value,
+      percentage: total > 0 ? ((value / total) * 100).toFixed(1) : '0'
     }));
   }, [workouts]);
 
@@ -198,7 +203,17 @@ export default function StatsPage() {
     };
   }, [workouts]);
 
-  const COLORS = ['#3b82f6', '#a855f7', '#ec4899', '#f97316', '#10b981', '#06b6d4', '#eab308'];
+  // Colores específicos por categoría de ejercicio
+  const MUSCLE_COLORS: { [key: string]: string } = {
+    'Pecho': '#f97316',      // Orange
+    'Espalda': '#3b82f6',    // Blue
+    'Piernas': '#a855f7',    // Purple
+    'Hombros': '#eab308',    // Yellow
+    'Brazos': '#ec4899',     // Pink
+    'Core': '#10b981',       // Green
+    'Cardio': '#ef4444',     // Red
+    'Full Body': '#06b6d4',  // Cyan
+  };
 
   const handleExportCSV = () => {
     if (workouts.length === 0) {
@@ -291,15 +306,31 @@ export default function StatsPage() {
         {workouts.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             {/* Personal Records */}
-            <div className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 dark:from-emerald-100 dark:to-emerald-50 border border-emerald-500/30 dark:border-emerald-200 rounded-xl p-5">
+            <div
+              onClick={() => advancedStats.topPRs.length > 0 && setIsRecordsModalOpen(true)}
+              className={`bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 dark:from-emerald-100 dark:to-emerald-50 border border-emerald-500/30 dark:border-emerald-200 rounded-xl p-5 ${
+                advancedStats.topPRs.length > 0 ? 'cursor-pointer hover:border-emerald-400 dark:hover:border-emerald-300 transition-all' : ''
+              }`}
+            >
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 bg-emerald-500/30 dark:bg-emerald-200 rounded-lg">
                   <Award className="w-6 h-6 text-emerald-400 dark:text-emerald-600" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <h3 className="text-lg font-bold text-white dark:text-emerald-900">Récords Personales</h3>
                   <p className="text-xs text-emerald-300 dark:text-emerald-700">{advancedStats.totalPRs} ejercicios</p>
                 </div>
+                {advancedStats.topPRs.length > 0 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsRecordsModalOpen(true);
+                    }}
+                    className="text-xs font-medium text-emerald-300 dark:text-emerald-700 hover:text-emerald-200 dark:hover:text-emerald-800 transition-colors"
+                  >
+                    Ver Todos →
+                  </button>
+                )}
               </div>
               {advancedStats.topPRs.length > 0 ? (
                 <div className="space-y-2">
@@ -560,29 +591,59 @@ export default function StatsPage() {
               Distribución por Grupo Muscular
             </h3>
             {muscleGroupDistribution.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={350}>
                 <PieChart>
                   <Pie
                     data={muscleGroupDistribution}
                     cx="50%"
                     cy="50%"
+                    innerRadius={80}
+                    outerRadius={130}
+                    paddingAngle={2}
                     labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={100}
+                    label={({ name, percentage }) => `${name} ${percentage}%`}
                     fill="#8884d8"
                     dataKey="value"
+                    animationBegin={0}
+                    animationDuration={800}
                   >
                     {muscleGroupDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={MUSCLE_COLORS[entry.name] || '#94a3b8'}
+                        className="transition-opacity duration-300 hover:opacity-80"
+                      />
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#1f2937',
-                      border: '1px solid #374151',
-                      borderRadius: '8px',
-                      color: '#fff'
+                    content={({ active, payload }) => {
+                      if (!active || !payload || payload.length === 0) return null;
+                      const data = payload[0];
+                      return (
+                        <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 shadow-xl">
+                          <p className="font-bold text-white mb-1">{data.name}</p>
+                          <p className="text-emerald-400 text-sm">{data.value} ejercicios</p>
+                          <p className="text-slate-400 text-sm">{data.payload.percentage}% del total</p>
+                        </div>
+                      );
                     }}
+                  />
+                  <Legend
+                    content={({ payload }) => (
+                      <div className="flex flex-wrap justify-center gap-3 mt-4">
+                        {payload?.map((entry: any, index: number) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-sm"
+                              style={{ backgroundColor: entry.color }}
+                            />
+                            <span className="text-xs text-slate-300 dark:text-slate-700">
+                              {entry.value}: {entry.payload.value} ({entry.payload.percentage}%)
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -606,6 +667,13 @@ export default function StatsPage() {
         )}
         </div>
       </PageTransition>
+
+      {/* Personal Records Modal */}
+      <PersonalRecordsModal
+        isOpen={isRecordsModalOpen}
+        onClose={() => setIsRecordsModalOpen(false)}
+        workouts={workouts}
+      />
     </div>
   );
 }
