@@ -591,17 +591,35 @@ export default function StatsPage() {
               Distribución por Grupo Muscular
             </h3>
             {muscleGroupDistribution.length > 0 ? (
-              <ResponsiveContainer width="100%" height={350}>
-                <PieChart>
+              <ResponsiveContainer width="100%" height={400}>
+                <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                   <Pie
                     data={muscleGroupDistribution}
                     cx="50%"
-                    cy="50%"
-                    innerRadius={80}
-                    outerRadius={130}
+                    cy="45%"
+                    innerRadius={60}
+                    outerRadius={100}
                     paddingAngle={2}
                     labelLine={false}
-                    label={({ name, percentage }) => `${name} ${percentage}%`}
+                    label={({ cx, cy, midAngle, innerRadius, outerRadius, percentage, name }) => {
+                      const RADIAN = Math.PI / 180;
+                      const radius = outerRadius + 25;
+                      const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                      const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                      return (
+                        <text
+                          x={x}
+                          y={y}
+                          fill="#e2e8f0"
+                          textAnchor={x > cx ? 'start' : 'end'}
+                          dominantBaseline="central"
+                          className="text-xs font-medium"
+                        >
+                          {`${name} ${percentage}%`}
+                        </text>
+                      );
+                    }}
                     fill="#8884d8"
                     dataKey="value"
                     animationBegin={0}
@@ -630,15 +648,15 @@ export default function StatsPage() {
                   />
                   <Legend
                     content={({ payload }) => (
-                      <div className="flex flex-wrap justify-center gap-3 mt-4">
+                      <div className="flex flex-wrap justify-center gap-2 mt-2 px-2">
                         {payload?.map((entry: any, index: number) => (
-                          <div key={index} className="flex items-center gap-2">
+                          <div key={index} className="flex items-center gap-1.5">
                             <div
-                              className="w-3 h-3 rounded-sm"
+                              className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
                               style={{ backgroundColor: entry.color }}
                             />
-                            <span className="text-xs text-slate-300 dark:text-slate-700">
-                              {entry.value}: {entry.payload.value} ({entry.payload.percentage}%)
+                            <span className="text-xs text-slate-300 dark:text-slate-700 whitespace-nowrap">
+                              {entry.value}: {entry.payload.value}
                             </span>
                           </div>
                         ))}
