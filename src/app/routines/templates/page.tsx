@@ -8,6 +8,8 @@ import { Sparkles, Users, TrendingUp, Zap, Check, Calendar, Dumbbell, X } from '
 import { ROUTINE_TEMPLATES, RoutineTemplate } from '@/data/routine-templates';
 import { mapExerciseIds } from '@/data/exercise-id-mapping';
 import { Routine, DayOfWeek } from '@/types';
+import { createRoutine } from '@/lib/supabase/services';
+import { supabase } from '@/lib/supabase/client';
 
 export default function TemplatesPage() {
   const router = useRouter();
@@ -27,33 +29,43 @@ export default function TemplatesPage() {
     setShowDaySelector(true);
   };
 
-  const handleConfirmTemplate = () => {
+  const handleConfirmTemplate = async () => {
     if (!selectedTemplate) return;
 
-    // Cargar rutinas existentes
-    const existingRoutines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
+    try {
+      // Obtener usuario actual
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        console.error('Usuario no autenticado:', userError);
+        alert('Debes iniciar sesión para aplicar plantillas');
+        return;
+      }
 
-    // Crear nuevas rutinas basadas en la plantilla con días seleccionados
-    const newRoutines: Routine[] = selectedTemplate.routines.map((routineData: any, index) => ({
-      id: `${selectedTemplate.id}-${selectedDays[index]}-${Date.now()}`,
-      name: routineData.name,
-      day: selectedDays[index],
-      // Mapear IDs de ejercicios de inglés a español
-      exercises: mapExerciseIds(routineData.exercises),
-      duration: routineData.exercises.length * 8 // Estimación: 8 min por ejercicio
-    }));
+      // Crear cada rutina en Supabase
+      const promises = selectedTemplate.routines.map(async (routineData: any, index) => {
+        const routine: Omit<Routine, 'id'> = {
+          name: routineData.name,
+          day: selectedDays[index],
+          exercises: mapExerciseIds(routineData.exercises),
+          duration: routineData.exercises.length * 8,
+          isRestDay: false
+        };
+        return await createRoutine(user.id, routine);
+      });
 
-    // Combinar con rutinas existentes
-    const allRoutines = [...existingRoutines, ...newRoutines];
-    localStorage.setItem('gym-tracker-routines', JSON.stringify(allRoutines));
+      await Promise.all(promises);
 
-    // Cerrar modal y limpiar estado
-    setShowDaySelector(false);
-    setSelectedTemplate(null);
-    setSelectedDays([]);
+      // Cerrar modal y limpiar estado
+      setShowDaySelector(false);
+      setSelectedTemplate(null);
+      setSelectedDays([]);
 
-    // Redirigir a rutinas
-    router.push('/routines');
+      // Redirigir a rutinas
+      router.push('/routines');
+    } catch (error) {
+      console.error('Error al aplicar plantilla:', error);
+      alert('Error al crear las rutinas. Por favor intenta de nuevo.');
+    }
   };
 
   const categoryLabels: Record<string, string> = {
