@@ -20,7 +20,7 @@ import {
 import { useConfirm } from '@/hooks/useConfirm';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/hooks/useToast';
-import { createRoutine, getRoutineByDay } from '@/lib/supabase/services';
+import { createRoutine, getRoutineByDay, deleteRoutine } from '@/lib/supabase/services';
 import { supabase } from '@/lib/supabase/client';
 
 export default function CreateRoutinePage() {
@@ -214,8 +214,9 @@ export default function CreateRoutinePage() {
         if (!shouldReplace) {
           return;
         }
-        // Note: The delete will be handled by the updateRoutine service
-        // For now, we'll just create a new one (duplicate handling to be fixed)
+
+        // Eliminar la rutina existente antes de crear la nueva
+        await deleteRoutine(existingRoutine.id);
       }
 
       // Calcular duración basada en datos históricos o estimación inteligente
@@ -230,7 +231,13 @@ export default function CreateRoutinePage() {
         isRestDay,
       };
 
-      await createRoutine(user.id, newRoutine);
+      const result = await createRoutine(user.id, newRoutine);
+
+      // Validar que la rutina se creó correctamente
+      if (!result) {
+        throw new Error('No se pudo crear la rutina');
+      }
+
       toast.success(`Rutina "${finalName}" creada correctamente`);
       setTimeout(() => router.push('/routines'), 300);
     } catch (error) {
