@@ -9,7 +9,7 @@ import { Routine, DayOfWeek } from '@/types';
 import { getDayColor, getDayInitial } from '@/lib/utils';
 import { Plus, Clock, Dumbbell, Calendar, Edit, Download, Sparkles } from 'lucide-react';
 import { getExerciseById } from '@/data/exercises';
-import { getRoutines } from '@/lib/supabase/services';
+import { getRoutines, createRoutine } from '@/lib/supabase/services';
 import { supabase } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/useToast';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
@@ -59,6 +59,55 @@ export default function RoutinesPage() {
 
       // Load routines from Supabase
       const supabaseRoutines = await getRoutines(user.id);
+
+      // If Supabase is empty but localStorage has routines, sync them
+      if (supabaseRoutines.length === 0) {
+        const localRoutines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
+
+        if (localRoutines.length > 0) {
+          console.log('[Routines] Syncing local routines to Supabase...');
+
+          // Attempt to sync each routine
+          let syncedCount = 0;
+          for (const routine of localRoutines) {
+            try {
+              await createRoutine(user.id, {
+                name: routine.name,
+                day: routine.day,
+                exercises: routine.exercises,
+                duration: routine.duration,
+                isRestDay: routine.isRestDay || false,
+              });
+              syncedCount++;
+            } catch (error) {
+              console.error('[Routines] Error syncing routine:', error);
+            }
+          }
+
+          if (syncedCount > 0) {
+            toast.success(`${syncedCount} rutina(s) sincronizada(s) con la nube`);
+            // Reload from Supabase to get the synced routines
+            const syncedRoutines = await getRoutines(user.id);
+            setRoutines(syncedRoutines);
+
+            const totalExercises = syncedRoutines.reduce((acc: number, r: Routine) =>
+              acc + (r.exercises?.length || 0), 0
+            );
+            const totalTime = syncedRoutines.reduce((acc: number, r: Routine) =>
+              acc + (r.duration || 0), 0
+            );
+
+            setStats({
+              total: syncedRoutines.length,
+              exercises: totalExercises,
+              active: syncedRoutines.length,
+              time: totalTime,
+            });
+            return;
+          }
+        }
+      }
+
       setRoutines(supabaseRoutines);
 
       const totalExercises = supabaseRoutines.reduce((acc: number, r: Routine) =>

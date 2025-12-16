@@ -41,15 +41,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) {
         console.error('[Auth] Error loading profile:', error);
 
-        // If profile doesn't exist, create a fallback profile
+        // If profile doesn't exist, create it in the database
         if (error.code === 'PGRST116') {
-          console.log('[Auth] Profile not found, creating fallback profile');
-          return {
+          console.log('[Auth] Profile not found, creating it in database...');
+
+          const newProfile = {
+            id: supabaseUser.id,
             name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'Usuario',
             email: supabaseUser.email || '',
-            weight: 0,
-            height: 0,
-            trainingGoal: undefined,
+            created_at: supabaseUser.created_at,
+          };
+
+          const { data: createdProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert(newProfile)
+            .select()
+            .single();
+
+          if (createError) {
+            console.error('[Auth] Error creating profile:', createError);
+            // If we can't create the profile, return fallback
+            return {
+              name: newProfile.name,
+              email: newProfile.email,
+              weight: 0,
+              height: 0,
+              trainingGoal: undefined,
+            };
+          }
+
+          console.log('[Auth] Profile created successfully:', createdProfile);
+
+          // Return the newly created profile
+          return {
+            name: createdProfile.name || 'Usuario',
+            email: createdProfile.email || '',
+            weight: createdProfile.weight || 0,
+            height: createdProfile.height || 0,
+            trainingGoal: createdProfile.training_goal,
           };
         }
 

@@ -146,10 +146,18 @@ export async function createRoutine(
 
     if (error) {
       console.error('[RoutineService] Error creating routine:', error);
+
+      // Provide more descriptive error messages
+      if (error.code === '23503') {
+        throw new Error('Tu perfil no está configurado correctamente. Por favor cierra sesión y vuelve a iniciar.');
+      }
+
       throw error;
     }
 
-    if (!data) return null;
+    if (!data) {
+      throw new Error('No se recibieron datos después de crear la rutina');
+    }
 
     return {
       id: data.id,
@@ -161,7 +169,7 @@ export async function createRoutine(
     };
   } catch (error) {
     console.error('[RoutineService] Error in createRoutine:', error);
-    return null;
+    throw error;  // Re-throw instead of silencing
   }
 }
 

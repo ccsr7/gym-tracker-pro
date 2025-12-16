@@ -173,17 +173,31 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
 
       // Si usuario está autenticado, guardar también en Supabase
       const { data: { user } } = await supabase.auth.getUser();
+      let supabaseErrors = 0;
+
       if (user) {
         for (const routine of importedRoutines) {
           try {
-            await createRoutine(user.id, routine);
+            const result = await createRoutine(user.id, routine);
+            if (!result) {
+              supabaseErrors++;
+            }
           } catch (error) {
             console.error('[RoutineImportExport] Error saving routine to Supabase:', error);
+            supabaseErrors++;
           }
         }
       }
 
-      toast.success(`${importedRoutines.length} rutina(s) importada(s) exitosamente`);
+      // Mostrar mensaje apropiado según resultado
+      if (supabaseErrors > 0) {
+        toast.warning(
+          `${importedRoutines.length} rutina(s) importada(s) localmente. ` +
+          `${supabaseErrors} no se sincronizaron con la nube. Recarga la página para reintentar.`
+        );
+      } else {
+        toast.success(`${importedRoutines.length} rutina(s) importada(s) exitosamente`);
+      }
       onImport();
       onClose();
     } catch (error) {
