@@ -200,7 +200,7 @@ export default function CalculatorPage() {
                 inputMode="decimal"
                 pattern="[0-9]*"
                 value={weight}
-                onChange={(e) => setWeight(e.target.value)}
+                onChange={(e) => setWeight(e.target.value.replace(',', '.'))}
                 onKeyPress={handleKeyPress}
                 placeholder="100"
                 step="0.5"

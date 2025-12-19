@@ -545,7 +545,10 @@ export default function HistoryPage() {
                                   <input
                                     type="number"
                                     value={set.weight}
-                                    onChange={(e) => handleSetChange(exerciseIdx, setIdx, 'weight', parseFloat(e.target.value) || 0)}
+                                    onChange={(e) => {
+                                      const normalizedValue = e.target.value.replace(',', '.');
+                                      handleSetChange(exerciseIdx, setIdx, 'weight', parseFloat(normalizedValue) || 0);
+                                    }}
                                     className="w-full px-4 py-4 bg-slate-700 dark:bg-slate-100 border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 text-center font-bold text-xl"
                                     step="0.5"
                                   />

@@ -858,7 +858,8 @@ export default function WorkoutPage() {
                           step="0.5"
                           value={set.weight === 0 ? '' : set.weight}
                           onChange={(e) => {
-                            const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                            const normalizedValue = e.target.value.replace(',', '.');
+                            const value = normalizedValue === '' ? 0 : parseFloat(normalizedValue);
                             handleSetChange(currentExerciseIndex, idx, 'weight', isNaN(value) ? 0 : value);
                           }}
                           onFocus={(e) => {

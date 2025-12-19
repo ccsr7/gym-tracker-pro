@@ -250,7 +250,7 @@ export default function ProfilePage() {
                   pattern="[0-9]*"
                   step="0.1"
                   value={weight}
-                  onChange={(e) => setWeight(e.target.value)}
+                  onChange={(e) => setWeight(e.target.value.replace(',', '.'))}
                   className="w-full px-4 py-3 bg-slate-700/50 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
