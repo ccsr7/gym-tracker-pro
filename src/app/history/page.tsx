@@ -546,7 +546,7 @@ export default function HistoryPage() {
                                     type="number"
                                     value={set.weight}
                                     onChange={(e) => handleSetChange(exerciseIdx, setIdx, 'weight', parseFloat(e.target.value) || 0)}
-                                    className="w-full px-4 py-3 bg-slate-700 dark:bg-slate-100 border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 text-center font-bold text-base"
+                                    className="w-full px-4 py-4 bg-slate-700 dark:bg-slate-100 border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 text-center font-bold text-xl"
                                     step="0.5"
                                   />
                                 </div>
@@ -557,7 +557,7 @@ export default function HistoryPage() {
                                     type="number"
                                     value={set.reps}
                                     onChange={(e) => handleSetChange(exerciseIdx, setIdx, 'reps', parseInt(e.target.value) || 0)}
-                                    className="w-full px-4 py-3 bg-slate-700 dark:bg-slate-100 border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 text-center font-bold text-base"
+                                    className="w-full px-4 py-4 bg-slate-700 dark:bg-slate-100 border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 text-center font-bold text-xl"
                                   />
                                 </div>
 
