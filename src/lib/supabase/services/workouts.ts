@@ -54,7 +54,14 @@ export async function getWorkouts(userId: string): Promise<Workout[]> {
       date: workout.date,
       routineId: workout.routine_id || '',
       routineName: workout.routine_name,
-      exercises: workout.exercises,
+      exercises: (workout.exercises || []).map((exercise: any) => ({
+        exerciseId: exercise.exerciseId || exercise.exercise_id,
+        sets: (exercise.sets || []).map((set: any) => ({
+          weight: typeof set.weight === 'number' ? set.weight : parseFloat(set.weight) || 0,
+          reps: typeof set.reps === 'number' ? set.reps : parseInt(set.reps) || 0,
+          completed: set.completed === true || set.completed === 'true',
+        })),
+      })),
       duration: workout.duration,
       notes: workout.notes,
       rpe: workout.rpe,
@@ -140,7 +147,14 @@ export async function getWorkoutById(id: string): Promise<Workout | null> {
       date: data.date,
       routineId: data.routine_id || '',
       routineName: data.routine_name,
-      exercises: data.exercises,
+      exercises: (data.exercises || []).map((exercise: any) => ({
+        exerciseId: exercise.exerciseId || exercise.exercise_id,
+        sets: (exercise.sets || []).map((set: any) => ({
+          weight: typeof set.weight === 'number' ? set.weight : parseFloat(set.weight) || 0,
+          reps: typeof set.reps === 'number' ? set.reps : parseInt(set.reps) || 0,
+          completed: set.completed === true || set.completed === 'true',
+        })),
+      })),
       duration: data.duration,
       notes: data.notes,
       rpe: data.rpe,
@@ -199,7 +213,7 @@ export async function createWorkout(
 
     if (!data) {
       console.error('[WorkoutService] No data returned from Supabase');
-      return null;
+      throw new Error('No se recibieron datos después de guardar el entrenamiento');
     }
 
     console.log('[WorkoutService] Workout created successfully:', data);
@@ -240,13 +254,23 @@ export async function updateWorkout(
   updates: Partial<Workout>
 ): Promise<Workout | null> {
   try {
+    // Validar y normalizar exercises antes de guardar
+    const normalizedExercises = (updates.exercises || []).map((exercise: any) => ({
+      exerciseId: exercise.exerciseId,
+      sets: (exercise.sets || []).map((set: any) => ({
+        weight: typeof set.weight === 'number' ? set.weight : parseFloat(set.weight) || 0,
+        reps: typeof set.reps === 'number' ? set.reps : parseInt(set.reps) || 0,
+        completed: Boolean(set.completed),
+      })),
+    }));
+
     const { data, error } = await supabase
       .from('workouts')
       .update({
         routine_id: updates.routineId,
         routine_name: updates.routineName,
         date: updates.date,
-        exercises: updates.exercises,
+        exercises: normalizedExercises,
         duration: updates.duration,
         notes: updates.notes,
         rpe: updates.rpe,
