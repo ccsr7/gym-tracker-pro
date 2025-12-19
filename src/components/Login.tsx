@@ -16,7 +16,6 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const { login, register, resetPassword, isSyncing } = useAuth();
 
   // Create demo account on first load if no users exist
@@ -36,44 +35,36 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setIsLoading(true);
 
     try {
       if (isLogin) {
         const result = await login(email, password);
         if (!result.success) {
           setError(result.error || 'Error al iniciar sesión');
-        } else {
-          // Navigate to dashboard after successful login
-          router.push('/');
         }
+        // Auth context handles navigation via onAuthStateChange
       } else {
         const result = await register(name, email, password);
         if (!result.success) {
           setError(result.error || 'Error al registrar');
-        } else {
-          // Navigate to dashboard after successful registration
-          router.push('/');
         }
+        // Auth context handles navigation via onAuthStateChange
       }
-    } finally {
-      setIsLoading(false);
+    } catch (err) {
+      setError('Error al procesar la solicitud');
     }
   };
 
   const handleDemoLogin = async () => {
     setError('');
-    setIsLoading(true);
     try {
       const result = await login('demo@gym.com', 'demo123');
       if (!result.success) {
         setError(result.error || 'Error al iniciar sesión');
-      } else {
-        // Navigate to dashboard after successful demo login
-        router.push('/');
       }
-    } finally {
-      setIsLoading(false);
+      // Auth context handles navigation via onAuthStateChange
+    } catch (err) {
+      setError('Error al procesar la solicitud');
     }
   };
 
@@ -81,7 +72,6 @@ export default function Login() {
     e.preventDefault();
     setError('');
     setSuccessMessage('');
-    setIsLoading(true);
 
     try {
       const result = await resetPassword(email);
@@ -91,8 +81,8 @@ export default function Login() {
       } else {
         setError(result.error || 'Error al enviar el correo');
       }
-    } finally {
-      setIsLoading(false);
+    } catch (err) {
+      setError('Error al procesar la solicitud');
     }
   };
 
@@ -144,10 +134,10 @@ export default function Login() {
 
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isSyncing}
                 className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
               >
-                {isLoading ? (
+                {isSyncing ? (
                   <>
                     <LoadingLogo size="md" variant="lift" />
                     <span>Enviando...</span>
@@ -225,13 +215,13 @@ export default function Login() {
 
             <button
               type="submit"
-              disabled={isLoading || isSyncing}
+              disabled={isSyncing}
               className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
             >
-              {isLoading || isSyncing ? (
+              {isSyncing ? (
                 <>
                   <LoadingLogo size="md" variant="lift" />
-                  <span>{isSyncing ? 'Sincronizando datos...' : 'Cargando...'}</span>
+                  <span>Sincronizando datos...</span>
                 </>
               ) : (
                 <span>{isLogin ? 'Iniciar Sesión' : 'Registrarse'}</span>
@@ -295,13 +285,13 @@ export default function Login() {
               <button
                 type="button"
                 onClick={handleDemoLogin}
-                disabled={isLoading}
+                disabled={isSyncing}
                 className="w-full bg-emerald-500/20 hover:bg-emerald-500/30 disabled:bg-slate-700 disabled:cursor-not-allowed border border-emerald-500/50 text-emerald-300 disabled:text-slate-500 font-medium py-2 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
               >
-                {isLoading ? (
+                {isSyncing ? (
                   <>
                     <LoadingLogo size="sm" variant="lift" />
-                    <span>Cargando...</span>
+                    <span>Sincronizando...</span>
                   </>
                 ) : (
                   <span>Usar Cuenta Demo</span>

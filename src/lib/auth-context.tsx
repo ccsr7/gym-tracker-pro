@@ -235,9 +235,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const profile = await loadUserProfile(data.user);
         setUser(profile);
 
-        // Sync data from Supabase BEFORE continuing
-        // This ensures fresh data is available when user navigates
-        await autoSyncData(data.user.id);
+        // Start data sync in background without blocking
+        // This allows immediate navigation while data syncs in the background
+        autoSyncData(data.user.id).catch(err =>
+          console.error('[Auth] Background sync failed:', err)
+        );
 
         // Auto-cleanup demo account if 7+ days have passed
         if (data.user.email === 'demo@gym.com') {

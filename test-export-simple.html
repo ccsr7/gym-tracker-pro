@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Export Code - Gym Tracker Pro</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+            background: #0f172a;
+            color: #fff;
+        }
+        h1 { color: #10b981; }
+        h2 { color: #3b82f6; margin-top: 0; }
+        .section {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            font-weight: 600;
+        }
+        button:hover { background: #059669; }
+        button:disabled {
+            background: #475569;
+            cursor: not-allowed;
+        }
+        input {
+            width: calc(100% - 24px);
+            padding: 12px;
+            margin: 10px 0;
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: white;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .result {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .success { color: #10b981; font-weight: bold; }
+        .error { color: #ef4444; font-weight: bold; }
+        .info { color: #3b82f6; }
+        .warning { color: #f59e0b; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test de Exportación - Gym Tracker Pro</h1>
+    <p style="color: #94a3b8;">Esta página te ayudará a diagnosticar problemas con la exportación de rutinas.</p>
+
+    <div class="section">
+        <h2>1. Verificar Estado Local</h2>
+        <button onclick="checkAuth()">Verificar Autenticación</button>
+        <button onclick="checkRoutines()">Verificar Rutinas</button>
+        <div id="checkResult" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="section">
+        <h2>2. Test de Supabase Auth</h2>
+        <button onclick="testSupabaseAuth()">Test Supabase Auth</button>
+        <div id="supabaseAuthResult" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="section">
+        <h2>3. Generar Código de Exportación</h2>
+        <p style="color: #94a3b8; font-size: 14px;">Esto simulará el proceso completo de exportación.</p>
+        <button onclick="simulateExport()">🚀 Simular Exportación Completa</button>
+        <div id="exportResult" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="section">
+        <h2>4. Verificar Código en Supabase</h2>
+        <p style="color: #94a3b8; font-size: 14px;">Ingresa un código para verificar si existe en Supabase.</p>
+        <input type="text" id="codeInput" placeholder="Ingresa el código generado (ej: A3B7C2D1)" />
+        <button onclick="verifyCode()">🔎 Verificar Código</button>
+        <div id="verifyResult" class="result" style="display:none;"></div>
+    </div>
+
+    <script type="module">
+        const SUPABASE_URL = 'https://ymuqlopycwdqrrmaaaoa.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InltdXFsb3B5Y3dkcXJybWFhYW9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc5OTM3NTksImV4cCI6MjA1MzU2OTc1OX0.h9TplTbHcXjGpBsF45-QQy-_bvXjCfCQf9gfO2IkA-0';
+
+        window.checkAuth = function() {
+            const result = document.getElementById('checkResult');
+            result.style.display = 'block';
+            result.innerHTML = '⏳ Verificando autenticación...\n\n';
+
+            const authData = localStorage.getItem('gym-tracker-auth');
+            if (authData) {
+                try {
+                    const parsed = JSON.parse(authData);
+                    result.innerHTML += '<span class="success">✅ Autenticación encontrada en localStorage</span>\n';
+                    result.innerHTML += `Email: ${parsed.email}\n`;
+                    result.innerHTML += `Nombre: ${parsed.name}\n`;
+                    result.innerHTML += `User ID: ${parsed.userId}\n`;
+                } catch (e) {
+                    result.innerHTML += '<span class="error">❌ Error al parsear datos de auth:</span>\n' + e.message + '\n';
+                }
+            } else {
+                result.innerHTML += '<span class="error">❌ No hay datos de autenticación en localStorage</span>\n';
+                result.innerHTML += '<span class="warning">⚠️  Necesitas estar logueado para usar Supabase</span>\n';
+            }
+        };
+
+        window.checkRoutines = function() {
+            const result = document.getElementById('checkResult');
+            result.style.display = 'block';
+            result.innerHTML = '⏳ Verificando rutinas...\n\n';
+
+            const routines = localStorage.getItem('gym-tracker-routines');
+            if (routines) {
+                try {
+                    const parsed = JSON.parse(routines);
+                    result.innerHTML += `<span class="success">✅ ${parsed.length} rutinas encontradas</span>\n\n`;
+                    parsed.forEach((r, i) => {
+                        result.innerHTML += `${i + 1}. ${r.name}\n`;
+                        result.innerHTML += `   Día: ${r.day}\n`;
+                        result.innerHTML += `   Ejercicios: ${r.exercises?.length || 0}\n`;
+                        result.innerHTML += `   Duración: ${r.duration} min\n\n`;
+                    });
+                } catch (e) {
+                    result.innerHTML += '<span class="error">❌ Error al parsear rutinas:</span>\n' + e.message + '\n';
+                }
+            } else {
+                result.innerHTML += '<span class="error">❌ No hay rutinas en localStorage</span>\n';
+                result.innerHTML += '<span class="warning">⚠️  Necesitas crear rutinas primero para exportarlas</span>\n';
+            }
+        };
+
+        window.testSupabaseAuth = async function() {
+            const result = document.getElementById('supabaseAuthResult');
+            result.style.display = 'block';
+            result.innerHTML = '⏳ Conectando a Supabase...\n\n';
+
+            try {
+                const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+                const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+                result.innerHTML += '<span class="info">📡 Cliente de Supabase creado</span>\n';
+                result.innerHTML += '<span class="info">🔍 Obteniendo usuario actual...</span>\n\n';
+
+                const { data, error } = await supabase.auth.getUser();
+
+                if (error) {
+                    result.innerHTML += '<span class="error">❌ Error de Supabase Auth:</span>\n';
+                    result.innerHTML += JSON.stringify(error, null, 2) + '\n';
+                } else if (data.user) {
+                    result.innerHTML += '<span class="success">✅ USUARIO AUTENTICADO EN SUPABASE</span>\n\n';
+                    result.innerHTML += `ID: ${data.user.id}\n`;
+                    result.innerHTML += `Email: ${data.user.email}\n`;
+                    result.innerHTML += `Confirmado: ${data.user.email_confirmed_at ? 'Sí' : 'No'}\n`;
+                    result.innerHTML += `Creado: ${new Date(data.user.created_at).toLocaleString('es-ES')}\n`;
+                    window.currentUserId = data.user.id;
+                } else {
+                    result.innerHTML += '<span class="error">❌ NO HAY SESIÓN ACTIVA EN SUPABASE</span>\n';
+                    result.innerHTML += '<span class="warning">⚠️  Intenta hacer login de nuevo en la app</span>\n';
+                }
+            } catch (e) {
+                result.innerHTML += '<span class="error">❌ Error crítico:</span>\n' + e.message + '\n';
+                result.innerHTML += '\n' + e.stack + '\n';
+            }
+        };
+
+        window.simulateExport = async function() {
+            const result = document.getElementById('exportResult');
+            result.style.display = 'block';
+            result.innerHTML = '🚀 Iniciando proceso de exportación...\n\n';
+
+            try {
+                // Step 1: Check routines
+                result.innerHTML += '<span class="info">📦 PASO 1: Verificando rutinas...</span>\n';
+                const routines = localStorage.getItem('gym-tracker-routines');
+                if (!routines) {
+                    result.innerHTML += '<span class="error">❌ No hay rutinas para exportar</span>\n';
+                    return;
+                }
+
+                const parsed = JSON.parse(routines);
+                if (parsed.length === 0) {
+                    result.innerHTML += '<span class="error">❌ La lista de rutinas está vacía</span>\n';
+                    return;
+                }
+
+                result.innerHTML += `<span class="success">✅ ${parsed.length} rutinas listas para exportar</span>\n\n`;
+
+                const exportData = {
+                    version: '1.0',
+                    timestamp: new Date().toISOString(),
+                    routines: parsed
+                };
+
+                // Step 2: Check auth
+                result.innerHTML += '<span class="info">🔐 PASO 2: Verificando autenticación...</span>\n';
+                const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+                const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+                const { data: userData, error: userError } = await supabase.auth.getUser();
+
+                if (userError || !userData.user) {
+                    result.innerHTML += '<span class="error">❌ Usuario NO autenticado</span>\n';
+                    result.innerHTML += JSON.stringify(userError || 'No user data', null, 2) + '\n\n';
+
+                    result.innerHTML += '<span class="warning">⚠️  FALLBACK: Usando localStorage...</span>\n';
+                    const jsonString = JSON.stringify(exportData);
+                    let hash = 0;
+                    for (let i = 0; i < jsonString.length; i++) {
+                        const char = jsonString.charCodeAt(i);
+                        hash = ((hash << 5) - hash) + char;
+                        hash = hash & hash;
+                    }
+                    const hashCode = Math.abs(hash).toString(36).toUpperCase().substring(0, 8).padStart(8, '0');
+                    const exportKey = `gym-export-${hashCode}`;
+                    localStorage.setItem(exportKey, btoa(JSON.stringify(exportData)));
+
+                    result.innerHTML += `\n<span class="success">✅ Código generado (local): ${hashCode}</span>\n`;
+                    result.innerHTML += '<span class="warning">⚠️  Este código SOLO funciona en este navegador/dispositivo</span>\n';
+                    return;
+                }
+
+                result.innerHTML += `<span class="success">✅ Usuario autenticado: ${userData.user.email}</span>\n`;
+                result.innerHTML += `<span class="info">   User ID: ${userData.user.id}</span>\n\n`;
+
+                // Step 3: Generate code
+                result.innerHTML += '<span class="info">🔑 PASO 3: Generando código único...</span>\n';
+                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+                let code = '';
+                for (let i = 0; i < 8; i++) {
+                    code += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                result.innerHTML += `<span class="info">   Código: ${code}</span>\n\n`;
+
+                // Step 4: Save to Supabase
+                result.innerHTML += '<span class="info">💾 PASO 4: Guardando en Supabase...</span>\n';
+                const { data, error } = await supabase
+                    .from('shared_routine_codes')
+                    .insert({
+                        code: code,
+                        routine_data: exportData,
+                        created_by_user_id: userData.user.id,
+                    })
+                    .select('code, id, created_at, expires_at')
+                    .single();
+
+                if (error) {
+                    result.innerHTML += '<span class="error">❌ ERROR AL GUARDAR EN SUPABASE:</span>\n\n';
+                    result.innerHTML += `Código de error: ${error.code}\n`;
+                    result.innerHTML += `Mensaje: ${error.message}\n`;
+                    result.innerHTML += `Detalles: ${error.details}\n`;
+                    result.innerHTML += `Hint: ${error.hint}\n\n`;
+                    result.innerHTML += 'Error completo:\n' + JSON.stringify(error, null, 2) + '\n';
+                } else {
+                    result.innerHTML += '<span class="success">✅✅✅ ¡CÓDIGO CREADO EXITOSAMENTE!</span>\n\n';
+                    result.innerHTML += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+                    result.innerHTML += `  CÓDIGO: <strong style="color:#10b981; font-size:18px;">${data.code}</strong>\n`;
+                    result.innerHTML += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+                    result.innerHTML += `ID: ${data.id}\n`;
+                    result.innerHTML += `Creado: ${new Date(data.created_at).toLocaleString('es-ES')}\n`;
+                    result.innerHTML += `Expira: ${new Date(data.expires_at).toLocaleString('es-ES')}\n\n`;
+                    result.innerHTML += '<span class="success">🌍 Este código funciona en CUALQUIER dispositivo!</span>\n';
+                    result.innerHTML += '<span class="success">🔗 Compártelo con quien quieras</span>\n';
+                    result.innerHTML += '\n<span class="info">💡 Usa el PASO 4 abajo para verificar que el código existe en Supabase</span>\n';
+                }
+            } catch (e) {
+                result.innerHTML += '\n<span class="error">❌ ERROR CRÍTICO:</span>\n';
+                result.innerHTML += e.message + '\n\n';
+                result.innerHTML += 'Stack trace:\n' + e.stack + '\n';
+            }
+        };
+
+        window.verifyCode = async function() {
+            const result = document.getElementById('verifyResult');
+            const code = document.getElementById('codeInput').value.trim().toUpperCase();
+
+            result.style.display = 'block';
+
+            if (!code) {
+                result.innerHTML = '<span class="error">❌ Por favor ingresa un código primero</span>\n';
+                return;
+            }
+
+            result.innerHTML = `🔎 Buscando código: <strong>${code}</strong>\n\n`;
+
+            try {
+                const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+                const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+                const { data, error } = await supabase
+                    .from('shared_routine_codes')
+                    .select('*')
+                    .eq('code', code)
+                    .single();
+
+                if (error) {
+                    if (error.code === 'PGRST116') {
+                        result.innerHTML += '<span class="error">❌ CÓDIGO NO ENCONTRADO EN SUPABASE</span>\n\n';
+                        result.innerHTML += 'Posibles razones:\n';
+                        result.innerHTML += '• El código no existe\n';
+                        result.innerHTML += '• El código expiró y fue eliminado\n';
+                        result.innerHTML += '• El código está en localStorage (método antiguo)\n';
+                    } else {
+                        result.innerHTML += '<span class="error">❌ Error al buscar código:</span>\n';
+                        result.innerHTML += JSON.stringify(error, null, 2) + '\n';
+                    }
+                } else {
+                    result.innerHTML += '<span class="success">✅✅✅ ¡CÓDIGO ENCONTRADO EN SUPABASE!</span>\n\n';
+                    result.innerHTML += '━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+                    result.innerHTML += `  CÓDIGO: ${data.code}\n`;
+                    result.innerHTML += '━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
+                    result.innerHTML += `ID en DB: ${data.id}\n`;
+                    result.innerHTML += `Rutinas: ${data.routine_data.routines.length}\n`;
+                    result.innerHTML += `Veces usado: ${data.usage_count}\n`;
+                    result.innerHTML += `Creado: ${new Date(data.created_at).toLocaleString('es-ES')}\n`;
+                    result.innerHTML += `Expira: ${new Date(data.expires_at).toLocaleString('es-ES')}\n\n`;
+
+                    const expiresAt = new Date(data.expires_at);
+                    const now = new Date();
+                    if (expiresAt > now) {
+                        const daysLeft = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24));
+                        result.innerHTML += `<span class="success">✅ Código VÁLIDO (expira en ${daysLeft} días)</span>\n`;
+                    } else {
+                        result.innerHTML += '<span class="error">❌ Código EXPIRADO</span>\n';
+                    }
+
+                    result.innerHTML += '\n<span class="success">🎉 Este código se puede importar desde cualquier dispositivo</span>\n';
+                }
+            } catch (e) {
+                result.innerHTML += '<span class="error">❌ Error crítico:</span>\n';
+                result.innerHTML += e.message + '\n\n';
+                result.innerHTML += e.stack + '\n';
+            }
+        };
+    </script>
+</body>
+</html>
