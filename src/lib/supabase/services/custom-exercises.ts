@@ -82,6 +82,9 @@ export async function createCustomExercise(
   }
 ): Promise<{ success: boolean; error?: string; exercise?: Exercise }> {
   try {
+    console.log('[CustomExercises] Creating exercise for user:', userId);
+    console.log('[CustomExercises] Exercise data:', exerciseData);
+
     const { data, error } = await supabase
       .from('custom_exercises')
       .insert({
@@ -102,17 +105,35 @@ export async function createCustomExercise(
       .single();
 
     if (error) {
-      console.error('[CustomExercises] Error creating custom exercise:', error);
-      return { success: false, error: 'Error al crear el ejercicio personalizado' };
+      console.error('[CustomExercises] Supabase error creating exercise:', error);
+      console.error('[CustomExercises] Error code:', error.code);
+      console.error('[CustomExercises] Error message:', error.message);
+      console.error('[CustomExercises] Error details:', error.details);
+
+      // MEJORADO: Mensajes específicos según código de error
+      if (error.code === '42501') {
+        return { success: false, error: 'No tienes permisos para crear ejercicios. Verifica las políticas de seguridad en Supabase.' };
+      } else if (error.code === '23503') {
+        return { success: false, error: 'Tu perfil no está configurado correctamente. Cierra sesión y vuelve a iniciar.' };
+      } else {
+        return { success: false, error: `Error de base de datos: ${error.message}` };
+      }
     }
+
+    if (!data) {
+      console.error('[CustomExercises] No data returned after insert');
+      return { success: false, error: 'No se recibieron datos después de crear el ejercicio' };
+    }
+
+    console.log('[CustomExercises] Exercise created successfully:', data);
 
     return {
       success: true,
       exercise: customExerciseToExercise(data),
     };
   } catch (error) {
-    console.error('[CustomExercises] Error creating custom exercise:', error);
-    return { success: false, error: 'Error al crear el ejercicio personalizado' };
+    console.error('[CustomExercises] Unexpected error creating exercise:', error);
+    return { success: false, error: `Error inesperado: ${error instanceof Error ? error.message : 'Error desconocido'}` };
   }
 }
 

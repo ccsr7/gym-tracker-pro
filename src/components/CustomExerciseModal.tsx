@@ -99,20 +99,38 @@ export default function CustomExerciseModal({ isOpen, onClose, onSuccess }: Cust
         return;
       }
 
+      // NUEVO: Verificar que el token sea válido intentando una query simple
+      const { error: tokenCheckError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      if (tokenCheckError) {
+        console.error('[CustomExerciseModal] Token validation failed:', tokenCheckError);
+        setError('Tu sesión ha expirado. Por favor cierra sesión y vuelve a iniciar.');
+        setIsSubmitting(false);
+        return;
+      }
+
       // Upload image if provided
       let imageUrl: string | undefined;
       if (imageFile) {
+        console.log('[CustomExerciseModal] Uploading image...');
         const { success, error: uploadError, url } = await uploadCustomExerciseImage(user.id, imageFile);
         if (!success) {
+          console.error('[CustomExerciseModal] Image upload failed:', uploadError);
           setError(uploadError || 'Error al subir la imagen');
           setIsSubmitting(false);
           return;
         }
         imageUrl = url;
+        console.log('[CustomExerciseModal] Image uploaded successfully:', imageUrl);
       }
 
       // Create exercise
-      const { success, error: createError } = await createCustomExercise(user.id, {
+      console.log('[CustomExerciseModal] Creating exercise...');
+      const { success, error: createError, exercise } = await createCustomExercise(user.id, {
         name: name.trim(),
         category,
         muscleGroup: muscleGroup.trim(),
@@ -126,17 +144,25 @@ export default function CustomExerciseModal({ isOpen, onClose, onSuccess }: Cust
       });
 
       if (!success) {
-        setError(createError || 'Error al crear el ejercicio');
+        console.error('[CustomExerciseModal] Exercise creation failed:', createError);
+        // MEJORADO: Mensaje más específico según el error
+        if (createError?.includes('permission')) {
+          setError('No tienes permisos para crear ejercicios. Verifica tu configuración de cuenta.');
+        } else {
+          setError(createError || 'Error al crear el ejercicio');
+        }
         setIsSubmitting(false);
         return;
       }
+
+      console.log('[CustomExerciseModal] Exercise created successfully:', exercise);
 
       // Success!
       onSuccess();
       handleClose();
     } catch (err) {
-      console.error('[CustomExerciseModal] Error creating exercise:', err);
-      setError('Error al crear el ejercicio');
+      console.error('[CustomExerciseModal] Unexpected error creating exercise:', err);
+      setError(`Error inesperado: ${err instanceof Error ? err.message : 'Error desconocido'}`);
       setIsSubmitting(false);
     }
   };
