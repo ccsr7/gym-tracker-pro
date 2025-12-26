@@ -99,20 +99,6 @@ export default function CustomExerciseModal({ isOpen, onClose, onSuccess }: Cust
         return;
       }
 
-      // NUEVO: Verificar que el token sea válido intentando una query simple
-      const { error: tokenCheckError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', user.id)
-        .single();
-
-      if (tokenCheckError) {
-        console.error('[CustomExerciseModal] Token validation failed:', tokenCheckError);
-        setError('Tu sesión ha expirado. Por favor cierra sesión y vuelve a iniciar.');
-        setIsSubmitting(false);
-        return;
-      }
-
       // Upload image if provided
       let imageUrl: string | undefined;
       if (imageFile) {
