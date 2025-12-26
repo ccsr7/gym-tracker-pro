@@ -100,12 +100,12 @@ export default function Dashboard() {
     const daysOrder = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
     const todayIndex = daysOrder.indexOf(today);
 
-    // Find next active routine (not rest day) in the next 7 days
+    // Find next active routine (not rest day and not template) in the next 7 days
     for (let i = 1; i <= 7; i++) {
       const nextDayIndex = (todayIndex + i) % 7;
       const nextDay = daysOrder[nextDayIndex];
       const nextRoutine = routines.find((r: Routine) =>
-        r.day === nextDay && !r.isRestDay
+        r.day === nextDay && !r.isRestDay && !r.isTemplate
       );
 
       if (nextRoutine) {
@@ -162,8 +162,25 @@ export default function Dashboard() {
     // ONLY read from localStorage - NO Supabase calls
     const today = getSpanishDay(new Date());
     const localRoutines = JSON.parse(localStorage.getItem('gym-tracker-routines') || '[]');
-    const routine = localRoutines.find((r: Routine) => r.day === today);
-    setTodayRoutine(routine || null);
+
+    // Buscar solo rutinas programadas (no plantillas)
+    const scheduledForToday = localRoutines.find(
+      (r: Routine) => r.day === today && !r.isTemplate
+    );
+
+    if (scheduledForToday) {
+      setTodayRoutine(scheduledForToday);
+      return;
+    }
+
+    // Si no hay rutina para hoy, buscar siguiente día con rutina programada
+    const nextWorkout = getNextWorkout();
+    if (nextWorkout) {
+      // Mostrar la rutina del siguiente día
+      setTodayRoutine(nextWorkout.routine);
+    } else {
+      setTodayRoutine(null);
+    }
   };
 
   const checkInProgressWorkout = () => {

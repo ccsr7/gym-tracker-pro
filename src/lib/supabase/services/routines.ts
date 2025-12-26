@@ -30,10 +30,12 @@ export async function getRoutines(userId: string): Promise<Routine[]> {
     const routines = data.map(routine => ({
       id: routine.id,
       name: routine.name,
-      day: routine.day as DayOfWeek,
+      day: routine.day ? (routine.day as DayOfWeek) : undefined,  // CAMBIO: Permitir undefined
       exercises: routine.exercises,
       duration: routine.duration,
       isRestDay: routine.is_rest_day || false,
+      isTemplate: routine.is_template || false,  // NUEVO
+      description: routine.description || undefined,  // NUEVO
     }));
 
     // Sync to localStorage
@@ -75,10 +77,12 @@ export async function getRoutineById(id: string): Promise<Routine | null> {
     return {
       id: data.id,
       name: data.name,
-      day: data.day as DayOfWeek,
+      day: data.day ? (data.day as DayOfWeek) : undefined,  // CAMBIO
       exercises: data.exercises,
       duration: data.duration,
       isRestDay: data.is_rest_day || false,
+      isTemplate: data.is_template || false,  // NUEVO
+      description: data.description || undefined,  // NUEVO
     };
   } catch (error) {
     console.error('[RoutineService] Error in getRoutineById:', error);
@@ -96,6 +100,7 @@ export async function getRoutineByDay(userId: string, day: DayOfWeek): Promise<R
       .select('*')
       .eq('user_id', userId)
       .eq('day', day)
+      .eq('is_template', false)  // NUEVO: Ignorar plantillas
       .single();
 
     if (error) {
@@ -116,10 +121,79 @@ export async function getRoutineByDay(userId: string, day: DayOfWeek): Promise<R
       exercises: data.exercises,
       duration: data.duration,
       isRestDay: data.is_rest_day || false,
+      isTemplate: data.is_template || false,  // NUEVO
+      description: data.description || undefined,  // NUEVO
     };
   } catch (error) {
     console.error('[RoutineService] Error in getRoutineByDay:', error);
     return null;
+  }
+}
+
+/**
+ * Get all routine templates for a user (routines without assigned day)
+ */
+export async function getRoutineTemplates(userId: string): Promise<Routine[]> {
+  try {
+    const { data, error } = await supabase
+      .from('routines')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_template', true)
+      .order('name', { ascending: true });
+
+    if (error) {
+      console.error('[RoutineService] Error fetching templates:', error);
+      return [];
+    }
+
+    return (data || []).map(routine => ({
+      id: routine.id,
+      name: routine.name,
+      day: undefined,
+      exercises: routine.exercises,
+      duration: routine.duration,
+      isRestDay: false,
+      isTemplate: true,
+      description: routine.description || undefined,
+    }));
+  } catch (error) {
+    console.error('[RoutineService] Error fetching templates:', error);
+    return [];
+  }
+}
+
+/**
+ * Get all scheduled routines for a user (routines with assigned day)
+ */
+export async function getScheduledRoutines(userId: string): Promise<Routine[]> {
+  try {
+    const { data, error } = await supabase
+      .from('routines')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_template', false)
+      .not('day', 'is', null)
+      .order('day', { ascending: true });
+
+    if (error) {
+      console.error('[RoutineService] Error fetching scheduled routines:', error);
+      return [];
+    }
+
+    return (data || []).map(routine => ({
+      id: routine.id,
+      name: routine.name,
+      day: routine.day as DayOfWeek,
+      exercises: routine.exercises,
+      duration: routine.duration,
+      isRestDay: routine.is_rest_day || false,
+      isTemplate: false,
+      description: routine.description || undefined,
+    }));
+  } catch (error) {
+    console.error('[RoutineService] Error fetching scheduled routines:', error);
+    return [];
   }
 }
 
@@ -131,15 +205,27 @@ export async function createRoutine(
   routine: Omit<Routine, 'id'>
 ): Promise<Routine | null> {
   try {
+    // Validación: Si es plantilla, day debe ser undefined
+    if (routine.isTemplate && routine.day) {
+      console.warn('[RoutineService] Template routines should not have a day assigned');
+    }
+
+    // Validación: Si NO es plantilla, day es obligatorio
+    if (!routine.isTemplate && !routine.day) {
+      throw new Error('Las rutinas programadas deben tener un día asignado');
+    }
+
     const { data, error } = await supabase
       .from('routines')
       .insert({
         user_id: userId,
         name: routine.name,
-        day: routine.day,
+        day: routine.day || null,
         exercises: routine.exercises,
         duration: routine.duration,
         is_rest_day: routine.isRestDay || false,
+        is_template: routine.isTemplate || false,
+        description: routine.description || null,
       })
       .select()
       .single();
@@ -162,10 +248,12 @@ export async function createRoutine(
     return {
       id: data.id,
       name: data.name,
-      day: data.day as DayOfWeek,
+      day: data.day ? (data.day as DayOfWeek) : undefined,
       exercises: data.exercises,
       duration: data.duration,
       isRestDay: data.is_rest_day || false,
+      isTemplate: data.is_template || false,
+      description: data.description || undefined,
     };
   } catch (error) {
     console.error('[RoutineService] Error in createRoutine:', error);
@@ -188,6 +276,8 @@ export async function updateRoutine(
     if (updates.exercises !== undefined) updateData.exercises = updates.exercises;
     if (updates.duration !== undefined) updateData.duration = updates.duration;
     if (updates.isRestDay !== undefined) updateData.is_rest_day = updates.isRestDay;
+    if (updates.isTemplate !== undefined) updateData.is_template = updates.isTemplate;  // NUEVO
+    if (updates.description !== undefined) updateData.description = updates.description;  // NUEVO
 
     const { data, error } = await supabase
       .from('routines')

@@ -22,6 +22,9 @@ export default function RoutinesPage() {
   const [stats, setStats] = useState({ total: 0, exercises: 0, active: 0, time: 0 });
   const [showImportExport, setShowImportExport] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'calendar' | 'templates'>('calendar');
+  const [templates, setTemplates] = useState<Routine[]>([]);
+  const [scheduledRoutines, setScheduledRoutines] = useState<Routine[]>([]);
 
   const days: DayOfWeek[] = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
@@ -108,7 +111,13 @@ export default function RoutinesPage() {
         }
       }
 
+      // Separar rutinas programadas y plantillas
+      const scheduled = supabaseRoutines.filter((r: Routine) => !r.isTemplate && r.day);
+      const templateList = supabaseRoutines.filter((r: Routine) => r.isTemplate);
+
       setRoutines(supabaseRoutines);
+      setScheduledRoutines(scheduled);
+      setTemplates(templateList);
 
       const totalExercises = supabaseRoutines.reduce((acc: number, r: Routine) =>
         acc + (r.exercises?.length || 0), 0
@@ -229,8 +238,36 @@ export default function RoutinesPage() {
           )}
         </div>
 
-        {/* Weekly Grid */}
-        <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {/* Toggle View Mode */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setViewMode('calendar')}
+            className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
+              viewMode === 'calendar'
+                ? 'bg-emerald-500 text-white'
+                : 'bg-slate-700/50 dark:bg-slate-200 text-slate-300 dark:text-slate-700 hover:bg-slate-600 dark:hover:bg-slate-300'
+            }`}
+          >
+            <Calendar className="w-5 h-5" />
+            Vista Semanal
+          </button>
+          <button
+            onClick={() => setViewMode('templates')}
+            className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
+              viewMode === 'templates'
+                ? 'bg-emerald-500 text-white'
+                : 'bg-slate-700/50 dark:bg-slate-200 text-slate-300 dark:text-slate-700 hover:bg-slate-600 dark:hover:bg-slate-300'
+            }`}
+          >
+            <Sparkles className="w-5 h-5" />
+            Mis Plantillas ({templates.length})
+          </button>
+        </div>
+
+        {/* Conditional rendering based on view mode */}
+        {viewMode === 'calendar' ? (
+          /* Weekly Grid */
+          <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {days.map((day) => {
             const routine = getRoutineForDay(day);
             const dayColor = getDayColor(day);
@@ -321,6 +358,72 @@ export default function RoutinesPage() {
             );
           })}
         </StaggerContainer>
+        ) : (
+          /* Templates View */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            {templates.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <Sparkles className="w-16 h-16 mx-auto text-slate-600 dark:text-slate-400 mb-4" />
+                <p className="text-slate-400 dark:text-slate-600 mb-4">
+                  No tienes plantillas creadas aún
+                </p>
+                <button
+                  onClick={() => router.push('/routines/create')}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 px-6 rounded-lg inline-flex items-center gap-2 transition-colors"
+                >
+                  <Plus className="w-5 h-5" />
+                  Crear Primera Plantilla
+                </button>
+              </div>
+            ) : (
+              templates.map((template) => (
+                <div
+                  key={template.id}
+                  className="bg-slate-800/50 dark:bg-white border border-slate-700 dark:border-slate-300 rounded-xl p-6 hover:border-emerald-500 dark:hover:border-emerald-500 transition-all cursor-pointer group"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-white dark:text-slate-900 mb-1">
+                        {template.name}
+                      </h3>
+                      {template.description && (
+                        <p className="text-sm text-slate-400 dark:text-slate-600 mb-3">
+                          {template.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center gap-2 text-sm text-slate-300 dark:text-slate-700">
+                      <Dumbbell className="w-4 h-4" />
+                      <span>{template.exercises.length} ejercicios</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-slate-300 dark:text-slate-700">
+                      <Clock className="w-4 h-4" />
+                      <span>~{template.duration} min</span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => router.push(`/workout/${template.id}`)}
+                      className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                    >
+                      Entrenar
+                    </button>
+                    <button
+                      onClick={() => router.push(`/routines/edit/${template.id}`)}
+                      className="bg-slate-700 dark:bg-slate-200 hover:bg-slate-600 dark:hover:bg-slate-300 text-white dark:text-slate-900 p-2 rounded-lg transition-colors"
+                    >
+                      <Edit className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

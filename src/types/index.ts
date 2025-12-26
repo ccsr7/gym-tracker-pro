@@ -51,10 +51,12 @@ export interface WorkoutExercise {
 export interface Routine {
   id: string;
   name: string;
-  day: DayOfWeek;
+  day?: DayOfWeek;  // OPCIONAL: undefined = plantilla reutilizable
   exercises: RoutineExercise[];
   duration: number;
   isRestDay?: boolean; // Indica si este día es de descanso programado
+  isTemplate?: boolean;  // true = plantilla, false/undefined = rutina programada
+  description?: string;  // Descripción opcional de la plantilla
 }
 
 export interface Workout {

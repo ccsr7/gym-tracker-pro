@@ -333,20 +333,22 @@ export default function RoutineImportExport({ onClose, onImport }: RoutineImport
 
       // Routine card background - subtle border
       const cardStartY = yPosition;
-      const dayColor = dayColors[routine.day] || colors.gray;
+      const dayColor = routine.day ? (dayColors[routine.day] || colors.gray) : colors.gray;
 
       // Card border
       doc.setDrawColor(220, 220, 220);
       doc.setLineWidth(0.5);
       doc.roundedRect(15, yPosition - 2, 180, 16, 2, 2, 'S');
 
-      // Day badge - more compact
-      doc.setFillColor(dayColor[0], dayColor[1], dayColor[2]);
-      doc.roundedRect(18, yPosition, 28, 9, 2, 2, 'F');
-      doc.setTextColor(colors.white[0], colors.white[1], colors.white[2]);
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'bold');
-      doc.text(routine.day.substring(0, 3).toUpperCase(), 32, yPosition + 6, { align: 'center' });
+      // Day badge - more compact (skip for templates without day)
+      if (routine.day) {
+        doc.setFillColor(dayColor[0], dayColor[1], dayColor[2]);
+        doc.roundedRect(18, yPosition, 28, 9, 2, 2, 'F');
+        doc.setTextColor(colors.white[0], colors.white[1], colors.white[2]);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text(routine.day.substring(0, 3).toUpperCase(), 32, yPosition + 6, { align: 'center' });
+      }
 
       // Routine name - bigger and bolder
       doc.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);

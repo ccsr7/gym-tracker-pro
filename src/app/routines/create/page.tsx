@@ -15,7 +15,9 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
-  Link2
+  Link2,
+  Calendar,
+  Sparkles
 } from 'lucide-react';
 import { useConfirm } from '@/hooks/useConfirm';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -40,6 +42,8 @@ export default function CreateRoutinePage() {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [supersetSelection, setSupersetSelection] = useState<number | null>(null);
   const [isRestDay, setIsRestDay] = useState(false);
+  const [routineType, setRoutineType] = useState<'scheduled' | 'template'>('scheduled');
+  const [description, setDescription] = useState('');
 
   const days: DayOfWeek[] = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
   const categories = ['Todos', 'Pecho', 'Espalda', 'Piernas', 'Hombros', 'Brazos', 'Core', 'Cardio'];
@@ -193,6 +197,12 @@ export default function CreateRoutinePage() {
       // Si no hay nombre, usar uno por defecto
       const finalName = name.trim() || (isRestDay ? 'Día de Descanso' : 'Nueva Rutina');
 
+      // Validación específica por tipo
+      if (routineType === 'scheduled' && !day) {
+        toast.warning('Por favor selecciona un día para la rutina programada');
+        return;
+      }
+
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -200,23 +210,25 @@ export default function CreateRoutinePage() {
         return;
       }
 
-      // Check if there's already a routine for this day
-      const existingRoutine = await getRoutineByDay(user.id, day);
-      if (existingRoutine) {
-        const shouldReplace = await confirm({
-          title: 'Rutina existente',
-          message: `Ya existe una rutina para ${day}. ¿Deseas reemplazarla?`,
-          confirmText: 'Reemplazar',
-          cancelText: 'Cancelar',
-          type: 'warning',
-        });
+      // Check if there's already a routine for this day (solo para rutinas programadas)
+      if (routineType === 'scheduled' && day) {
+        const existingRoutine = await getRoutineByDay(user.id, day);
+        if (existingRoutine) {
+          const shouldReplace = await confirm({
+            title: 'Rutina existente',
+            message: `Ya existe una rutina para ${day}. ¿Deseas reemplazarla?`,
+            confirmText: 'Reemplazar',
+            cancelText: 'Cancelar',
+            type: 'warning',
+          });
 
-        if (!shouldReplace) {
-          return;
+          if (!shouldReplace) {
+            return;
+          }
+
+          // Eliminar la rutina existente antes de crear la nueva
+          await deleteRoutine(existingRoutine.id);
         }
-
-        // Eliminar la rutina existente antes de crear la nueva
-        await deleteRoutine(existingRoutine.id);
       }
 
       // Calcular duración basada en datos históricos o estimación inteligente
@@ -225,10 +237,12 @@ export default function CreateRoutinePage() {
 
       const newRoutine = {
         name: finalName,
-        day,
+        day: routineType === 'scheduled' ? day : undefined,
         exercises: isRestDay ? [] : selectedExercises,
         duration: estimatedDuration,
         isRestDay,
+        isTemplate: routineType === 'template',
+        description: routineType === 'template' ? description.trim() || undefined : undefined,
       };
 
       const result = await createRoutine(user.id, newRoutine);
@@ -238,7 +252,11 @@ export default function CreateRoutinePage() {
         throw new Error('No se pudo crear la rutina');
       }
 
-      toast.success(`Rutina "${finalName}" creada correctamente`);
+      toast.success(
+        routineType === 'template'
+          ? `Plantilla "${finalName}" creada correctamente`
+          : `Rutina "${finalName}" creada para ${day}`
+      );
       setTimeout(() => router.push('/routines'), 300);
     } catch (error) {
       console.error('[CreateRoutine] Error saving routine:', error);
@@ -325,27 +343,80 @@ export default function CreateRoutinePage() {
           />
         </div>
 
-        {/* Day Selection */}
+        {/* Routine Type Selection */}
         <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-6 mb-4">
           <label className="block text-sm font-medium text-slate-300 dark:text-slate-700 mb-3">
-            Día de la Semana
+            Tipo de Rutina
           </label>
-          <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
-            {days.map((d) => (
-              <button
-                key={d}
-                onClick={() => setDay(d)}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  day === d
-                    ? 'bg-emerald-500 text-white'
-                    : 'bg-slate-700/50 dark:bg-slate-200 text-slate-300 dark:text-slate-700 hover:bg-slate-700 dark:hover:bg-slate-300'
-                }`}
-              >
-                {d.substring(0, 3)}
-              </button>
-            ))}
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={() => setRoutineType('scheduled')}
+              className={`p-4 rounded-lg border-2 transition-colors ${
+                routineType === 'scheduled'
+                  ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300'
+                  : 'border-slate-600 dark:border-slate-400 text-slate-300 dark:text-slate-700 hover:border-emerald-500/50'
+              }`}
+            >
+              <Calendar className="w-6 h-6 mx-auto mb-2" />
+              <div className="font-medium">Programada</div>
+              <div className="text-xs opacity-75">Asignada a un día específico</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setRoutineType('template')}
+              className={`p-4 rounded-lg border-2 transition-colors ${
+                routineType === 'template'
+                  ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300'
+                  : 'border-slate-600 dark:border-slate-400 text-slate-300 dark:text-slate-700 hover:border-emerald-500/50'
+              }`}
+            >
+              <Sparkles className="w-6 h-6 mx-auto mb-2" />
+              <div className="font-medium">Plantilla</div>
+              <div className="text-xs opacity-75">Reutilizable cualquier día</div>
+            </button>
           </div>
         </div>
+
+        {/* Day Selection - SOLO si es rutina programada */}
+        {routineType === 'scheduled' && (
+          <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-6 mb-4">
+            <label className="block text-sm font-medium text-slate-300 dark:text-slate-700 mb-3">
+              Día de la Semana
+            </label>
+            <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
+              {days.map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setDay(d)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    day === d
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-slate-700/50 dark:bg-slate-200 text-slate-300 dark:text-slate-700 hover:bg-slate-700 dark:hover:bg-slate-300'
+                  }`}
+                >
+                  {d.substring(0, 3)}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Description Field - SOLO si es plantilla */}
+        {routineType === 'template' && (
+          <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-6 mb-4">
+            <label className="block text-sm font-medium text-slate-300 dark:text-slate-700 mb-3">
+              Descripción (Opcional)
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Ej: Rutina enfocada en pecho, hombros y tríceps"
+              className="w-full px-4 py-3 bg-slate-700/50 dark:bg-white border border-slate-600 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 placeholder-slate-400 dark:placeholder-slate-500 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              rows={3}
+            />
+          </div>
+        )}
 
         {/* Rest Day Toggle */}
         <div className="bg-slate-800/40 dark:bg-slate-100 backdrop-blur-sm border border-slate-700/50 dark:border-slate-200 rounded-xl p-6 mb-4">

@@ -111,7 +111,7 @@ export default function EditRoutinePage() {
 
         if (routine) {
           setName(routine.name);
-          setDay(routine.day);
+          setDay(routine.day || 'Lunes');
           setIsRestDay(routine.isRestDay || false);
           setSelectedExercises(routine.exercises.map((e: any) => e.exerciseId));
 
