@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Search, Link2 } from 'lucide-react';
+import { X, Search, Link2, Plus } from 'lucide-react';
 import { Exercise } from '@/types';
 import { getSimilarExercises, getExerciseLastWorkoutData } from '@/lib/exercise-utils';
 import { getExerciseById } from '@/data/exercises';
@@ -13,6 +13,7 @@ interface ExercisePickerModalProps {
   currentExerciseId: string;
   onSelectExercise: (exerciseId: string) => void;
   isSupersetExercise?: boolean;
+  onCreateNew?: () => void;
 }
 
 export default function ExercisePickerModal({
@@ -20,7 +21,8 @@ export default function ExercisePickerModal({
   onClose,
   currentExerciseId,
   onSelectExercise,
-  isSupersetExercise = false
+  isSupersetExercise = false,
+  onCreateNew
 }: ExercisePickerModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredExercises, setFilteredExercises] = useState<Exercise[]>([]);
@@ -159,6 +161,19 @@ export default function ExercisePickerModal({
             </div>
           )}
         </div>
+
+        {/* Footer - Botón Crear Ejercicio Nuevo */}
+        {onCreateNew && (
+          <div className="border-t border-slate-700 dark:border-slate-300 p-4">
+            <button
+              onClick={onCreateNew}
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Crear Ejercicio Nuevo</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

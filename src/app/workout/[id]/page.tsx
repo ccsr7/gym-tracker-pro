@@ -9,7 +9,10 @@ import { Play, Pause, Check, Plus, Trash2, Timer, Save, X, History, TrendingUp, 
 import { useAuth } from '@/lib/auth-context';
 import { getProgressionSuggestion } from '@/lib/progression-suggestions';
 import ExercisePickerModal from '@/components/ExercisePickerModal';
+import CustomExerciseModal from '@/components/CustomExerciseModal';
 import { generateSetsForExercise } from '@/lib/exercise-utils';
+import { getUserCustomExercises } from '@/lib/supabase/services/custom-exercises';
+import { Exercise } from '@/types';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { useConfirm } from '@/hooks/useConfirm';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -46,6 +49,8 @@ export default function WorkoutPage() {
   const [exerciseIndexToReplace, setExerciseIndexToReplace] = useState<number | null>(null);
   const [justSaved, setJustSaved] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [showCustomExerciseModal, setShowCustomExerciseModal] = useState(false);
+  const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
 
   // Refs para scroll automático a las series
   const setRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -532,6 +537,30 @@ export default function WorkoutPage() {
     setWorkoutExercises(updated);
     setShowExercisePicker(false);
     setExerciseIndexToReplace(null);
+  };
+
+  const handleCreateFromPicker = () => {
+    setShowExercisePicker(false);
+    setShowCustomExerciseModal(true);
+  };
+
+  const handleCustomExerciseCreated = async () => {
+    // Recargar ejercicios personalizados
+    if (user) {
+      const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+      if (supabaseUser) {
+        const newCustomExercises = await getUserCustomExercises(supabaseUser.id);
+        setCustomExercises(newCustomExercises);
+
+        // Cerrar modal de creación
+        setShowCustomExerciseModal(false);
+
+        // Volver a abrir el picker para que vea el ejercicio recién creado
+        setShowExercisePicker(true);
+
+        toast.success('Ejercicio creado. Ahora puedes seleccionarlo.');
+      }
+    }
   };
 
   const handleSaveWorkout = async () => {
@@ -1181,8 +1210,19 @@ export default function WorkoutPage() {
             currentExerciseId={currentExercise.exerciseId}
             onSelectExercise={handleReplaceExercise}
             isSupersetExercise={!!currentExercise.isSupersetWith}
+            onCreateNew={handleCreateFromPicker}
           />
         )}
+
+        {/* Modal de Crear Ejercicio Personalizado */}
+        <CustomExerciseModal
+          isOpen={showCustomExerciseModal}
+          onClose={() => {
+            setShowCustomExerciseModal(false);
+            setExerciseIndexToReplace(null);
+          }}
+          onSuccess={handleCustomExerciseCreated}
+        />
 
         {/* Dialog de Confirmación */}
         <ConfirmDialog {...confirmState} />
