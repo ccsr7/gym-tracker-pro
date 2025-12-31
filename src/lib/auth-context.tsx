@@ -211,67 +211,108 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: passwordValidation.error };
       }
 
-      // Sign in with Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: emailValidation.value,
-        password: password,
-      });
+      // Sign in with Supabase con timeout y reintentos
+      let lastError: any = null;
+      const maxRetries = 2;
+      const timeoutMs = 10000; // 10 segundos
 
-      if (error) {
-        console.error('[Auth] Login error:', error);
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`[Auth] Login attempt ${attempt + 1}/${maxRetries + 1}`);
 
-        // Map Supabase errors to user-friendly messages
-        if (error.message.includes('Invalid login credentials')) {
-          return { success: false, error: 'Email o contraseña incorrectos' };
-        }
-        if (error.message.includes('Email not confirmed')) {
-          return { success: false, error: 'Por favor confirma tu email' };
-        }
+          // Promise con timeout
+          const loginPromise = supabase.auth.signInWithPassword({
+            email: emailValidation.value,
+            password: password,
+          });
 
-        return { success: false, error: 'Error al iniciar sesión' };
-      }
+          const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Timeout')), timeoutMs)
+          );
 
-      if (data.user) {
-        const profile = await loadUserProfile(data.user);
-        setUser(profile);
+          const { data, error } = await Promise.race([loginPromise, timeoutPromise]);
 
-        // Start data sync in background without blocking
-        // This allows immediate navigation while data syncs in the background
-        autoSyncData(data.user.id).catch(err =>
-          console.error('[Auth] Background sync failed:', err)
-        );
+          if (error) {
+            console.error('[Auth] Login error:', error);
 
-        // Auto-cleanup demo account if 7+ days have passed
-        if (data.user.email === 'demo@gym.com') {
-          try {
-            console.log('[Auth] Checking if demo account needs cleanup...');
-            const { data: cleanupResult, error: cleanupError } = await supabase.rpc('cleanup_demo_account_smart');
-
-            if (cleanupError) {
-              console.error('[Auth] Demo cleanup error:', cleanupError);
-            } else if (cleanupResult && cleanupResult[0]?.cleaned) {
-              console.log('[Auth] Demo account cleaned:', {
-                workouts: cleanupResult[0].workouts_deleted,
-                routines: cleanupResult[0].routines_deleted
-              });
-              // Reload localStorage to reflect cleanup
-              window.location.reload();
-            } else {
-              console.log('[Auth] Demo account does not need cleanup yet');
+            // Map Supabase errors to user-friendly messages
+            if (error.message.includes('Invalid login credentials')) {
+              return { success: false, error: 'Email o contraseña incorrectos' };
             }
-          } catch (cleanupErr) {
-            console.error('[Auth] Demo cleanup failed:', cleanupErr);
-            // Continue anyway - cleanup is not critical for login
+            if (error.message.includes('Email not confirmed')) {
+              return { success: false, error: 'Por favor confirma tu email' };
+            }
+
+            return { success: false, error: 'Error al iniciar sesión' };
+          }
+
+          // Si llegamos aquí, el login fue exitoso
+          if (data.user) {
+            const profile = await loadUserProfile(data.user);
+            setUser(profile);
+
+            // Start data sync in background without blocking
+            autoSyncData(data.user.id).catch(err =>
+              console.error('[Auth] Background sync failed:', err)
+            );
+
+            // Auto-cleanup demo account if 7+ days have passed
+            if (data.user.email === 'demo@gym.com') {
+              try {
+                console.log('[Auth] Checking if demo account needs cleanup...');
+                const { data: cleanupResult, error: cleanupError } = await supabase.rpc('cleanup_demo_account_smart');
+
+                if (cleanupError) {
+                  console.error('[Auth] Demo cleanup error:', cleanupError);
+                } else if (cleanupResult && cleanupResult[0]?.cleaned) {
+                  console.log('[Auth] Demo account cleaned:', {
+                    workouts: cleanupResult[0].workouts_deleted,
+                    routines: cleanupResult[0].routines_deleted
+                  });
+                  // Reload localStorage to reflect cleanup
+                  window.location.reload();
+                } else {
+                  console.log('[Auth] Demo account does not need cleanup yet');
+                }
+              } catch (cleanupErr) {
+                console.error('[Auth] Demo cleanup failed:', cleanupErr);
+                // Continue anyway - cleanup is not critical for login
+              }
+            }
+          }
+
+          return { success: true };
+
+        } catch (attemptError: any) {
+          lastError = attemptError;
+
+          if (attemptError.message === 'Timeout') {
+            console.warn(`[Auth] Login attempt ${attempt + 1} timed out`);
+            if (attempt < maxRetries) {
+              // Esperar 1 segundo antes de reintentar
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              continue;
+            }
+          } else {
+            // Error no relacionado con timeout, lanzar inmediatamente
+            throw attemptError;
           }
         }
       }
 
-      return { success: true };
+      // Si llegamos aquí, todos los intentos fallaron por timeout
+      console.error('[Auth] All login attempts failed');
+      return {
+        success: false,
+        error: 'La conexión está tardando demasiado. Verifica tu internet e intenta de nuevo.'
+      };
+
     } catch (error) {
       console.error('[Auth] Login error:', error);
       return { success: false, error: 'Error al iniciar sesión' };
     }
   };
+
 
   const register = async (name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
