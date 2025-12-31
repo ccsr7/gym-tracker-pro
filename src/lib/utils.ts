@@ -89,12 +89,27 @@ export function calculateWorkoutStreak(workouts: any[], routines: any[]): number
     new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
-  // Obtener días de la semana con entrenamientos programados (no días de descanso)
+  // Obtener días de la semana con entrenamientos programados (no días de descanso, no plantillas)
   const workoutDays = routines
-    .filter((r: any) => !r.isRestDay)
+    .filter((r: any) =>
+      !r.isRestDay &&      // No es día de descanso
+      !r.isTemplate &&     // No es plantilla
+      r.day !== undefined  // Tiene día asignado
+    )
     .map((r: any) => r.day);
 
-  if (workoutDays.length === 0) return 0;
+  // Obtener días marcados como descanso en rutinas (isRestDay=true)
+  const routineRestDays = routines
+    .filter((r: any) =>
+      r.isRestDay === true &&
+      !r.isTemplate &&
+      r.day !== undefined
+    )
+    .map((r: any) => r.day);
+
+  const routineRestDaysSet = new Set(routineRestDays);
+
+  if (workoutDays.length === 0 && routineRestDays.length === 0) return 0;
 
   const daysOrder = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
@@ -134,7 +149,7 @@ export function calculateWorkoutStreak(workouts: any[], routines: any[]): number
     if (programmedDaysSet.has(dayName)) {
       // Si hay un entrenamiento completado en esta fecha
       if (completedDates.has(dateStr)) {
-        streak++;
+        streak++; // Workout completado
       }
       // Si es un día de descanso planificado, NO romper la racha
       else if (plannedRestDates.has(dateStr)) {
@@ -149,7 +164,11 @@ export function calculateWorkoutStreak(workouts: any[], routines: any[]): number
         break;
       }
     }
-    // Si no es un día programado (día de descanso en rutina), continuar sin afectar la racha
+    // Si es un día de descanso programado en rutina (isRestDay=true)
+    else if (routineRestDaysSet.has(dayName)) {
+      streak++; // Día de descanso programado cuenta como válido
+    }
+    // Si no es día programado ni descanso, continuar sin afectar la racha
   }
 
   return streak;

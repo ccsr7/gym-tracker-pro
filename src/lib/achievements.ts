@@ -1,5 +1,6 @@
 import { Workout } from '@/types';
 import { storageService, STORAGE_KEYS } from './storage-service';
+import { getSpanishDay } from './utils';
 
 export interface Achievement {
   id: string;
@@ -217,6 +218,13 @@ function calculateCurrentStreak(workouts: Workout[]): number {
     restDays.map(rd => new Date(rd.date).toISOString().split('T')[0])
   );
 
+  // Cargar rutinas para identificar días de descanso programados
+  const routines = storageService.get<any[]>(STORAGE_KEYS.ROUTINES, []);
+  const routineRestDays = routines
+    .filter((r: any) => r.isRestDay === true && !r.isTemplate && r.day)
+    .map((r: any) => r.day);
+  const routineRestDaysSet = new Set(routineRestDays);
+
   const sortedWorkouts = [...workouts].sort((a, b) =>
     new Date(b.date).getTime() - new Date(a.date).getTime()
   );
@@ -238,8 +246,10 @@ function calculateCurrentStreak(workouts: Workout[]): number {
         const checkDate = new Date(currentDate);
         checkDate.setDate(checkDate.getDate() - d);
         const dateStr = checkDate.toISOString().split('T')[0];
+        const dayName = getSpanishDay(checkDate);
 
-        if (!restDatesSet.has(dateStr)) {
+        // Verificar si es descanso manual O descanso programado en rutina
+        if (!restDatesSet.has(dateStr) && !routineRestDaysSet.has(dayName)) {
           allRestDays = false;
           break;
         }
