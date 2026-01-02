@@ -36,8 +36,8 @@ export default function ExercisePickerModal({
       return;
     }
 
-    // Obtener ejercicios similares (misma categoría)
-    const similarExercises = getSimilarExercises(currentExerciseId, true);
+    // Obtener todos los ejercicios (sin filtrar por categoría)
+    const similarExercises = getSimilarExercises(currentExerciseId, false);
 
     // Aplicar filtro de búsqueda si existe
     if (searchQuery) {
@@ -64,7 +64,7 @@ export default function ExercisePickerModal({
                 Reemplazar {currentExercise.name}
               </h3>
               <p className="text-slate-400 dark:text-slate-600 text-sm mt-1">
-                Ejercicios de {currentExercise.category}
+                Todos los ejercicios disponibles
                 {isSupersetExercise && (
                   <span className="ml-2 inline-flex items-center gap-1 text-purple-400 dark:text-purple-600">
                     <Link2 className="w-3 h-3" />
