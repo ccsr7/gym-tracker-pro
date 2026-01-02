@@ -30,7 +30,9 @@
       "Bash(copy page.tsx page.tsx.backup)",
       "Bash(del \"c:\\Users\\cesar\\Desktop\\gym-tracker-pro-new\\src\\components\\stats\\StatsCharts.tsx\")",
       "Bash(find:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(node scripts/import-exercises.js:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []
