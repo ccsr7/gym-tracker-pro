@@ -247,7 +247,7 @@ export default function ProfilePage() {
                 <input
                   type="number"
                   inputMode="decimal"
-                  pattern="[0-9]*"
+                  pattern="[0-9.,]*"
                   step="0.1"
                   value={weight}
                   onChange={(e) => setWeight(e.target.value.replace(',', '.'))}

@@ -883,7 +883,7 @@ export default function WorkoutPage() {
                         <input
                           type="number"
                           inputMode="decimal"
-                          pattern="[0-9]*"
+                          pattern="[0-9.,]*"
                           step="0.5"
                           value={set.weight === 0 ? '' : set.weight}
                           onChange={(e) => {
