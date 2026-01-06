@@ -123,18 +123,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    let isMounted = true;
+
     // Check for existing session on mount
     const initializeAuth = async () => {
       try {
-        // Add timeout to prevent infinite loading
+        console.log('[Auth] Initializing auth...');
+
+        // Add timeout to prevent infinite loading (increased to 10s for slow connections)
         const timeoutId = setTimeout(() => {
-          console.warn('[Auth] Session check timed out after 5s, proceeding anyway');
-          setIsLoading(false);
-        }, 5000);
+          console.warn('[Auth] Session check timed out after 10s, proceeding anyway');
+          if (isMounted) {
+            setIsLoading(false);
+          }
+        }, 10000);
 
         const { data: { session }, error } = await supabase.auth.getSession();
 
         clearTimeout(timeoutId);
+
+        if (!isMounted) {
+          console.log('[Auth] Component unmounted, aborting initialization');
+          return;
+        }
 
         if (error) {
           console.error('[Auth] Error getting session:', error);
@@ -142,32 +153,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
+        console.log('[Auth] Session retrieved:', session ? 'Valid session found' : 'No session');
+
         if (session?.user) {
           try {
+            console.log('[Auth] Loading user profile for:', session.user.email);
             const profile = await loadUserProfile(session.user);
-            setUser(profile);
 
-            // Auto-sync data in background
-            if (profile) {
-              await autoSyncData(session.user.id);
+            if (isMounted) {
+              setUser(profile);
+              console.log('[Auth] User profile loaded successfully');
+
+              // Auto-sync data in background
+              if (profile) {
+                await autoSyncData(session.user.id);
+              }
             }
           } catch (profileError) {
             console.error('[Auth] Error loading profile, continuing anyway:', profileError);
             // Set a fallback user even if profile loading fails
-            setUser({
-              name: session.user.email?.split('@')[0] || 'Usuario',
-              email: session.user.email || '',
-              weight: 0,
-              height: 0,
-              trainingGoal: undefined,
-            });
+            if (isMounted) {
+              setUser({
+                name: session.user.email?.split('@')[0] || 'Usuario',
+                email: session.user.email || '',
+                weight: 0,
+                height: 0,
+                trainingGoal: undefined,
+              });
+            }
           }
         }
 
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       } catch (error) {
         console.error('[Auth] Error initializing auth:', error);
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -177,7 +201,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[Auth] Auth state changed:', event);
 
+      if (!isMounted) {
+        console.log('[Auth] Component unmounted, ignoring auth state change');
+        return;
+      }
+
       if (event === 'SIGNED_IN' && session?.user) {
+        console.log('[Auth] User signed in:', session.user.email);
         const profile = await loadUserProfile(session.user);
         setUser(profile);
 
@@ -186,14 +216,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await autoSyncData(session.user.id);
         }
       } else if (event === 'SIGNED_OUT') {
+        console.log('[Auth] User signed out');
         setUser(null);
       } else if (event === 'USER_UPDATED' && session?.user) {
+        console.log('[Auth] User updated:', session.user.email);
         const profile = await loadUserProfile(session.user);
         setUser(profile);
+      } else if (event === 'TOKEN_REFRESHED') {
+        console.log('[Auth] Token refreshed successfully');
       }
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -269,8 +304,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     workouts: cleanupResult[0].workouts_deleted,
                     routines: cleanupResult[0].routines_deleted
                   });
-                  // Reload localStorage to reflect cleanup
-                  window.location.reload();
+                  // Sync data again to reflect cleanup (no reload needed)
+                  await autoSyncData(data.user.id);
                 } else {
                   console.log('[Auth] Demo account does not need cleanup yet');
                 }

@@ -148,9 +148,23 @@ export class ErrorBoundary extends Component<Props, State> {
                 <p className="text-sm text-blue-300 dark:text-blue-700 text-center">
                   Si el problema persiste, intenta limpiar el caché del navegador o{' '}
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (confirm('¿Estás seguro? Esto cerrará tu sesión pero NO borrará tus datos.')) {
+                        try {
+                          // Importar supabase dinámicamente para evitar errores si no está disponible
+                          const { supabase } = await import('@/lib/supabase/client');
+                          await supabase.auth.signOut();
+                        } catch (error) {
+                          console.error('[ErrorBoundary] Error signing out:', error);
+                        }
+                        // Limpiar localStorage manualmente como fallback
                         localStorage.removeItem('gym-tracker-user');
+                        // Limpiar todas las keys de Supabase
+                        Object.keys(localStorage).forEach(key => {
+                          if (key.startsWith('sb-')) {
+                            localStorage.removeItem(key);
+                          }
+                        });
                         window.location.href = '/';
                       }
                     }}
