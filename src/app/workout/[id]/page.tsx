@@ -406,7 +406,10 @@ export default function WorkoutPage() {
           type: 'success',
         });
         if (shouldFinish) {
-          handleSaveWorkout();
+          // Esperar a que el modal se cierre completamente (animación de 200ms)
+          setTimeout(() => {
+            handleSaveWorkout();
+          }, 250);
         }
       }, 500);
       return;
@@ -564,7 +567,11 @@ export default function WorkoutPage() {
   };
 
   const handleSaveWorkout = async () => {
-    if (!routine) return;
+    console.log('[Workout] handleSaveWorkout called');
+    if (!routine) {
+      console.log('[Workout] No routine found, aborting save');
+      return;
+    }
 
     const totalVolume = workoutExercises.reduce((total, ex) => {
       return total + ex.sets.reduce((exTotal, set) => {
