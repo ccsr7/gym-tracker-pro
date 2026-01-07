@@ -47,6 +47,7 @@ export default function WorkoutPage() {
   const [progressionSuggestion, setProgressionSuggestion] = useState<any>(null);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [exerciseIndexToReplace, setExerciseIndexToReplace] = useState<number | null>(null);
+  const [isAddingNewExercise, setIsAddingNewExercise] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [showCustomExerciseModal, setShowCustomExerciseModal] = useState(false);
@@ -542,6 +543,32 @@ export default function WorkoutPage() {
     setExerciseIndexToReplace(null);
   };
 
+  const handleAddNewExercise = (exerciseId: string) => {
+    // Generar 3 sets por defecto para el nuevo ejercicio (sin valores precargados)
+    const newSets: WorkoutSet[] = Array(3).fill(null).map(() => ({
+      reps: 0,
+      weight: 0,
+      completed: false
+    }));
+
+    const newExercise: WorkoutExercise = {
+      exerciseId: exerciseId,
+      sets: newSets,
+      notes: ''
+    };
+
+    setWorkoutExercises([...workoutExercises, newExercise]);
+    setShowExercisePicker(false);
+    setIsAddingNewExercise(false);
+
+    // Navegar automáticamente al nuevo ejercicio
+    setTimeout(() => {
+      setCurrentExerciseIndex(workoutExercises.length);
+    }, 100);
+
+    toast.success('Ejercicio agregado al entrenamiento');
+  };
+
   const handleCreateFromPicker = () => {
     setShowExercisePicker(false);
     setShowCustomExerciseModal(true);
@@ -885,8 +912,15 @@ export default function WorkoutPage() {
 
                     {/* Inputs y botón de completar */}
                     <div className="flex items-end gap-3">
-                      <div className="flex-1">
-                        <label className="text-sm text-slate-400 dark:text-slate-600 block mb-2 font-medium">Peso (kg)</label>
+                      <div className="flex-1 relative">
+                        <label className="text-sm text-slate-400 dark:text-slate-600 block mb-2 font-medium">
+                          Peso (kg)
+                          {set.weight > 0 && !set.completed && (
+                            <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">
+                              (anterior: {set.weight}kg)
+                            </span>
+                          )}
+                        </label>
                         <input
                           type="number"
                           inputMode="decimal"
@@ -900,15 +934,22 @@ export default function WorkoutPage() {
                           }}
                           onFocus={(e) => {
                             handleSetFocus(currentExerciseIndex, idx);
-                            e.target.select(); // Seleccionar todo el texto al hacer focus
+                            e.target.select();
                           }}
                           className="w-full px-4 py-4 bg-slate-600/50 dark:bg-slate-100 border-2 border-slate-500 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 font-bold text-center text-2xl"
                           disabled={set.completed}
                           placeholder="0"
                         />
                       </div>
-                      <div className="flex-1">
-                        <label className="text-sm text-slate-400 dark:text-slate-600 block mb-2 font-medium">Reps</label>
+                      <div className="flex-1 relative">
+                        <label className="text-sm text-slate-400 dark:text-slate-600 block mb-2 font-medium">
+                          Reps
+                          {set.reps > 0 && !set.completed && (
+                            <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">
+                              (anterior: {set.reps})
+                            </span>
+                          )}
+                        </label>
                         <input
                           type="number"
                           inputMode="numeric"
@@ -921,7 +962,7 @@ export default function WorkoutPage() {
                           }}
                           onFocus={(e) => {
                             handleSetFocus(currentExerciseIndex, idx);
-                            e.target.select(); // Seleccionar todo el texto al hacer focus
+                            e.target.select();
                           }}
                           className="w-full px-4 py-4 bg-slate-600/50 dark:bg-slate-100 border-2 border-slate-500 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 font-bold text-center text-2xl"
                           disabled={set.completed}
@@ -988,6 +1029,18 @@ export default function WorkoutPage() {
                 )}
               </button>
             </div>
+
+            {/* Agregar Ejercicio Nuevo */}
+            <button
+              onClick={() => {
+                setIsAddingNewExercise(true);
+                setShowExercisePicker(true);
+              }}
+              className="w-full py-3 mt-3 bg-blue-500/20 dark:bg-blue-100 hover:bg-blue-500/30 dark:hover:bg-blue-200 border-2 border-blue-500/50 dark:border-blue-300 text-blue-400 dark:text-blue-700 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              Agregar Ejercicio al Entrenamiento
+            </button>
 
             {/* Notas del Ejercicio Actual */}
             <div className="mt-4">
@@ -1213,9 +1266,10 @@ export default function WorkoutPage() {
             onClose={() => {
               setShowExercisePicker(false);
               setExerciseIndexToReplace(null);
+              setIsAddingNewExercise(false);
             }}
             currentExerciseId={currentExercise.exerciseId}
-            onSelectExercise={handleReplaceExercise}
+            onSelectExercise={isAddingNewExercise ? handleAddNewExercise : handleReplaceExercise}
             isSupersetExercise={!!currentExercise.isSupersetWith}
             onCreateNew={handleCreateFromPicker}
           />
