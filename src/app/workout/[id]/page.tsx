@@ -52,6 +52,7 @@ export default function WorkoutPage() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [showCustomExerciseModal, setShowCustomExerciseModal] = useState(false);
   const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
+  const [userInputValues, setUserInputValues] = useState<Record<string, number>>({});
 
   // Refs para scroll automático a las series
   const setRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -314,6 +315,13 @@ export default function WorkoutPage() {
     const updated = [...workoutExercises];
     updated[exerciseIdx].sets[setIdx][field] = value;
     setWorkoutExercises(updated);
+
+    // Trackear que el usuario editó este campo
+    const key = `${exerciseIdx}-${setIdx}-${field}`;
+    setUserInputValues(prev => ({
+      ...prev,
+      [key]: value
+    }));
   };
 
   // Auto-completar la serie anterior cuando el usuario cambia de foco a otra serie
@@ -915,59 +923,75 @@ export default function WorkoutPage() {
                       <div className="flex-1 relative">
                         <label className="text-sm text-slate-400 dark:text-slate-600 block mb-2 font-medium">
                           Peso (kg)
-                          {set.weight > 0 && !set.completed && (
-                            <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">
-                              (anterior: {set.weight}kg)
-                            </span>
-                          )}
                         </label>
-                        <input
-                          type="number"
-                          inputMode="decimal"
-                          pattern="[0-9.,]*"
-                          step="0.5"
-                          value={set.weight === 0 ? '' : set.weight}
-                          onChange={(e) => {
-                            const normalizedValue = e.target.value.replace(',', '.');
-                            const value = normalizedValue === '' ? 0 : parseFloat(normalizedValue);
-                            handleSetChange(currentExerciseIndex, idx, 'weight', isNaN(value) ? 0 : value);
-                          }}
-                          onFocus={(e) => {
-                            handleSetFocus(currentExerciseIndex, idx);
-                            e.target.select();
-                          }}
-                          className="w-full px-4 py-4 bg-slate-600/50 dark:bg-slate-100 border-2 border-slate-500 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 font-bold text-center text-2xl"
-                          disabled={set.completed}
-                          placeholder="0"
-                        />
+                        <div className="relative">
+                          {/* Valor fantasma - solo mostrar si NO ha sido editado */}
+                          {!userInputValues[`${currentExerciseIndex}-${idx}-weight`] && set.weight > 0 && !set.completed && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <span className="text-slate-500/30 dark:text-slate-400/30 font-bold text-2xl">
+                                {set.weight}
+                              </span>
+                            </div>
+                          )}
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            pattern="[0-9.,]*"
+                            step="0.5"
+                            value={
+                              userInputValues[`${currentExerciseIndex}-${idx}-weight`] !== undefined
+                                ? (userInputValues[`${currentExerciseIndex}-${idx}-weight`] === 0 ? '' : userInputValues[`${currentExerciseIndex}-${idx}-weight`])
+                                : ''
+                            }
+                            onChange={(e) => {
+                              const normalizedValue = e.target.value.replace(',', '.');
+                              const value = normalizedValue === '' ? 0 : parseFloat(normalizedValue);
+                              handleSetChange(currentExerciseIndex, idx, 'weight', isNaN(value) ? 0 : value);
+                            }}
+                            onFocus={(e) => {
+                              handleSetFocus(currentExerciseIndex, idx);
+                            }}
+                            className="w-full px-4 py-4 bg-slate-600/50 dark:bg-slate-100 border-2 border-slate-500 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 font-bold text-center text-2xl relative z-10"
+                            disabled={set.completed}
+                            placeholder="0"
+                          />
+                        </div>
                       </div>
                       <div className="flex-1 relative">
                         <label className="text-sm text-slate-400 dark:text-slate-600 block mb-2 font-medium">
                           Reps
-                          {set.reps > 0 && !set.completed && (
-                            <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">
-                              (anterior: {set.reps})
-                            </span>
-                          )}
                         </label>
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          step="1"
-                          value={set.reps === 0 ? '' : set.reps}
-                          onChange={(e) => {
-                            const value = e.target.value === '' ? 0 : parseInt(e.target.value);
-                            handleSetChange(currentExerciseIndex, idx, 'reps', isNaN(value) ? 0 : value);
-                          }}
-                          onFocus={(e) => {
-                            handleSetFocus(currentExerciseIndex, idx);
-                            e.target.select();
-                          }}
-                          className="w-full px-4 py-4 bg-slate-600/50 dark:bg-slate-100 border-2 border-slate-500 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 font-bold text-center text-2xl"
-                          disabled={set.completed}
-                          placeholder="0"
-                        />
+                        <div className="relative">
+                          {/* Valor fantasma - solo mostrar si NO ha sido editado */}
+                          {!userInputValues[`${currentExerciseIndex}-${idx}-reps`] && set.reps > 0 && !set.completed && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <span className="text-slate-500/30 dark:text-slate-400/30 font-bold text-2xl">
+                                {set.reps}
+                              </span>
+                            </div>
+                          )}
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            step="1"
+                            value={
+                              userInputValues[`${currentExerciseIndex}-${idx}-reps`] !== undefined
+                                ? (userInputValues[`${currentExerciseIndex}-${idx}-reps`] === 0 ? '' : userInputValues[`${currentExerciseIndex}-${idx}-reps`])
+                                : ''
+                            }
+                            onChange={(e) => {
+                              const value = e.target.value === '' ? 0 : parseInt(e.target.value);
+                              handleSetChange(currentExerciseIndex, idx, 'reps', isNaN(value) ? 0 : value);
+                            }}
+                            onFocus={(e) => {
+                              handleSetFocus(currentExerciseIndex, idx);
+                            }}
+                            className="w-full px-4 py-4 bg-slate-600/50 dark:bg-slate-100 border-2 border-slate-500 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 font-bold text-center text-2xl relative z-10"
+                            disabled={set.completed}
+                            placeholder="0"
+                          />
+                        </div>
                       </div>
                       <button
                         onClick={() => handleToggleSet(currentExerciseIndex, idx)}
