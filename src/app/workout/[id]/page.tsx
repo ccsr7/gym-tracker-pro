@@ -53,6 +53,7 @@ export default function WorkoutPage() {
   const [showCustomExerciseModal, setShowCustomExerciseModal] = useState(false);
   const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
   const [userInputValues, setUserInputValues] = useState<Record<string, number>>({});
+  const [historicalValues, setHistoricalValues] = useState<Record<string, { weight: number; reps: number }>>({});
 
   // Refs para scroll automático a las series
   const setRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -155,7 +156,9 @@ export default function WorkoutPage() {
       setLastWorkoutData(lastWeights);
 
       // Inicializar workout exercises basados en la rutina
-      const initialWorkout: WorkoutExercise[] = foundRoutine.exercises.map((ex: any) => {
+      const historicalValuesTemp: Record<string, { weight: number; reps: number }> = {};
+
+      const initialWorkout: WorkoutExercise[] = foundRoutine.exercises.map((ex: any, exerciseIdx: number) => {
         // Buscar el ejercicio en el último entrenamiento
         const lastExercise = lastWorkout?.exercises.find((lastEx: WorkoutExercise) => lastEx.exerciseId === ex.exerciseId);
 
@@ -164,24 +167,31 @@ export default function WorkoutPage() {
           // Usar las series exactas del último entrenamiento (solo las completadas)
           const completedSets = lastExercise.sets.filter((s: WorkoutSet) => s.completed);
           if (completedSets.length > 0) {
-            // Crear el mismo número de series que en la rutina, usando los datos del último entrenamiento
-            sets = Array(ex.sets).fill(null).map((_, idx) => {
-              // Si hay una serie correspondiente en el último entrenamiento, usar sus datos
-              if (completedSets[idx]) {
-                return {
-                  reps: completedSets[idx].reps,
-                  weight: completedSets[idx].weight,
-                  completed: false
-                };
-              }
-              // Si no hay serie correspondiente, usar la última serie completada como referencia
-              const lastSet = completedSets[completedSets.length - 1];
-              return {
-                reps: lastSet.reps,
-                weight: lastSet.weight,
-                completed: false
+            // Guardar valores históricos en estado separado
+            completedSets.forEach((completedSet, idx) => {
+              const key = `${exerciseIdx}-${idx}`;
+              historicalValuesTemp[key] = {
+                weight: completedSet.weight,
+                reps: completedSet.reps
               };
             });
+
+            // Si hay más sets en la rutina que en el historial, usar el último valor para los extras
+            const lastSet = completedSets[completedSets.length - 1];
+            for (let idx = completedSets.length; idx < ex.sets; idx++) {
+              const key = `${exerciseIdx}-${idx}`;
+              historicalValuesTemp[key] = {
+                weight: lastSet.weight,
+                reps: lastSet.reps
+              };
+            }
+
+            // Inicializar sets con valores en 0 (no precargar)
+            sets = Array(ex.sets).fill(null).map(() => ({
+              reps: 0,
+              weight: 0,
+              completed: false
+            }));
           } else {
             // No hay series completadas, inicializar vacío
             sets = Array(ex.sets).fill(null).map(() => ({
@@ -206,6 +216,8 @@ export default function WorkoutPage() {
           notes: ''
         };
       });
+
+      setHistoricalValues(historicalValuesTemp);
       setWorkoutExercises(initialWorkout);
       }
     };
@@ -926,13 +938,19 @@ export default function WorkoutPage() {
                         </label>
                         <div className="relative">
                           {/* Valor fantasma - solo mostrar si NO ha sido editado */}
-                          {!userInputValues[`${currentExerciseIndex}-${idx}-weight`] && set.weight > 0 && !set.completed && (
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <span className="text-slate-500/30 dark:text-slate-400/30 font-bold text-2xl">
-                                {set.weight}
-                              </span>
-                            </div>
-                          )}
+                          {(() => {
+                            const key = `${currentExerciseIndex}-${idx}`;
+                            const historical = historicalValues[key];
+                            const hasUserInput = userInputValues[`${key}-weight`] !== undefined;
+
+                            return !hasUserInput && historical?.weight > 0 && !set.completed && (
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <span className="text-slate-500/30 dark:text-slate-400/30 font-bold text-2xl">
+                                  {historical.weight}
+                                </span>
+                              </div>
+                            );
+                          })()}
                           <input
                             type="number"
                             inputMode="decimal"
@@ -963,13 +981,19 @@ export default function WorkoutPage() {
                         </label>
                         <div className="relative">
                           {/* Valor fantasma - solo mostrar si NO ha sido editado */}
-                          {!userInputValues[`${currentExerciseIndex}-${idx}-reps`] && set.reps > 0 && !set.completed && (
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <span className="text-slate-500/30 dark:text-slate-400/30 font-bold text-2xl">
-                                {set.reps}
-                              </span>
-                            </div>
-                          )}
+                          {(() => {
+                            const key = `${currentExerciseIndex}-${idx}`;
+                            const historical = historicalValues[key];
+                            const hasUserInput = userInputValues[`${key}-reps`] !== undefined;
+
+                            return !hasUserInput && historical?.reps > 0 && !set.completed && (
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <span className="text-slate-500/30 dark:text-slate-400/30 font-bold text-2xl">
+                                  {historical.reps}
+                                </span>
+                              </div>
+                            );
+                          })()}
                           <input
                             type="number"
                             inputMode="numeric"
