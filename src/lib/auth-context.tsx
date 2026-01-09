@@ -125,18 +125,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
+    // Clean invalid/corrupted tokens before initializing
+    const cleanInvalidTokens = () => {
+      try {
+        const keys = Object.keys(localStorage).filter(k => k.startsWith('sb-'));
+        keys.forEach(key => {
+          try {
+            const value = localStorage.getItem(key);
+            if (value) {
+              JSON.parse(value); // Verify it's valid JSON
+            }
+          } catch {
+            console.warn(`[Auth] Removing corrupted token: ${key}`);
+            localStorage.removeItem(key);
+          }
+        });
+      } catch (error) {
+        console.error('[Auth] Error cleaning tokens:', error);
+      }
+    };
+
     // Check for existing session on mount
     const initializeAuth = async () => {
       try {
         console.log('[Auth] Initializing auth...');
 
-        // Add timeout to prevent infinite loading (increased to 10s for slow connections)
+        // Add timeout to prevent infinite loading (increased to 30s for slow connections)
         const timeoutId = setTimeout(() => {
-          console.warn('[Auth] Session check timed out after 10s, proceeding anyway');
+          console.warn('[Auth] Session check timed out after 30s, proceeding anyway');
           if (isMounted) {
             setIsLoading(false);
           }
-        }, 10000);
+        }, 30000);
 
         const { data: { session }, error } = await supabase.auth.getSession();
 
@@ -195,6 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
+    cleanInvalidTokens();
     initializeAuth();
 
     // Listen for auth state changes
