@@ -159,14 +159,24 @@ export default function WorkoutPage() {
       // Inicializar workout exercises basados en la rutina
       const historicalValuesTemp: Record<string, { weight: number; reps: number }> = {};
 
+      console.log('DEBUG INIT - lastWorkout:', lastWorkout);
+      console.log('DEBUG INIT - foundRoutine.exercises:', foundRoutine.exercises);
+
       const initialWorkout: WorkoutExercise[] = foundRoutine.exercises.map((ex: any, exerciseIdx: number) => {
         // Buscar el ejercicio en el último entrenamiento
         const lastExercise = lastWorkout?.exercises.find((lastEx: WorkoutExercise) => lastEx.exerciseId === ex.exerciseId);
+
+        console.log(`DEBUG INIT - Exercise ${exerciseIdx} (${ex.exerciseId}):`, {
+          lastExercise,
+          hasLastExercise: !!lastExercise
+        });
 
         let sets: WorkoutSet[];
         if (lastExercise) {
           // Usar las series exactas del último entrenamiento (solo las completadas)
           const completedSets = lastExercise.sets.filter((s: WorkoutSet) => s.completed);
+          console.log(`DEBUG INIT - Exercise ${exerciseIdx} completedSets:`, completedSets);
+
           if (completedSets.length > 0) {
             // Guardar valores históricos en estado separado
             completedSets.forEach((completedSet, idx) => {
@@ -175,6 +185,7 @@ export default function WorkoutPage() {
                 weight: completedSet.weight,
                 reps: completedSet.reps
               };
+              console.log(`DEBUG INIT - Guardando histórico [${key}]:`, historicalValuesTemp[key]);
             });
 
             // Si hay más sets en la rutina que en el historial, usar el último valor para los extras
@@ -218,6 +229,7 @@ export default function WorkoutPage() {
         };
       });
 
+      console.log('DEBUG INIT - FINAL historicalValuesTemp:', historicalValuesTemp);
       setHistoricalValues(historicalValuesTemp);
       setWorkoutExercises(initialWorkout);
       }
