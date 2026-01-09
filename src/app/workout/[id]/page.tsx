@@ -971,8 +971,8 @@ export default function WorkoutPage() {
                             }
 
                             return !hasUserInput && historical?.weight > 0 && !set.completed && (
-                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <span className="text-slate-500/30 dark:text-slate-400/30 font-bold text-2xl">
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                                <span className="text-slate-400/50 dark:text-slate-500/50 font-bold text-2xl">
                                   {historical.weight}
                                 </span>
                               </div>
@@ -996,12 +996,14 @@ export default function WorkoutPage() {
                             onFocus={(e) => {
                               handleSetFocus(currentExerciseIndex, idx);
                             }}
-                            className="w-full px-4 py-4 bg-slate-600/50 dark:bg-slate-100 border-2 border-slate-500 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 font-bold text-center text-2xl relative z-10 backdrop-blur-none"
+                            className="w-full px-4 py-4 border-2 border-slate-500 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 font-bold text-center text-2xl relative z-10"
                             style={{
-                              backgroundColor: !userInputValues[`${currentExerciseIndex}-${idx}-weight`] && historicalValues[`${currentExerciseIndex}-${idx}`]?.weight > 0 ? 'transparent' : undefined
+                              backgroundColor: !userInputValues[`${currentExerciseIndex}-${idx}-weight`] && historicalValues[`${currentExerciseIndex}-${idx}`]?.weight > 0
+                                ? 'transparent'
+                                : 'rgba(71, 85, 105, 0.5)'
                             }}
                             disabled={set.completed}
-                            placeholder={historicalValues[`${currentExerciseIndex}-${idx}`]?.weight > 0 ? String(historicalValues[`${currentExerciseIndex}-${idx}`].weight) : "0"}
+                            placeholder="0"
                           />
                         </div>
                       </div>
@@ -1017,8 +1019,8 @@ export default function WorkoutPage() {
                             const hasUserInput = userInputValues[`${key}-reps`] !== undefined;
 
                             return !hasUserInput && historical?.reps > 0 && !set.completed && (
-                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <span className="text-slate-500/30 dark:text-slate-400/30 font-bold text-2xl">
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                                <span className="text-slate-400/50 dark:text-slate-500/50 font-bold text-2xl">
                                   {historical.reps}
                                 </span>
                               </div>
@@ -1041,12 +1043,14 @@ export default function WorkoutPage() {
                             onFocus={(e) => {
                               handleSetFocus(currentExerciseIndex, idx);
                             }}
-                            className="w-full px-4 py-4 bg-slate-600/50 dark:bg-slate-100 border-2 border-slate-500 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 font-bold text-center text-2xl relative z-10 backdrop-blur-none"
+                            className="w-full px-4 py-4 border-2 border-slate-500 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 font-bold text-center text-2xl relative z-10"
                             style={{
-                              backgroundColor: !userInputValues[`${currentExerciseIndex}-${idx}-reps`] && historicalValues[`${currentExerciseIndex}-${idx}`]?.reps > 0 ? 'transparent' : undefined
+                              backgroundColor: !userInputValues[`${currentExerciseIndex}-${idx}-reps`] && historicalValues[`${currentExerciseIndex}-${idx}`]?.reps > 0
+                                ? 'transparent'
+                                : 'rgba(71, 85, 105, 0.5)'
                             }}
                             disabled={set.completed}
-                            placeholder={historicalValues[`${currentExerciseIndex}-${idx}`]?.reps > 0 ? String(historicalValues[`${currentExerciseIndex}-${idx}`].reps) : "0"}
+                            placeholder="0"
                           />
                         </div>
                       </div>
