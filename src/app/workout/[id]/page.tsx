@@ -104,6 +104,7 @@ export default function WorkoutPage() {
           // Preguntar si quiere continuar (usando window.confirm para no bloquear inicialización)
           if (window.confirm('Tienes un entrenamiento en progreso. ¿Quieres continuar donde lo dejaste?')) {
             setWorkoutExercises(inProgressData.exercises);
+            setHistoricalValues(inProgressData.historicalValues || {});
             setCurrentExerciseIndex(inProgressData.currentExerciseIndex || 0);
             setStartTime(inProgressData.startTime);
             setNotes(inProgressData.notes || '');
@@ -258,6 +259,7 @@ export default function WorkoutPage() {
       const inProgressKey = `workout-in-progress-${routineId}`;
       const dataToSave = {
         exercises: workoutExercises,
+        historicalValues,
         currentExerciseIndex,
         startTime,
         notes,
@@ -269,7 +271,7 @@ export default function WorkoutPage() {
       };
       localStorage.setItem(inProgressKey, JSON.stringify(dataToSave));
     }
-  }, [workoutExercises, currentExerciseIndex, notes, rpe, routine, routineId, startTime, restEndTime, isResting]);
+  }, [workoutExercises, historicalValues, currentExerciseIndex, notes, rpe, routine, routineId, startTime, restEndTime, isResting]);
 
   // Calcular sugerencias de progresión
   useEffect(() => {
@@ -942,6 +944,19 @@ export default function WorkoutPage() {
                             const key = `${currentExerciseIndex}-${idx}`;
                             const historical = historicalValues[key];
                             const hasUserInput = userInputValues[`${key}-weight`] !== undefined;
+
+                            // DEBUG: Mostrar estado de historicalValues (solo para primera serie del primer ejercicio)
+                            if (idx === 0 && currentExerciseIndex === 0) {
+                              console.log('DEBUG Ghost:', {
+                                currentExerciseIndex,
+                                idx,
+                                key,
+                                historicalValues,
+                                historical,
+                                userInputValues,
+                                hasUserInput
+                              });
+                            }
 
                             return !hasUserInput && historical?.weight > 0 && !set.completed && (
                               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
