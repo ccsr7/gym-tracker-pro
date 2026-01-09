@@ -996,9 +996,12 @@ export default function WorkoutPage() {
                             onFocus={(e) => {
                               handleSetFocus(currentExerciseIndex, idx);
                             }}
-                            className="w-full px-4 py-4 bg-slate-600/50 dark:bg-slate-100 border-2 border-slate-500 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 font-bold text-center text-2xl relative z-10"
+                            className="w-full px-4 py-4 bg-slate-600/50 dark:bg-slate-100 border-2 border-slate-500 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 font-bold text-center text-2xl relative z-10 backdrop-blur-none"
+                            style={{
+                              backgroundColor: !userInputValues[`${currentExerciseIndex}-${idx}-weight`] && historicalValues[`${currentExerciseIndex}-${idx}`]?.weight > 0 ? 'transparent' : undefined
+                            }}
                             disabled={set.completed}
-                            placeholder="0"
+                            placeholder={historicalValues[`${currentExerciseIndex}-${idx}`]?.weight > 0 ? String(historicalValues[`${currentExerciseIndex}-${idx}`].weight) : "0"}
                           />
                         </div>
                       </div>
@@ -1038,9 +1041,12 @@ export default function WorkoutPage() {
                             onFocus={(e) => {
                               handleSetFocus(currentExerciseIndex, idx);
                             }}
-                            className="w-full px-4 py-4 bg-slate-600/50 dark:bg-slate-100 border-2 border-slate-500 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 font-bold text-center text-2xl relative z-10"
+                            className="w-full px-4 py-4 bg-slate-600/50 dark:bg-slate-100 border-2 border-slate-500 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 font-bold text-center text-2xl relative z-10 backdrop-blur-none"
+                            style={{
+                              backgroundColor: !userInputValues[`${currentExerciseIndex}-${idx}-reps`] && historicalValues[`${currentExerciseIndex}-${idx}`]?.reps > 0 ? 'transparent' : undefined
+                            }}
                             disabled={set.completed}
-                            placeholder="0"
+                            placeholder={historicalValues[`${currentExerciseIndex}-${idx}`]?.reps > 0 ? String(historicalValues[`${currentExerciseIndex}-${idx}`].reps) : "0"}
                           />
                         </div>
                       </div>
