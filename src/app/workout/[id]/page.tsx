@@ -1003,7 +1003,7 @@ export default function WorkoutPage() {
                                 : 'rgba(71, 85, 105, 0.5)'
                             }}
                             disabled={set.completed}
-                            placeholder="0"
+                            placeholder={historicalValues[`${currentExerciseIndex}-${idx}`]?.weight > 0 ? '' : '0'}
                           />
                         </div>
                       </div>
@@ -1050,7 +1050,7 @@ export default function WorkoutPage() {
                                 : 'rgba(71, 85, 105, 0.5)'
                             }}
                             disabled={set.completed}
-                            placeholder="0"
+                            placeholder={historicalValues[`${currentExerciseIndex}-${idx}`]?.reps > 0 ? '' : '0'}
                           />
                         </div>
                       </div>
