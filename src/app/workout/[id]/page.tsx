@@ -129,7 +129,7 @@ export default function WorkoutPage() {
           }
         }
 
-      // Buscar el último entrenamiento de esta rutina para pre-cargar pesos
+      // Buscar TODOS los entrenamientos (no solo de esta rutina)
       let allWorkouts: Workout[] = [];
 
       if (supabaseUser) {
@@ -138,33 +138,47 @@ export default function WorkoutPage() {
         allWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
       }
 
-      const lastWorkout = allWorkouts
-        .filter((w: Workout) => w.routineId === routineId)
-        .sort((a: Workout, b: Workout) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+      // Ordenar todos los workouts por fecha (más reciente primero)
+      const sortedWorkouts = allWorkouts.sort((a: Workout, b: Workout) =>
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+
+      // Crear un mapa de ejerciseId -> último ejercicio realizado
+      const lastExerciseMap: Record<string, WorkoutExercise> = {};
+
+      // Para cada ejercicio en la rutina actual, buscar la última vez que se hizo
+      foundRoutine.exercises.forEach((ex: any) => {
+        // Buscar en TODOS los workouts el último que tenga este ejercicio
+        for (const workout of sortedWorkouts) {
+          const foundExercise = workout.exercises.find((we: WorkoutExercise) => we.exerciseId === ex.exerciseId);
+          if (foundExercise && foundExercise.sets.some((s: WorkoutSet) => s.completed)) {
+            lastExerciseMap[ex.exerciseId] = foundExercise;
+            break; // Ya encontramos el más reciente, salimos del loop
+          }
+        }
+      });
 
       // Guardar datos para mostrar "Última vez" (usando peso máximo y reps promedio)
       const lastWeights: Record<string, { weight: number; reps: number }> = {};
-      if (lastWorkout) {
-        lastWorkout.exercises.forEach((ex: WorkoutExercise) => {
-          const completedSets = ex.sets.filter(s => s.completed);
-          if (completedSets.length > 0) {
-            const maxWeight = Math.max(...completedSets.map(s => s.weight));
-            const avgReps = Math.round(completedSets.reduce((sum, s) => sum + s.reps, 0) / completedSets.length);
-            lastWeights[ex.exerciseId] = { weight: maxWeight, reps: avgReps };
-          }
-        });
-      }
+      Object.entries(lastExerciseMap).forEach(([exerciseId, exercise]) => {
+        const completedSets = exercise.sets.filter((s: WorkoutSet) => s.completed);
+        if (completedSets.length > 0) {
+          const maxWeight = Math.max(...completedSets.map(s => s.weight));
+          const avgReps = Math.round(completedSets.reduce((sum, s) => sum + s.reps, 0) / completedSets.length);
+          lastWeights[exerciseId] = { weight: maxWeight, reps: avgReps };
+        }
+      });
       setLastWorkoutData(lastWeights);
 
       // Inicializar workout exercises basados en la rutina
       const historicalValuesTemp: Record<string, { weight: number; reps: number }> = {};
 
-      console.log('DEBUG INIT - lastWorkout:', lastWorkout);
+      console.log('DEBUG INIT - lastExerciseMap:', lastExerciseMap);
       console.log('DEBUG INIT - foundRoutine.exercises:', foundRoutine.exercises);
 
       const initialWorkout: WorkoutExercise[] = foundRoutine.exercises.map((ex: any, exerciseIdx: number) => {
-        // Buscar el ejercicio en el último entrenamiento
-        const lastExercise = lastWorkout?.exercises.find((lastEx: WorkoutExercise) => lastEx.exerciseId === ex.exerciseId);
+        // Buscar el ejercicio en el mapa de últimos ejercicios
+        const lastExercise = lastExerciseMap[ex.exerciseId];
 
         console.log(`DEBUG INIT - Exercise ${exerciseIdx} (${ex.exerciseId}):`, {
           lastExercise,
@@ -979,7 +993,7 @@ export default function WorkoutPage() {
                             );
                           })()}
                           <input
-                            type="number"
+                            type="text"
                             inputMode="decimal"
                             pattern="[0-9.,]*"
                             step="0.5"
@@ -998,7 +1012,7 @@ export default function WorkoutPage() {
                             }}
                             className="w-full px-4 py-4 border-2 border-slate-500 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 font-bold text-center text-2xl relative z-10"
                             style={{
-                              backgroundColor: !userInputValues[`${currentExerciseIndex}-${idx}-weight`] && historicalValues[`${currentExerciseIndex}-${idx}`]?.weight > 0
+                              backgroundColor: userInputValues[`${currentExerciseIndex}-${idx}-weight`] === undefined && historicalValues[`${currentExerciseIndex}-${idx}`]?.weight > 0
                                 ? 'transparent'
                                 : 'rgba(71, 85, 105, 0.5)'
                             }}
@@ -1045,7 +1059,7 @@ export default function WorkoutPage() {
                             }}
                             className="w-full px-4 py-4 border-2 border-slate-500 dark:border-slate-300 rounded-lg text-white dark:text-slate-900 font-bold text-center text-2xl relative z-10"
                             style={{
-                              backgroundColor: !userInputValues[`${currentExerciseIndex}-${idx}-reps`] && historicalValues[`${currentExerciseIndex}-${idx}`]?.reps > 0
+                              backgroundColor: userInputValues[`${currentExerciseIndex}-${idx}-reps`] === undefined && historicalValues[`${currentExerciseIndex}-${idx}`]?.reps > 0
                                 ? 'transparent'
                                 : 'rgba(71, 85, 105, 0.5)'
                             }}
