@@ -53,6 +53,7 @@ export default function WorkoutPage() {
   const [showCustomExerciseModal, setShowCustomExerciseModal] = useState(false);
   const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
   const [userInputValues, setUserInputValues] = useState<Record<string, number>>({});
+  const [inputDisplayValues, setInputDisplayValues] = useState<Record<string, string>>({}); // Valores visuales para permitir decimales
   const [historicalValues, setHistoricalValues] = useState<Record<string, { weight: number; reps: number }>>({});
 
   // Refs para scroll automático a las series
@@ -998,16 +999,35 @@ export default function WorkoutPage() {
                             type="text"
                             inputMode="decimal"
                             pattern="[0-9.,]*"
-                            step="0.5"
                             value={
-                              userInputValues[`${currentExerciseIndex}-${idx}-weight`] !== undefined
-                                ? (userInputValues[`${currentExerciseIndex}-${idx}-weight`] === 0 ? '' : userInputValues[`${currentExerciseIndex}-${idx}-weight`])
-                                : ''
+                              inputDisplayValues[`${currentExerciseIndex}-${idx}-weight`] !== undefined
+                                ? inputDisplayValues[`${currentExerciseIndex}-${idx}-weight`]
+                                : (userInputValues[`${currentExerciseIndex}-${idx}-weight`] !== undefined && userInputValues[`${currentExerciseIndex}-${idx}-weight`] !== 0
+                                    ? String(userInputValues[`${currentExerciseIndex}-${idx}-weight`])
+                                    : '')
                             }
                             onChange={(e) => {
-                              const normalizedValue = e.target.value.replace(',', '.');
+                              const inputValue = e.target.value;
+                              // Solo permitir números, punto y coma
+                              if (inputValue !== '' && !/^[0-9.,]*$/.test(inputValue)) return;
+
+                              const key = `${currentExerciseIndex}-${idx}-weight`;
+                              // Guardar el valor visual (string) para permitir escribir decimales
+                              setInputDisplayValues(prev => ({ ...prev, [key]: inputValue }));
+
+                              // Convertir a número para el estado real
+                              const normalizedValue = inputValue.replace(',', '.');
                               const value = normalizedValue === '' ? 0 : parseFloat(normalizedValue);
                               handleSetChange(currentExerciseIndex, idx, 'weight', isNaN(value) ? 0 : value);
+                            }}
+                            onBlur={(e) => {
+                              // Al perder foco, limpiar el valor visual para usar el valor real
+                              const key = `${currentExerciseIndex}-${idx}-weight`;
+                              setInputDisplayValues(prev => {
+                                const newValues = { ...prev };
+                                delete newValues[key];
+                                return newValues;
+                              });
                             }}
                             onFocus={(e) => {
                               handleSetFocus(currentExerciseIndex, idx);
