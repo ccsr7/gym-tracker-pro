@@ -85,7 +85,12 @@ export async function createCustomExercise(
     console.log('[CustomExercises] Creating exercise for user:', userId);
     console.log('[CustomExercises] Exercise data:', exerciseData);
 
-    const { data, error } = await supabase
+    // Agregar timeout de 10 segundos
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('TIMEOUT')), 10000);
+    });
+
+    const insertPromise = supabase
       .from('custom_exercises')
       .insert({
         user_id: userId,
@@ -103,6 +108,8 @@ export async function createCustomExercise(
       })
       .select()
       .single();
+
+    const { data, error } = await Promise.race([insertPromise, timeoutPromise]) as any;
 
     if (error) {
       console.error('[CustomExercises] Supabase error creating exercise:', error);
@@ -133,6 +140,12 @@ export async function createCustomExercise(
     };
   } catch (error) {
     console.error('[CustomExercises] Unexpected error creating exercise:', error);
+
+    // Manejar timeout específicamente
+    if (error instanceof Error && error.message === 'TIMEOUT') {
+      return { success: false, error: 'La operación tardó demasiado. Verifica tu conexión o que la tabla custom_exercises exista en Supabase.' };
+    }
+
     return { success: false, error: `Error inesperado: ${error instanceof Error ? error.message : 'Error desconocido'}` };
   }
 }
