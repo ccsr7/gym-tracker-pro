@@ -668,30 +668,62 @@ export default function WorkoutPage() {
       totalVolume
     };
 
+    // Función auxiliar para guardar en localStorage
+    const saveToLocalStorage = () => {
+      const workout: Workout = {
+        id: `workout-${Date.now()}`,
+        ...workoutData
+      };
+      const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+      storedWorkouts.push(workout);
+      localStorage.setItem('gym-tracker-workouts', JSON.stringify(storedWorkouts));
+      console.log('[Workout] Saved to localStorage, total workouts:', storedWorkouts.length);
+      return true;
+    };
+
+    // Función con timeout para operaciones de Supabase
+    const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> => {
+      return Promise.race([
+        promise,
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error('TIMEOUT')), ms)
+        )
+      ]);
+    };
+
     try {
       console.log('[Workout] Starting save process...');
-      const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+
+      // Intentar obtener usuario con timeout de 5 segundos
+      let supabaseUser = null;
+      try {
+        const { data } = await withTimeout(supabase.auth.getUser(), 5000);
+        supabaseUser = data?.user;
+      } catch (authError) {
+        console.warn('[Workout] Auth check failed or timed out, will save to localStorage:', authError);
+      }
+
+      let savedToSupabase = false;
 
       if (supabaseUser) {
-        // Save to Supabase
-        console.log('[Workout] Saving to Supabase for user:', supabaseUser.id);
-        const savedWorkout = await createWorkout(supabaseUser.id, workoutData);
-        console.log('[Workout] Saved to Supabase:', savedWorkout);
+        // Intentar guardar en Supabase con timeout de 10 segundos
+        try {
+          console.log('[Workout] Saving to Supabase for user:', supabaseUser.id);
+          const savedWorkout = await withTimeout(createWorkout(supabaseUser.id, workoutData), 10000);
+          console.log('[Workout] Saved to Supabase:', savedWorkout);
 
-        if (!savedWorkout) {
-          throw new Error('Failed to save workout to Supabase');
+          if (savedWorkout) {
+            savedToSupabase = true;
+          }
+        } catch (supabaseError) {
+          console.warn('[Workout] Supabase save failed or timed out:', supabaseError);
         }
-      } else {
-        // Fallback to localStorage
-        console.log('[Workout] No user found, saving to localStorage only');
-        const workout: Workout = {
-          id: `workout-${Date.now()}`,
-          ...workoutData
-        };
-        const storedWorkouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
-        storedWorkouts.push(workout);
-        localStorage.setItem('gym-tracker-workouts', JSON.stringify(storedWorkouts));
-        console.log('[Workout] Saved to localStorage, total workouts:', storedWorkouts.length);
+      }
+
+      // Si no se guardó en Supabase, guardar en localStorage como fallback
+      if (!savedToSupabase) {
+        console.log('[Workout] Falling back to localStorage');
+        saveToLocalStorage();
       }
 
       // Limpiar el workout en progreso
@@ -702,7 +734,11 @@ export default function WorkoutPage() {
       setJustSaved(true);
 
       // Mostrar confirmación
-      toast.success('Entrenamiento guardado correctamente');
+      if (savedToSupabase) {
+        toast.success('Entrenamiento guardado correctamente');
+      } else {
+        toast.success('Entrenamiento guardado localmente');
+      }
       console.log('[Workout] Save completed successfully');
 
       // Navegar después de un pequeño delay para que se vea el toast
@@ -711,7 +747,24 @@ export default function WorkoutPage() {
       }, 300);
     } catch (error) {
       console.error('[Workout] Error saving workout:', error);
-      toast.error(`Error al guardar: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+
+      // Último intento: guardar en localStorage
+      try {
+        saveToLocalStorage();
+
+        // Limpiar el workout en progreso
+        const inProgressKey = `workout-in-progress-${routineId}`;
+        localStorage.removeItem(inProgressKey);
+
+        setJustSaved(true);
+        toast.success('Entrenamiento guardado localmente (sin conexión)');
+
+        setTimeout(() => {
+          router.push('/history');
+        }, 300);
+      } catch (localError) {
+        toast.error('Error al guardar el entrenamiento');
+      }
     }
   };
 
