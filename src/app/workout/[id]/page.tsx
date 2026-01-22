@@ -105,6 +105,7 @@ export default function WorkoutPage() {
           if (window.confirm('Tienes un entrenamiento en progreso. ¿Quieres continuar donde lo dejaste?')) {
             setWorkoutExercises(inProgressData.exercises);
             setHistoricalValues(inProgressData.historicalValues || {});
+            setUserInputValues(inProgressData.userInputValues || {});
             setCurrentExerciseIndex(inProgressData.currentExerciseIndex || 0);
             setStartTime(inProgressData.startTime);
             setNotes(inProgressData.notes || '');
@@ -286,6 +287,7 @@ export default function WorkoutPage() {
       const dataToSave = {
         exercises: workoutExercises,
         historicalValues,
+        userInputValues,
         currentExerciseIndex,
         startTime,
         notes,
@@ -297,7 +299,7 @@ export default function WorkoutPage() {
       };
       localStorage.setItem(inProgressKey, JSON.stringify(dataToSave));
     }
-  }, [workoutExercises, historicalValues, currentExerciseIndex, notes, rpe, routine, routineId, startTime, restEndTime, isResting]);
+  }, [workoutExercises, historicalValues, userInputValues, currentExerciseIndex, notes, rpe, routine, routineId, startTime, restEndTime, isResting]);
 
   // Calcular sugerencias de progresión
   useEffect(() => {
