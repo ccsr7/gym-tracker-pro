@@ -2,8 +2,8 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { memo } from 'react';
-import { Home, Library, CalendarDays, User, Dumbbell, Moon, Sun, BarChart3, Calculator, Trophy } from 'lucide-react';
+import { memo, useState } from 'react';
+import { Home, Library, CalendarDays, User, Dumbbell, Moon, Sun, BarChart3, Calculator, Trophy, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 import { useAuth } from '@/lib/auth-context';
 
@@ -11,6 +11,7 @@ function Navigation() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
+  const [navCollapsed, setNavCollapsed] = useState(false);
 
   // Navegación principal (mobile bottom bar) - 5 items más importantes
   const navItems = [
@@ -164,28 +165,42 @@ function Navigation() {
       </div>
 
       {/* Mobile Navigation - Bottom Bar (5 items) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 dark:bg-white/95 backdrop-blur-lg border-t border-slate-700/50 dark:border-slate-200 z-50 pb-safe">
-        <div className="grid grid-cols-5 gap-1 px-1 py-2">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.path;
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 dark:bg-white/95 backdrop-blur-lg border-t border-slate-700/50 dark:border-slate-200 z-50 pb-safe transition-transform duration-300">
+        {/* Toggle tab */}
+        <button
+          onClick={() => setNavCollapsed(prev => !prev)}
+          className="absolute -top-5 left-1/2 -translate-x-1/2 flex items-center justify-center w-10 h-5 bg-slate-900/95 dark:bg-white/95 border border-slate-700/50 dark:border-slate-200 border-b-0 rounded-t-lg"
+          aria-label={navCollapsed ? 'Mostrar navegación' : 'Ocultar navegación'}
+        >
+          {navCollapsed
+            ? <ChevronUp className="w-3 h-3 text-slate-400 dark:text-slate-600" />
+            : <ChevronDown className="w-3 h-3 text-slate-400 dark:text-slate-600" />
+          }
+        </button>
 
-            return (
-              <Link
-                key={item.path}
-                href={item.path}
-                prefetch={true}
-                className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all ${
-                  isActive
-                    ? `${item.color} text-white shadow-lg scale-105`
-                    : 'text-slate-400 dark:text-slate-600 hover:bg-slate-800/50 dark:hover:bg-slate-100'
-                }`}
-              >
-                <Icon className="w-5 h-5 mb-0.5" />
-                <span className="text-[10px] font-medium leading-tight">{item.label}</span>
-              </Link>
-            );
-          })}
+        <div className={`overflow-hidden transition-all duration-300 ${navCollapsed ? 'max-h-0' : 'max-h-24'}`}>
+          <div className="grid grid-cols-5 gap-1 px-1 py-2">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.path;
+
+              return (
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  prefetch={true}
+                  className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all ${
+                    isActive
+                      ? `${item.color} text-white shadow-lg scale-105`
+                      : 'text-slate-400 dark:text-slate-600 hover:bg-slate-800/50 dark:hover:bg-slate-100'
+                  }`}
+                >
+                  <Icon className="w-5 h-5 mb-0.5" />
+                  <span className="text-[10px] font-medium leading-tight">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </nav>
     </>

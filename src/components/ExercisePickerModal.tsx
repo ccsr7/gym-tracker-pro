@@ -54,7 +54,7 @@ export default function ExercisePickerModal({
   if (!isOpen || !currentExercise) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
       <div className="bg-slate-800 dark:bg-white rounded-xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col border border-slate-700 dark:border-slate-200">
         {/* Header */}
         <div className="p-6 border-b border-slate-700 dark:border-slate-200">

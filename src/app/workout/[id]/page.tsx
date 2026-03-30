@@ -572,12 +572,82 @@ export default function WorkoutPage() {
     setShowHistoryModal(true);
   };
 
+  const handleDeleteExercise = async (exerciseIdx: number) => {
+    const exercise = workoutExercises[exerciseIdx];
+    const exerciseData = getExerciseById(exercise.exerciseId);
+    const confirmed = await showConfirmDialog(
+      `¿Eliminar "${exerciseData?.name || 'este ejercicio'}" del entrenamiento?`
+    );
+    if (!confirmed) return;
+
+    const updated = [...workoutExercises];
+
+    // Si tiene biserie, desvinculamos al compañero
+    if (exercise.isSupersetWith) {
+      const partnerIdx = updated.findIndex(ex => ex.exerciseId === exercise.isSupersetWith);
+      if (partnerIdx !== -1) {
+        updated[partnerIdx] = { ...updated[partnerIdx], isSupersetWith: undefined };
+      }
+    }
+
+    updated.splice(exerciseIdx, 1);
+    setWorkoutExercises(updated);
+
+    // Ajustar el índice actual si es necesario
+    setCurrentExerciseIndex(prev => {
+      if (updated.length === 0) return 0;
+      if (prev >= updated.length) return updated.length - 1;
+      if (prev > exerciseIdx) return prev - 1;
+      return prev;
+    });
+
+    // Limpiar estados de inputs para el índice eliminado
+    setUserInputValues(prev => {
+      const next: Record<string, number> = {};
+      Object.entries(prev).forEach(([key, val]) => {
+        const parts = key.split('-');
+        const keyIdx = parseInt(parts[0]);
+        if (keyIdx === exerciseIdx) return;
+        const newIdx = keyIdx > exerciseIdx ? keyIdx - 1 : keyIdx;
+        next[`${newIdx}-${parts.slice(1).join('-')}`] = val;
+      });
+      return next;
+    });
+
+    setInputDisplayValues(prev => {
+      const next: Record<string, string> = {};
+      Object.entries(prev).forEach(([key, val]) => {
+        const parts = key.split('-');
+        const keyIdx = parseInt(parts[0]);
+        if (keyIdx === exerciseIdx) return;
+        const newIdx = keyIdx > exerciseIdx ? keyIdx - 1 : keyIdx;
+        next[`${newIdx}-${parts.slice(1).join('-')}`] = val;
+      });
+      return next;
+    });
+
+    setHistoricalValues(prev => {
+      const next: Record<string, { weight: number; reps: number }> = {};
+      Object.entries(prev).forEach(([key, val]) => {
+        const parts = key.split('-');
+        const keyIdx = parseInt(parts[0]);
+        if (keyIdx === exerciseIdx) return;
+        const newIdx = keyIdx > exerciseIdx ? keyIdx - 1 : keyIdx;
+        next[`${newIdx}-${parts[1]}`] = val;
+      });
+      return next;
+    });
+
+    toast.success('Ejercicio eliminado');
+  };
+
   const handleReplaceExercise = (newExerciseId: string) => {
     if (exerciseIndexToReplace === null) return;
 
     const updated = [...workoutExercises];
     const oldExercise = updated[exerciseIndexToReplace];
     const numSets = oldExercise.sets.length;
+    const exerciseIdx = exerciseIndexToReplace;
 
     // Generar sets para el nuevo ejercicio (con historial o en 0)
     const newSets = generateSetsForExercise(newExerciseId, numSets);
@@ -589,7 +659,66 @@ export default function WorkoutPage() {
       notes: '' // Limpiar notas ya que es un ejercicio diferente
     };
 
+    // Fix biserie: actualizar el compañero para que apunte al nuevo ejercicio
+    if (oldExercise.isSupersetWith) {
+      const partnerIdx = updated.findIndex(ex => ex.exerciseId === oldExercise.isSupersetWith);
+      if (partnerIdx !== -1) {
+        updated[partnerIdx] = {
+          ...updated[partnerIdx],
+          isSupersetWith: newExerciseId
+        };
+      }
+    }
+
     setWorkoutExercises(updated);
+
+    // Limpiar userInputValues e inputDisplayValues del ejercicio anterior en este índice
+    setUserInputValues(prev => {
+      const next = { ...prev };
+      for (let setIdx = 0; setIdx < numSets; setIdx++) {
+        delete next[`${exerciseIdx}-${setIdx}-weight`];
+        delete next[`${exerciseIdx}-${setIdx}-reps`];
+      }
+      return next;
+    });
+
+    setInputDisplayValues(prev => {
+      const next = { ...prev };
+      for (let setIdx = 0; setIdx < numSets; setIdx++) {
+        delete next[`${exerciseIdx}-${setIdx}-weight`];
+      }
+      return next;
+    });
+
+    // Actualizar historicalValues para el nuevo ejercicio en este índice
+    const workouts = JSON.parse(localStorage.getItem('gym-tracker-workouts') || '[]');
+    const lastWorkoutWithExercise = workouts
+      .filter((w: any) => w.exercises.some((ex: any) => ex.exerciseId === newExerciseId))
+      .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+
+    setHistoricalValues(prev => {
+      const next = { ...prev };
+      // Limpiar valores del ejercicio anterior en este índice
+      for (let setIdx = 0; setIdx < numSets; setIdx++) {
+        delete next[`${exerciseIdx}-${setIdx}`];
+      }
+      // Cargar valores históricos del nuevo ejercicio
+      if (lastWorkoutWithExercise) {
+        const lastExercise = lastWorkoutWithExercise.exercises.find((ex: any) => ex.exerciseId === newExerciseId);
+        const completedSets = lastExercise?.sets.filter((s: any) => s.completed) || [];
+        if (completedSets.length > 0) {
+          const lastSet = completedSets[completedSets.length - 1];
+          for (let setIdx = 0; setIdx < numSets; setIdx++) {
+            next[`${exerciseIdx}-${setIdx}`] = {
+              weight: completedSets[setIdx]?.weight ?? lastSet.weight,
+              reps: completedSets[setIdx]?.reps ?? lastSet.reps
+            };
+          }
+        }
+      }
+      return next;
+    });
+
     setShowExercisePicker(false);
     setExerciseIndexToReplace(null);
   };
@@ -929,6 +1058,15 @@ export default function WorkoutPage() {
                   >
                     <History className="w-5 h-5" />
                   </button>
+                  {workoutExercises.length > 1 && (
+                    <button
+                      onClick={() => handleDeleteExercise(currentExerciseIndex)}
+                      className="p-2 text-red-400 dark:text-red-600 hover:text-red-300 dark:hover:text-red-700 hover:bg-slate-700/50 dark:hover:bg-slate-200 rounded-lg transition-colors"
+                      title="Eliminar ejercicio"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  )}
                 </div>
                 <p className="text-slate-400 dark:text-slate-600">{exercise.category} • {exercise.muscleGroup}</p>
                 {lastWorkoutData[currentExercise.exerciseId] && (() => {

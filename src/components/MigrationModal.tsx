@@ -165,6 +165,11 @@ export default function MigrationModal({ onClose, onSuccess }: MigrationModalPro
       setErrors(migrationErrors);
       setMigrationComplete(true);
 
+      // Eliminar datos locales automáticamente después de migrar
+      localStorage.removeItem('gym-tracker-routines');
+      localStorage.removeItem('gym-tracker-workouts');
+      localStorage.removeItem('gym-tracker-rest-days');
+
       // Build success message
       const messages: string[] = [];
       if (migratedWorkouts > 0) messages.push(`✅ ${migratedWorkouts} entrenamientos migrados`);
@@ -289,7 +294,7 @@ export default function MigrationModal({ onClose, onSuccess }: MigrationModalPro
                         <li>La migración puede tomar algunos minutos dependiendo de la cantidad de datos</li>
                         <li>Asegúrate de tener una conexión estable a internet</li>
                         <li>Los datos duplicados serán omitidos automáticamente</li>
-                        <li>Tus datos locales permanecerán intactos después de la migración</li>
+                        <li>Los datos locales se eliminarán automáticamente al terminar para evitar re-migraciones</li>
                       </ul>
                     </div>
                   </div>
@@ -374,19 +379,10 @@ export default function MigrationModal({ onClose, onSuccess }: MigrationModalPro
                   </div>
                 )}
 
-                {/* Option to clear local data */}
-                <div className="bg-slate-700/30 dark:bg-slate-100 rounded-lg p-4 mb-6">
-                  <p className="text-sm text-slate-300 dark:text-slate-700 mb-3">
-                    ¿Deseas eliminar los datos locales ahora que están en Supabase?
-                  </p>
-                  <button
-                    onClick={handleClearLocalData}
-                    className="w-full px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-400 dark:text-red-600 rounded-lg text-sm transition-colors"
-                  >
-                    Eliminar Datos Locales
-                  </button>
-                  <p className="text-xs text-slate-500 dark:text-slate-600 mt-2">
-                    Puedes hacerlo más tarde si prefieres
+                {/* Confirmación de limpieza automática */}
+                <div className="bg-emerald-500/10 dark:bg-emerald-50 border border-emerald-500/30 dark:border-emerald-200 rounded-lg p-4 mb-6">
+                  <p className="text-sm text-emerald-300 dark:text-emerald-700">
+                    Los datos locales fueron eliminados automáticamente. La próxima migración no volverá a procesar estos registros.
                   </p>
                 </div>
               </div>
